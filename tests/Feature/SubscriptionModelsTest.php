@@ -17,8 +17,8 @@ it('relates a reseller to its properties and subscriptions', function (): void {
     createTestTenant(['reseller_id' => $reseller->getKey()]);
     createTestTenant(['reseller_id' => $reseller->getKey()]);
 
-    expect($reseller->tenants)->toHaveCount(2)
-        ->and($reseller->tenants->first())->toBeInstanceOf(testTenantModel())
+    expect($reseller->stores)->toHaveCount(2)
+        ->and($reseller->stores->first())->toBeInstanceOf(testTenantModel())
         ->and($reseller->subscriptions)->toHaveCount(1);
 });
 

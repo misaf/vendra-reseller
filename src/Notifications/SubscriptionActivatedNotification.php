@@ -33,6 +33,6 @@ final class SubscriptionActivatedNotification extends Notification implements No
         return (new MailMessage())
             ->subject('Your subscription is active')
             ->line("Your reseller is now subscribed to the {$this->plan->name} plan.")
-            ->line("You can run up to {$this->plan->max_units} property(s).");
+            ->line("You can run up to {$this->plan->max_units} store(s).");
     }
 }

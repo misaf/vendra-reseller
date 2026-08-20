@@ -11,7 +11,7 @@ use Misaf\VendraSubscription\Events\SubscriptionActivated;
 /**
  * Notifies a subscriber's owner that their subscription is now active. The
  * subscription engine has already activated the subscription and reactivated
- * its properties; this listener only performs the host-specific notification.
+ * its stores; this listener only performs the host-specific notification.
  */
 final class NotifyActivatedSubscriber
 {

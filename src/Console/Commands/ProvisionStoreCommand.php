@@ -9,13 +9,13 @@ use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Misaf\VendraProperty\Actions\ProvisionPropertyAction;
 use Misaf\VendraReseller\Actions\CreateResellerAction;
 use Misaf\VendraReseller\Models\Reseller;
+use Misaf\VendraStore\Actions\ProvisionStoreAction;
+use Misaf\VendraStore\Models\StoreDomain;
 use Misaf\VendraSubscription\Models\Plan;
-use Misaf\VendraTenant\Models\TenantDomain;
 
-final class ProvisionPropertyCommand extends Command implements PromptsForMissingInput
+final class ProvisionStoreCommand extends Command implements PromptsForMissingInput
 {
     protected $signature = 'vendra-subscription:provision
         {name : Tenant name}
@@ -24,14 +24,14 @@ final class ProvisionPropertyCommand extends Command implements PromptsForMissin
         {email : Email address for the tenant owner}
         {--if-missing : Skip provisioning when the tenant domain already exists}
         {--password= : Password for the tenant owner (random when omitted)}
-        {--reseller= : Attach the property to an existing reseller (id or slug)}
-        {--plan= : Create a reseller for this property subscribed to the given plan (id or slug)}
+        {--reseller= : Attach the store to an existing reseller (id or slug)}
+        {--plan= : Create a reseller for this store subscribed to the given plan (id or slug)}
         {--seed : Run default tenant seeders after provisioning}';
 
-    protected $description = 'Provision a property (tenant) with a domain, owner user, and role assignment';
+    protected $description = 'Provision a store (tenant) with a domain, owner user, and role assignment';
 
     public function __construct(
-        private readonly ProvisionPropertyAction $provisionTenantAction,
+        private readonly ProvisionStoreAction $provisionTenantAction,
         private readonly CreateResellerAction $createResellerAction,
     ) {
         parent::__construct();
@@ -80,7 +80,7 @@ final class ProvisionPropertyCommand extends Command implements PromptsForMissin
 
         $result = $this->provisionTenantAction->execute($data, $shouldSeed, $password, $reseller);
 
-        $this->info('Property provisioned.');
+        $this->info('Store provisioned.');
         $this->table(['Field', 'Value'], [
             ['Domain', $data['domain']],
             ['Reseller', null === $reseller ? '[none]' : $reseller->name],
@@ -154,7 +154,7 @@ final class ProvisionPropertyCommand extends Command implements PromptsForMissin
 
         $domain = (string) $this->argument('domain');
 
-        if ( ! TenantDomain::query()->where('name', $domain)->exists()) {
+        if ( ! StoreDomain::query()->where('name', $domain)->exists()) {
             return false;
         }
 
@@ -213,7 +213,7 @@ final class ProvisionPropertyCommand extends Command implements PromptsForMissin
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('tenant_domains', 'name')->withoutTrashed(),
+                Rule::unique('store_domains', 'name')->withoutTrashed(),
             ],
             'username' => ['required', 'string', 'max:255'],
             'email'    => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->withoutTrashed()],

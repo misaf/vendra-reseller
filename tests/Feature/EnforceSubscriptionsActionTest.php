@@ -35,48 +35,48 @@ it('expires subscriptions whose period has lapsed', function (): void {
     expect($subscription->refresh()->status)->toBe(SubscriptionStatus::Expired);
 });
 
-it('suspends properties once the grace period has passed', function (): void {
+it('suspends stores once the grace period has passed', function (): void {
     $reseller = lapsedReseller(graceDays: 0, endsAt: now()->subDays(2));
-    $property = createTestTenant(['reseller_id' => $reseller->getKey(), 'active' => true]);
+    $store = createTestTenant(['reseller_id' => $reseller->getKey(), 'active' => true]);
 
     $result = app(EnforceSubscriptionsAction::class)->execute();
 
-    expect($property->refresh()->active)->toBeTrue()
-        ->and($property->billing_suspended_at)->not->toBeNull()
+    expect($store->refresh()->active)->toBeTrue()
+        ->and($store->billing_suspended_at)->not->toBeNull()
         ->and($result['grace_expired'])->toBe(1);
 });
 
 it('keeps properties live while still within the grace period', function (): void {
     $reseller = lapsedReseller(graceDays: 10, endsAt: now()->subDay());
-    $property = createTestTenant(['reseller_id' => $reseller->getKey(), 'active' => true]);
+    $store = createTestTenant(['reseller_id' => $reseller->getKey(), 'active' => true]);
 
     app(EnforceSubscriptionsAction::class)->execute();
 
-    expect($property->refresh()->active)->toBeTrue()
-        ->and($property->billing_suspended_at)->toBeNull();
+    expect($store->refresh()->active)->toBeTrue()
+        ->and($store->billing_suspended_at)->toBeNull();
 });
 
 it('leaves properties of resellers with an active subscription untouched', function (): void {
     $reseller = Reseller::factory()->create();
     Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->graceDays(0))->create();
-    $property = createTestTenant(['reseller_id' => $reseller->getKey(), 'active' => true]);
+    $store = createTestTenant(['reseller_id' => $reseller->getKey(), 'active' => true]);
 
     $result = app(EnforceSubscriptionsAction::class)->execute();
 
-    expect($property->refresh()->active)->toBeTrue()
-        ->and($property->billing_suspended_at)->toBeNull()
+    expect($store->refresh()->active)->toBeTrue()
+        ->and($store->billing_suspended_at)->toBeNull()
         ->and($result['grace_expired'])->toBe(0);
 });
 
 it('does not convert manual disablement into billing suspension', function (): void {
     $reseller = lapsedReseller(graceDays: 0, endsAt: now()->subDays(2));
-    $property = createTestTenant([
+    $store = createTestTenant([
         'reseller_id' => $reseller->getKey(),
         'active'      => false,
     ]);
 
     app(EnforceSubscriptionsAction::class)->execute();
 
-    expect($property->refresh()->active)->toBeFalse()
-        ->and($property->billing_suspended_at)->toBeNull();
+    expect($store->refresh()->active)->toBeFalse()
+        ->and($store->billing_suspended_at)->toBeNull();
 });

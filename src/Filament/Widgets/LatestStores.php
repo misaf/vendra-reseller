@@ -11,9 +11,9 @@ use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
 use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
-use Misaf\VendraTenant\Models\Tenant;
+use Misaf\VendraStore\Models\Store;
 
-final class LatestProperties extends BaseWidget
+final class LatestStores extends BaseWidget
 {
     use InteractsWithCurrentReseller;
 
@@ -25,14 +25,14 @@ final class LatestProperties extends BaseWidget
     {
         $reseller = (new self())->currentReseller();
 
-        return null !== $reseller && $reseller->tenants()->exists();
+        return null !== $reseller && $reseller->stores()->exists();
     }
 
     public function table(Table $table): Table
     {
         return $table
-            ->heading(__('console.properties'))
-            ->query(fn(): Builder => Tenant::query()->where('reseller_id', $this->currentReseller()?->getKey() ?? 0))
+            ->heading(__('console.stores'))
+            ->query(fn(): Builder => Store::query()->where('reseller_id', $this->currentReseller()?->getKey() ?? 0))
             ->columns([
                 TextColumn::make('name')
                     ->label(__('console.name'))
@@ -42,7 +42,7 @@ final class LatestProperties extends BaseWidget
                 TextColumn::make('domain')
                     ->label(__('console.domain'))
                     ->icon(Heroicon::GlobeAlt)
-                    ->state(fn(Tenant $record): ?string => $record->activeDomainName())
+                    ->state(fn(Store $record): ?string => $record->activeDomainName())
                     ->placeholder('—'),
 
                 ToggleColumn::make('active')

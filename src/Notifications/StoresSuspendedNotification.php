@@ -10,7 +10,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
 
-final class PropertiesSuspendedNotification extends Notification implements NotTenantAware, ShouldQueueAfterCommit
+final class StoresSuspendedNotification extends Notification implements NotTenantAware, ShouldQueueAfterCommit
 {
     use Queueable;
 
@@ -30,8 +30,8 @@ final class PropertiesSuspendedNotification extends Notification implements NotT
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage())
-            ->subject('Your properties have been suspended')
-            ->line("{$this->suspendedCount} property(s) were suspended because your subscription lapsed.")
+            ->subject('Your stores have been suspended')
+            ->line("{$this->suspendedCount} store(s) were suspended because your subscription lapsed.")
             ->line('Renew your subscription to bring them back online.');
     }
 }

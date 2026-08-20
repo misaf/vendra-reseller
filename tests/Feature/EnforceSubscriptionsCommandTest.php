@@ -14,11 +14,11 @@ it('expires subscriptions and suspends properties via the command', function ():
         'starts_at' => now()->subMonths(2),
         'ends_at'   => now()->subDays(2),
     ]);
-    $property = createTestTenant(['reseller_id' => $reseller->getKey(), 'active' => true]);
+    $store = createTestTenant(['reseller_id' => $reseller->getKey(), 'active' => true]);
 
     $this->artisan('vendra-subscription:enforce-subscriptions')->assertSuccessful();
 
-    expect($property->refresh()->active)->toBeTrue()
-        ->and($property->billing_suspended_at)->not->toBeNull()
+    expect($store->refresh()->active)->toBeTrue()
+        ->and($store->billing_suspended_at)->not->toBeNull()
         ->and($reseller->subscriptions()->sole()->status)->toBe(SubscriptionStatus::Expired);
 });

@@ -8,9 +8,9 @@ use Closure;
 use Illuminate\Contracts\Auth\Factory;
 use Illuminate\Http\Request;
 use Misaf\VendraReseller\Models\ResellerUser;
+use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSupport\Context\ContextKeys;
 use Misaf\VendraSupport\Context\RequestJobContext;
-use Misaf\VendraTenant\Models\Tenant;
 use Symfony\Component\HttpFoundation\Response;
 
 final readonly class AddResellerToRequestJobContext
@@ -23,10 +23,10 @@ final readonly class AddResellerToRequestJobContext
     public function handle(Request $request, Closure $next): Response
     {
         $resellerUser = $this->auth->guard('reseller')->user();
-        $tenant = Tenant::current();
+        $tenant = Store::current();
         $resellerId = $resellerUser instanceof ResellerUser
             ? $resellerUser->reseller_id
-            : ($tenant instanceof Tenant ? $tenant->reseller_id : null);
+            : ($tenant instanceof Store ? $tenant->reseller_id : null);
 
         (new RequestJobContext(
             metadata: [ContextKeys::RESELLER_ID => $resellerId],

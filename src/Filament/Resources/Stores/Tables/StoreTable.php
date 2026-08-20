@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Misaf\VendraReseller\Filament\Resources\Properties\Tables;
+namespace Misaf\VendraReseller\Filament\Resources\Stores\Tables;
 
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
@@ -17,17 +17,17 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
-use Misaf\VendraProperty\Models\StorefrontDeployment;
-use Misaf\VendraReseller\Filament\Resources\Properties\Actions\ReplaceDomainAction;
-use Misaf\VendraReseller\Filament\Resources\Properties\PropertyResource;
-use Misaf\VendraTenant\Models\Tenant;
+use Misaf\VendraReseller\Filament\Resources\Stores\Actions\ReplaceDomainAction;
+use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
+use Misaf\VendraStore\Models\Store;
+use Misaf\VendraStore\Models\StorefrontDeployment;
 
-final class PropertyTable
+final class StoreTable
 {
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query): Builder => $query->where('reseller_id', PropertyResource::currentResellerId()))
+            ->modifyQueryUsing(fn(Builder $query): Builder => $query->where('reseller_id', StoreResource::currentResellerId()))
             ->columns([
                 TextColumn::make('row')
                     ->label('#')
@@ -43,22 +43,22 @@ final class PropertyTable
                 TextColumn::make('domain')
                     ->label(__('console.domain'))
                     ->icon(Heroicon::GlobeAlt)
-                    ->state(fn(Tenant $record): ?string => $record->activeDomainName())
+                    ->state(fn(Store $record): ?string => $record->activeDomainName())
                     ->placeholder('—'),
 
                 TextColumn::make('storefront_status')
                     ->label(__('console.storefront_status'))
                     ->badge()
-                    ->state(fn(Tenant $record): ?string => self::storefrontStatuses()->get($record->id))
+                    ->state(fn(Store $record): ?string => self::storefrontStatuses()->get($record->id))
                     ->placeholder(__('console.storefront_not_requested')),
 
                 TextColumn::make('admin_access')
                     ->label(__('console.admin_url'))
-                    ->state(fn(Tenant $record): string => 'https://' . $record->slug . '.' . Config::string('vendra-tenant.central_host'))
-                    ->description(fn(Tenant $record): ?string => $record->activeDomainName()
+                    ->state(fn(Store $record): string => 'https://' . $record->slug . '.' . Config::string('vendra-tenant.central_host'))
+                    ->description(fn(Store $record): ?string => $record->activeDomainName()
                         ? 'https://admin.' . $record->activeDomainName()
                         : null)
-                    ->url(fn(Tenant $record): string => 'https://' . $record->slug . '.' . Config::string('vendra-tenant.central_host'))
+                    ->url(fn(Store $record): string => 'https://' . $record->slug . '.' . Config::string('vendra-tenant.central_host'))
                     ->openUrlInNewTab()
                     ->copyable()
                     ->copyMessage(__('console.url_copied'))
@@ -89,9 +89,9 @@ final class PropertyTable
                         fn(TextColumn $column) => $column->dateTime('Y-m-d H:i')
                     ),
             ])
-            ->description(__('console.tables.description.properties'))
-            ->emptyStateHeading(__('console.tables.empty_state.heading.properties'))
-            ->emptyStateDescription(__('console.tables.empty_state.description.properties'))
+            ->description(__('console.tables.description.stores'))
+            ->emptyStateHeading(__('console.tables.empty_state.heading.stores'))
+            ->emptyStateDescription(__('console.tables.empty_state.description.stores'))
             ->emptyStateIcon(Heroicon::OutlinedGlobeAlt)
             ->filters(
                 [
@@ -112,13 +112,13 @@ final class PropertyTable
                     ReplaceDomainAction::make(),
 
                     DeleteAction::make()
-                        ->authorize(fn(): bool => PropertyResource::canCreate()),
+                        ->authorize(fn(): bool => StoreResource::canCreate()),
                 ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
-                        ->authorize(fn(): bool => PropertyResource::canCreate()),
+                        ->authorize(fn(): bool => StoreResource::canCreate()),
                 ]),
             ])
             ->defaultSort(column: 'id', direction: 'desc');
@@ -129,9 +129,9 @@ final class PropertyTable
     {
         return once(fn(): Collection => StorefrontDeployment::query()
             ->orderBy('id')
-            ->get(['tenant_id', 'status'])
+            ->get(['store_id', 'status'])
             ->mapWithKeys(fn(StorefrontDeployment $deployment): array => [
-                $deployment->tenant_id => $deployment->status->value,
+                $deployment->store_id => $deployment->status->value,
             ]));
     }
 }

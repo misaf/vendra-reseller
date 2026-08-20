@@ -1,8 +1,8 @@
 # Vendra Reseller
 
 The reseller domain and the reseller self-service panel for Laravel. A reseller
-is the billing owner of one or more properties: it holds the subscription, the
-plan limits are enforced against it, and its owner manages its properties from
+is the billing owner of one or more stores: it holds the subscription, the
+plan limits are enforced against it, and its owner manages its stores from
 its own Filament panel.
 
 A reseller spans several tenants, so **the panel runs outside the tenant
@@ -14,7 +14,7 @@ reseller.
 - PHP 8.3+
 - Laravel 13
 - Filament 5
-- `misaf/vendra-property`, `misaf/vendra-subscription`, `misaf/vendra-transaction`,
+- `misaf/vendra-store`, `misaf/vendra-subscription`, `misaf/vendra-transaction`,
   `misaf/vendra-tenant`, `misaf/vendra-localization` and `misaf/vendra-support`
 
 ## Installation
@@ -64,16 +64,16 @@ app(OffboardResellerAction::class)->execute($reseller, reason: 'Contract ended')
 ### The subscriber
 
 `Models\Reseller` implements `SubscriptionSubscriber`, so plan limits are
-answered by `misaf/vendra-subscription` and property quotas by
-`Misaf\VendraProperty\Support\PropertyQuota` — no limit arithmetic is duplicated
+answered by `misaf/vendra-subscription` and store quotas by
+`Misaf\VendraStore\Support\StoreQuota` — no limit arithmetic is duplicated
 here.
 
 ```php
 $reseller->isSubscriptionActive();
 $reseller->activeSubscription();
-$reseller->subscribedPropertyCount();
-$reseller->suspendActiveProperties();
-$reseller->reactivateSuspendedProperties();
+$reseller->subscribedUnitCount();
+$reseller->suspendActiveUnits();
+$reseller->reactivateSuspendedUnits();
 $reseller->allows('feature-key');
 ```
 
@@ -90,7 +90,7 @@ them into reseller behaviour, wired in `Providers\ResellerServiceProvider`:
 | --- | --- |
 | `SubscriptionActivated` | `NotifyActivatedSubscriber` |
 | `SubscriptionExpiringSoon` | `RemindExpiringSubscriber` |
-| `SubscriptionGraceExpired` | `SuspendSubscriberProperties` |
+| `SubscriptionGraceExpired` | `SuspendSubscriberStores` |
 
 Add a new reaction as a listener here rather than pushing reseller knowledge
 into the subscription engine, and do not register these listeners again in the
@@ -103,8 +103,8 @@ php artisan vendra-subscription:provision {name} {domain} {username} {email} \
     [--reseller=] [--plan=] [--password=] [--if-missing] [--seed]
 ```
 
-Provisions a property with its domain, owner user, and role assignment. It calls
-`Misaf\VendraProperty\Actions\ProvisionPropertyAction` — the reseller-specific
+Provisions a store with its domain, owner user, and role assignment. It calls
+`Misaf\VendraStore\Actions\ProvisionStoreAction` — the reseller-specific
 part is only which reseller is attached (`--reseller`), or created and
 subscribed (`--plan`).
 
@@ -114,8 +114,8 @@ subscribed (`--plan`).
 domain, login and registration pages, widgets). `Providers\ResellerServiceProvider`
 registers the console command and the event listeners. The split is deliberate.
 
-Property screens are reused, not copied: the panel's resources extend
-`misaf/vendra-property`'s `CreatePropertyPage`, `StorefrontConfigurationFields`
+Store screens are reused, not copied: the panel's resources extend
+`misaf/vendra-store`'s `CreateStorePage`, `StorefrontConfigurationFields`
 and `ReplaceDomainAction`, supplying the authenticated owner as the reseller.
 Resolve the acting reseller with `Filament\Concerns\InteractsWithCurrentReseller`;
 `Http\Middleware\AddResellerToRequestJobContext` carries it into queued work.

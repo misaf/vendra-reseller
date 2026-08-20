@@ -7,10 +7,10 @@ namespace Misaf\VendraReseller\Filament\Widgets;
 use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Misaf\VendraProperty\Filament\Concerns\BuildsDailyTrend;
 use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
+use Misaf\VendraStore\Filament\Concerns\BuildsDailyTrend;
+use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSubscription\Models\Subscription;
-use Misaf\VendraTenant\Models\Tenant;
 
 final class ResellerOverview extends StatsOverviewWidget
 {
@@ -28,7 +28,7 @@ final class ResellerOverview extends StatsOverviewWidget
         }
 
         $subscription = $reseller->activeSubscription();
-        $used = $reseller->tenants()->count();
+        $used = $reseller->stores()->count();
 
         $planName = __('console.no_plan');
         $max = null;
@@ -42,9 +42,9 @@ final class ResellerOverview extends StatsOverviewWidget
             Stat::make(__('console.plan'), $planName)
                 ->icon(Heroicon::OutlinedRectangleStack)
                 ->color($subscription instanceof Subscription ? 'primary' : 'gray'),
-            Stat::make(__('console.properties'), null === $max ? (string) $used : "{$used} / {$max}")
+            Stat::make(__('console.stores'), null === $max ? (string) $used : "{$used} / {$max}")
                 ->icon(Heroicon::OutlinedGlobeAlt)
-                ->chart($this->dailyTrend(Tenant::query()->where('reseller_id', $reseller->getKey()))),
+                ->chart($this->dailyTrend(Store::query()->where('reseller_id', $reseller->getKey()))),
         ];
     }
 }

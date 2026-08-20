@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Support\Facades\Notification;
 use Misaf\VendraReseller\Models\Reseller;
-use Misaf\VendraReseller\Notifications\PropertiesSuspendedNotification;
+use Misaf\VendraReseller\Notifications\StoresSuspendedNotification;
 use Misaf\VendraReseller\Notifications\SubscriptionActivatedNotification;
 use Misaf\VendraReseller\Notifications\SubscriptionExpiringNotification;
 use Misaf\VendraSubscription\Actions\EnforceSubscriptionsAction;
@@ -66,7 +66,7 @@ it('notifies the owner when properties are suspended', function (): void {
     app(EnforceSubscriptionsAction::class)->execute();
     app(EnforceSubscriptionsAction::class)->execute();
 
-    Notification::assertSentToTimes($reseller, PropertiesSuspendedNotification::class, 1);
+    Notification::assertSentToTimes($reseller, StoresSuspendedNotification::class, 1);
 });
 
 it('queues subscription notifications off the request lifecycle', function (string $notification): void {
@@ -76,7 +76,7 @@ it('queues subscription notifications off the request lifecycle', function (stri
 })->with([
     SubscriptionActivatedNotification::class,
     SubscriptionExpiringNotification::class,
-    PropertiesSuspendedNotification::class,
+    StoresSuspendedNotification::class,
 ]);
 
 it('sends subscription notifications on the transactional-email queue', function (): void {

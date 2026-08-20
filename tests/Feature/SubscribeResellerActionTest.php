@@ -36,7 +36,7 @@ it('renews by creating a fresh active subscription for the same plan', function 
 
 it('clears only billing suspension when the reseller resubscribes', function (): void {
     $reseller = Reseller::factory()->create();
-    $property = createTestTenant([
+    $store = createTestTenant([
         'reseller_id'          => $reseller->getKey(),
         'active'               => false,
         'billing_suspended_at' => now(),
@@ -44,8 +44,8 @@ it('clears only billing suspension when the reseller resubscribes', function ():
 
     app(SubscribeAction::class)->execute($reseller, Plan::factory()->create());
 
-    expect($property->refresh()->active)->toBeFalse()
-        ->and($property->billing_suspended_at)->toBeNull();
+    expect($store->refresh()->active)->toBeFalse()
+        ->and($store->billing_suspended_at)->toBeNull();
 });
 
 it('rejects a second active subscription for the same reseller', function (): void {

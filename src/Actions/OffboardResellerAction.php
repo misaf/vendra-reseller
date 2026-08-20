@@ -40,7 +40,7 @@ final class OffboardResellerAction
                 return $lockedReseller;
             }
 
-            $tenants = $lockedReseller->tenants()
+            $tenants = $lockedReseller->stores()
                 ->lockForUpdate()
                 ->get();
             $cancelledSubscriptionCount = $this->subscriptionRegistry->cancelOpen($lockedReseller);

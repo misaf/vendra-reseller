@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Misaf\VendraReseller\Filament\Resources\Properties\Schemas;
+namespace Misaf\VendraReseller\Filament\Resources\Stores\Schemas;
 
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 use Livewire\Component as Livewire;
 use Misaf\LaravelEmailValidation\Rules\EmailValidation;
-use Misaf\VendraProperty\Filament\Schemas\StorefrontConfigurationFields;
-use Misaf\VendraTenant\Models\TenantDomain;
+use Misaf\VendraStore\Filament\Schemas\StorefrontConfigurationFields;
+use Misaf\VendraStore\Models\StoreDomain;
 
-final class PropertyForm
+final class StoreForm
 {
     public static function configure(Schema $schema): Schema
     {
@@ -24,10 +24,10 @@ final class PropertyForm
                     ->live(onBlur: true)
                     ->maxLength(255)
                     ->required()
-                    ->rules(TenantDomain::activeDomainRules())
+                    ->rules(StoreDomain::activeDomainRules())
                     ->dehydrateStateUsing(fn(?string $state): ?string => null === $state
                         ? null
-                        : TenantDomain::normalizeDomain($state)),
+                        : StoreDomain::normalizeDomain($state)),
 
                 TextInput::make('email')
                     ->afterStateUpdated(fn(Livewire $livewire) => $livewire->validateOnly('data.email'))

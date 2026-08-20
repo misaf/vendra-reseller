@@ -18,10 +18,10 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Support\Carbon;
 use LogicException;
 use Misaf\VendraReseller\Database\Factories\ResellerFactory;
+use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSubscription\Contracts\SubscriptionSubscriber;
 use Misaf\VendraSubscription\Models\Subscription;
 use Misaf\VendraSupport\Contracts\ShouldLogActivity;
-use Misaf\VendraTenant\Models\Tenant;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
@@ -110,13 +110,13 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     }
 
     /**
-     * The properties (tenants) owned by this reseller.
+     * The stores owned by this reseller.
      *
-     * @return HasMany<Tenant, $this>
+     * @return HasMany<Store, $this>
      */
-    public function tenants(): HasMany
+    public function stores(): HasMany
     {
-        return $this->hasMany(Tenant::class);
+        return $this->hasMany(Store::class);
     }
 
     /**
@@ -171,26 +171,26 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
         return $this->ownerUser()->first();
     }
 
-    public function subscribedPropertyCount(): int
+    public function subscribedUnitCount(): int
     {
-        return $this->tenants()->count();
+        return $this->stores()->count();
     }
 
-    public function activeSubscribedPropertyCount(): int
+    public function activeSubscribedUnitCount(): int
     {
-        return $this->tenants()->accessible()->count();
+        return $this->stores()->accessible()->count();
     }
 
-    public function suspendActiveProperties(): int
+    public function suspendActiveUnits(): int
     {
-        return $this->tenants()
+        return $this->stores()
             ->accessible()
             ->update(['billing_suspended_at' => now()]);
     }
 
-    public function reactivateSuspendedProperties(): int
+    public function reactivateSuspendedUnits(): int
     {
-        return $this->tenants()
+        return $this->stores()
             ->whereNotNull('billing_suspended_at')
             ->update(['billing_suspended_at' => null]);
     }

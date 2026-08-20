@@ -35,6 +35,6 @@ final class SubscriptionExpiringNotification extends Notification implements Not
         return (new MailMessage())
             ->subject('Your subscription is expiring soon')
             ->line("Your subscription expires on {$endsAt}.")
-            ->line('Renew now to keep your properties online.');
+            ->line('Renew now to keep your stores online.');
     }
 }

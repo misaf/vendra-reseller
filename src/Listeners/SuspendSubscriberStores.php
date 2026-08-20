@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Listeners;
 
-use Misaf\VendraReseller\Notifications\PropertiesSuspendedNotification;
+use Misaf\VendraReseller\Notifications\StoresSuspendedNotification;
 use Misaf\VendraSubscription\Contracts\SubscriptionSubscriber;
 use Misaf\VendraSubscription\Events\SubscriptionGraceExpired;
 
 /**
- * Suspends a subscriber's active properties once its subscription is past the
+ * Suspends a subscriber's active stores once its subscription is past the
  * plan's grace window, and notifies the owner. The engine only detects the
- * lapse; suspending tenant properties is a host-specific reaction.
+ * lapse; suspending a subscriber’s stores is a host-specific reaction.
  */
-final class SuspendSubscriberProperties
+final class SuspendSubscriberStores
 {
     public function handle(SubscriptionGraceExpired $event): void
     {
@@ -23,10 +23,10 @@ final class SuspendSubscriberProperties
             return;
         }
 
-        $count = $subscriber->suspendActiveProperties();
+        $count = $subscriber->suspendActiveUnits();
 
         if ($count > 0 && $subscriber->hasOwnerContact()) {
-            $subscriber->notifyOwner(new PropertiesSuspendedNotification($count));
+            $subscriber->notifyOwner(new StoresSuspendedNotification($count));
         }
     }
 }

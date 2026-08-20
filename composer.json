@@ -28,7 +28,7 @@
         "illuminate/support": "^13.0",
         "misaf/laravel-email-validation": "^1.0",
         "misaf/vendra-localization": "self.version",
-        "misaf/vendra-property": "self.version",
+        "misaf/vendra-store": "self.version",
         "misaf/vendra-subscription": "self.version",
         "misaf/vendra-support": "self.version",
         "misaf/vendra-tenant": "self.version",
