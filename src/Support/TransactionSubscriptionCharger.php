@@ -15,9 +15,10 @@ use Misaf\VendraSupport\Enums\SubscriptionChargeStatus;
 use Misaf\VendraTransaction\Actions\CreateTransactionAction;
 use Misaf\VendraTransaction\Enums\TransactionTypeEnum;
 use Misaf\VendraTransaction\Exceptions\InsufficientBalanceException;
-use Misaf\VendraTransaction\Facades\TransactionService;
+use Misaf\VendraTransaction\Facades\TransactionGatewayRegistry;
+use Misaf\VendraTransaction\Facades\WalletResolver;
 use Misaf\VendraTransaction\Models\Transaction;
-use Misaf\VendraTransaction\Services\TransactionService as TransactionServiceClass;
+use Misaf\VendraTransaction\Services\TransactionGatewayRegistry as TransactionGatewayRegistryClass;
 use Misaf\VendraTransaction\States\Approved;
 use Misaf\VendraTransaction\States\Declined;
 use Misaf\VendraTransaction\States\Failed;
@@ -32,12 +33,12 @@ final class TransactionSubscriptionCharger implements SubscriptionCharger
 
     public function provider(): string
     {
-        return TransactionServiceClass::INTERNAL_GATEWAY_SLUG;
+        return TransactionGatewayRegistryClass::INTERNAL_GATEWAY_SLUG;
     }
 
     public function available(): bool
     {
-        return TransactionService::hasActiveTransactionGateway(TransactionServiceClass::INTERNAL_GATEWAY_SLUG);
+        return TransactionGatewayRegistry::hasActive(TransactionGatewayRegistryClass::INTERNAL_GATEWAY_SLUG);
     }
 
     public function charge(SubscriptionCharge $charge): SubscriptionChargeResult
@@ -61,10 +62,10 @@ final class TransactionSubscriptionCharger implements SubscriptionCharger
 
     private function chargeWithinContext(SubscriptionCharge $charge): SubscriptionChargeResult
     {
-        $wallet = TransactionService::walletFor($charge->payer, $charge->currencyCode);
+        $wallet = WalletResolver::walletFor($charge->payer, $charge->currencyCode);
 
         $transaction = $this->createTransactionAction->execute(
-            TransactionServiceClass::INTERNAL_GATEWAY_SLUG,
+            TransactionGatewayRegistryClass::INTERNAL_GATEWAY_SLUG,
             $wallet,
             TransactionTypeEnum::Withdrawal,
             $charge->amount,

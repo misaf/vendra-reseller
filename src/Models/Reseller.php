@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Misaf\VendraReseller\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,8 +17,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Carbon;
-use LogicException;
 use Misaf\VendraReseller\Database\Factories\ResellerFactory;
+use Misaf\VendraReseller\Observers\ResellerObserver;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSubscription\Contracts\SubscriptionSubscriber;
 use Misaf\VendraSubscription\Models\Subscription;
@@ -39,6 +40,7 @@ use Spatie\Sluggable\SlugOptions;
  * @property Carbon|null $deleted_at
  */
 #[Fillable(['name', 'description', 'slug', 'active', 'email'])]
+#[ObservedBy([ResellerObserver::class])]
 #[UseFactory(ResellerFactory::class)]
 final class Reseller extends Model implements ShouldLogActivity, SubscriptionSubscriber
 {
@@ -48,15 +50,6 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     use HasSlug;
     use Notifiable;
     use SoftDeletes;
-
-    protected static function booted(): void
-    {
-        static::deleting(function (Reseller $reseller): void {
-            if (null === $reseller->offboarded_at) {
-                throw new LogicException("Reseller [{$reseller->id}] must be offboarded through OffboardResellerAction before deletion.");
-            }
-        });
-    }
 
     /**
      * @return array<string, string>

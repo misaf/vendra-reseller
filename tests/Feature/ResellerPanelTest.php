@@ -25,6 +25,7 @@ use Misaf\VendraReseller\Models\ResellerUser;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraStore\Models\StoreDomain;
 use Misaf\VendraStore\Models\StorefrontDeployment;
+use Misaf\VendraStore\Models\StorefrontImage;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
 use Misaf\VendraSupport\Tenancy\Events\TenantProvisioned;
@@ -60,6 +61,7 @@ function actAsResellerOwner(Reseller $reseller): ResellerUser
 function resellerStorefrontFormData(): array
 {
     return [
+        'storefront_image_id'             => StorefrontImage::factory()->create()->id,
         'storefront_slug'                 => 'acme-flowers',
         'storefront_theme'                => 'default',
         'storefront_name_en'              => 'Acme Flowers',
