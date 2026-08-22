@@ -11,7 +11,7 @@ reseller.
 
 ## Requirements
 
-- PHP 8.3+
+- PHP 8.4+
 - Laravel 13
 - Filament 5
 - `misaf/vendra-store`, `misaf/vendra-subscription`, `misaf/vendra-transaction`,
