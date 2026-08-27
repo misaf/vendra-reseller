@@ -56,6 +56,15 @@ $reseller = app(CreateResellerAction::class)->execute(
 This creates the reseller, its first panel user (`CreateResellerOwnerAction`),
 and the subscription to the given plan.
 
+### Owner accounts
+
+Credential and lifecycle changes go through
+`UpdateResellerOwnerPasswordAction`, `UpdateResellerOwnerEmailAction`,
+`SetResellerOwnerAccountEnabledAction`, and `ReplaceResellerOwnerAction`.
+Replacement soft-deletes the previous login as account history and creates the
+new owner through `CreateResellerOwnerAction`; email changes also keep the
+reseller contact email synchronized.
+
 ### Offboarding
 
 ```php
@@ -96,6 +105,7 @@ them into reseller behaviour, wired in `Providers\ResellerServiceProvider`:
 | Event | Listener |
 | --- | --- |
 | `SubscriptionActivated` | `NotifyActivatedSubscriber` |
+| `SubscriptionCancelled` | `SuspendSubscriberStores` |
 | `SubscriptionExpiringSoon` | `RemindExpiringSubscriber` |
 | `SubscriptionGraceExpired` | `SuspendSubscriberStores` |
 
@@ -126,6 +136,13 @@ Store screens are reused, not copied: the panel's resources extend
 and `ReplaceDomainAction`, supplying the authenticated owner as the reseller.
 Resolve the acting reseller with `Filament\Concerns\InteractsWithCurrentReseller`;
 `Http\Middleware\AddResellerToRequestJobContext` carries it into queued work.
+
+The reseller dashboard shows subscribed store usage against the plan allowance,
+remaining capacity, subscription state, and counts for active, provisioning,
+and failed stores. Store listings expose derived store and storefront-deployment
+statuses and filters, with all queries still rooted in
+`StoreResource::getEloquentQuery()`. Runtime administration and container details
+remain platform-owner concerns and are not exposed here.
 
 ## Testing
 

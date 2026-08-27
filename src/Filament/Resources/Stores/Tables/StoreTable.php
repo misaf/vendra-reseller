@@ -10,15 +10,16 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Misaf\VendraReseller\Filament\Resources\Stores\Actions\ReplaceDomainAction;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
+use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
+use Misaf\VendraStore\Enums\StoreStatus;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraStore\Models\StorefrontDeployment;
 
@@ -26,8 +27,6 @@ final class StoreTable
 {
     public static function configure(Table $table): Table
     {
-        // Scoping to the owner's reseller belongs to StoreResource::getEloquentQuery(),
-        // which every read here builds on — including the record actions.
         return $table
             ->columns([
                 TextColumn::make('row')
@@ -44,30 +43,34 @@ final class StoreTable
                 TextColumn::make('domain')
                     ->label(__('console.domain'))
                     ->icon(Heroicon::GlobeAlt)
-                    ->state(fn(Store $record): ?string => $record->activeDomainName())
+                    ->state(fn(Store $record): ?string => $record->domains->first()?->name)
                     ->placeholder('—'),
 
                 TextColumn::make('storefront_status')
                     ->label(__('console.storefront_status'))
                     ->badge()
-                    ->state(fn(Store $record): ?string => self::storefrontStatuses()->get($record->id))
+                    ->state(fn(Store $record): ?string => self::deployment($record)?->status->value)
                     ->placeholder(__('console.storefront_not_requested')),
 
                 TextColumn::make('admin_access')
                     ->label(__('console.admin_url'))
                     ->state(fn(Store $record): string => 'https://' . $record->slug . '.' . Config::string('vendra-tenant.central_host'))
-                    ->description(fn(Store $record): ?string => $record->activeDomainName()
-                        ? 'https://admin.' . $record->activeDomainName()
-                        : null)
+                    ->description(function (Store $record): ?string {
+                        $domain = $record->domains->first()?->name;
+
+                        return null === $domain ? null : 'https://admin.' . $domain;
+                    })
                     ->url(fn(Store $record): string => 'https://' . $record->slug . '.' . Config::string('vendra-tenant.central_host'))
                     ->openUrlInNewTab()
                     ->copyable()
                     ->copyMessage(__('console.url_copied'))
                     ->placeholder('—'),
 
-                ToggleColumn::make('active')
-                    ->label(__('console.active'))
-                    ->onIcon(Heroicon::Bolt),
+                TextColumn::make('status')
+                    ->label(__('console.operational_status'))
+                    ->badge()
+                    ->state(fn(Store $record): string => $record->status()->value)
+                    ->formatStateUsing(fn(string $state): string => __("console.store_status_{$state}")),
 
                 TextColumn::make('created_at')
                     ->extraCellAttributes(['dir' => 'ltr'])
@@ -105,6 +108,31 @@ final class StoreTable
                             false: fn(Builder $query): Builder => $query->where('active', false),
                             blank: fn(Builder $query): Builder => $query,
                         ),
+
+                    SelectFilter::make('status')
+                        ->label(__('console.operational_status'))
+                        ->options(self::statusOptions())
+                        ->query(function (Builder $query, array $data): Builder {
+                            $value = $data['value'] ?? null;
+                            $status = is_string($value) ? StoreStatus::tryFrom($value) : null;
+
+                            return null === $status ? $query : $query->withStatus($status);
+                        }),
+
+                    SelectFilter::make('storefront_status')
+                        ->label(__('console.storefront_status'))
+                        ->options(self::deploymentStatusOptions())
+                        ->query(function (Builder $query, array $data): Builder {
+                            $value = $data['value'] ?? null;
+                            $status = is_string($value) ? StorefrontDeploymentStatus::tryFrom($value) : null;
+
+                            return null === $status
+                                ? $query
+                                : $query->whereHas(
+                                    'storefrontDeployments',
+                                    fn(Builder $query): Builder => $query->where('status', $status),
+                                );
+                        }),
                 ],
                 layout: FiltersLayout::AboveContentCollapsible,
             )
@@ -125,14 +153,30 @@ final class StoreTable
             ->defaultSort(column: 'id', direction: 'desc');
     }
 
-    /** @return Collection<int, 'failed'|'pending'|'processing'|'ready'|'requested'> */
-    private static function storefrontStatuses(): Collection
+    private static function deployment(Store $store): ?StorefrontDeployment
     {
-        return once(fn(): Collection => StorefrontDeployment::query()
-            ->orderBy('id')
-            ->get(['store_id', 'status'])
-            ->mapWithKeys(fn(StorefrontDeployment $deployment): array => [
-                $deployment->store_id => $deployment->status->value,
-            ]));
+        $deployment = $store->storefrontDeployments->first();
+
+        return $deployment instanceof StorefrontDeployment ? $deployment : null;
+    }
+
+    /** @return array<string, string> */
+    private static function statusOptions(): array
+    {
+        return collect(StoreStatus::cases())
+            ->mapWithKeys(fn(StoreStatus $status): array => [
+                $status->value => __("console.store_status_{$status->value}"),
+            ])
+            ->all();
+    }
+
+    /** @return array<string, string> */
+    private static function deploymentStatusOptions(): array
+    {
+        return collect(StorefrontDeploymentStatus::cases())
+            ->mapWithKeys(fn(StorefrontDeploymentStatus $status): array => [
+                $status->value => __("console.deployment_status_{$status->value}"),
+            ])
+            ->all();
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Misaf\VendraReseller\Filament\Resources\Stores;
 
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -13,6 +14,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Facades\Config;
 use InvalidArgumentException;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\CreateStore;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\ListStores;
@@ -90,7 +92,12 @@ final class StoreResource extends Resource
             return parent::getEloquentQuery()->whereRaw('1 = 0');
         }
 
-        return parent::getEloquentQuery()->where('reseller_id', $resellerId);
+        return parent::getEloquentQuery()
+            ->where('reseller_id', $resellerId)
+            ->with([
+                'storefrontDeployments' => fn(Relation $relation): Relation => $relation->orderByDesc('id'),
+                'domains'               => fn(Relation $relation): Relation => $relation->where('active', true),
+            ]);
     }
 
     /**
@@ -145,6 +152,23 @@ final class StoreResource extends Resource
 
         return [
             __('console.domain') => is_string($domainName) ? $domainName : '—',
+        ];
+    }
+
+    /**
+     * @return array<Action>
+     */
+    public static function getGlobalSearchResultActions(Model $record): array
+    {
+        $store = self::store($record);
+
+        return [
+            Action::make('openAdmin')
+                ->label(__('console.admin_url'))
+                ->url(
+                    'https://' . $store->slug . '.' . Config::string('vendra-tenant.central_host'),
+                    shouldOpenInNewTab: true,
+                ),
         ];
     }
 

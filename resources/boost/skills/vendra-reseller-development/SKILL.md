@@ -34,18 +34,21 @@ description: "Create, modify, review, or test the Vendra Reseller module in pack
 ## Reseller Lifecycle
 
 - `Actions\CreateResellerAction` and `Actions\CreateResellerOwnerAction` create the reseller and its first panel user.
+- Owner changes use `UpdateResellerOwnerPasswordAction`, `UpdateResellerOwnerEmailAction`, `SetResellerOwnerAccountEnabledAction`, and `ReplaceResellerOwnerAction`; preserve replaced owners as soft-deleted account history.
 - `Actions\OffboardResellerAction` is the only supported removal path. `Reseller::deleting` throws for a reseller that was not offboarded first, and `Events\ResellerOffboarded` is the extension point.
 - `Models\Reseller` implements `SubscriptionSubscriber` and `ShouldLogActivity`. Read quota state through `Misaf\VendraStore\Support\StoreQuota`; do not recompute plan limits inline.
 
 ## Subscription Reactions
 
-- `Providers\ResellerServiceProvider` maps generic subscription events to reseller behaviour: `SubscriptionActivated` → `NotifyActivatedSubscriber`, `SubscriptionExpiringSoon` → `RemindExpiringSubscriber`, `SubscriptionGraceExpired` → `SuspendSubscriberStores`.
+- `Providers\ResellerServiceProvider` maps generic subscription events to reseller behaviour: `SubscriptionActivated` → `NotifyActivatedSubscriber`, `SubscriptionExpiringSoon` → `RemindExpiringSubscriber`, and both `SubscriptionCancelled` / `SubscriptionGraceExpired` → `SuspendSubscriberStores`.
 - Add new reactions as listeners here. Do not push reseller knowledge into the subscription engine, and do not register the same listeners again in the host app.
 
 ## Panel
 
 - `Providers\ResellerPanelServiceProvider` registers the panel; `Providers\ResellerServiceProvider` registers the command and listeners. Keep the split.
 - Resolve the acting reseller with `Filament\Concerns\InteractsWithCurrentReseller`; `Http\Middleware\AddResellerToRequestJobContext` carries it into queued work.
+- Dashboard usage and operational counts reuse `StoreQuota`, subscriber methods, and `Store::status()`. Store and deployment-status filters must remain rooted in `StoreResource::getEloquentQuery()` so they cannot cross reseller boundaries.
+- Do not expose container-runtime administration, logs, or platform recovery actions in the reseller panel.
 
 ## Testing
 

@@ -6,10 +6,10 @@ namespace Misaf\VendraReseller\Filament\Widgets;
 
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
 use Misaf\VendraStore\Models\Store;
 
@@ -32,7 +32,11 @@ final class LatestStores extends BaseWidget
     {
         return $table
             ->heading(__('console.stores'))
-            ->query(fn(): Builder => Store::query()->where('reseller_id', $this->currentReseller()?->getKey() ?? 0))
+            ->query(fn(): Builder => Store::query()
+                ->where('reseller_id', $this->currentReseller()?->getKey() ?? 0)
+                ->with([
+                    'domains' => fn(Relation $relation): Relation => $relation->where('active', true),
+                ]))
             ->columns([
                 TextColumn::make('name')
                     ->label(__('console.name'))
@@ -42,12 +46,14 @@ final class LatestStores extends BaseWidget
                 TextColumn::make('domain')
                     ->label(__('console.domain'))
                     ->icon(Heroicon::GlobeAlt)
-                    ->state(fn(Store $record): ?string => $record->activeDomainName())
+                    ->state(fn(Store $record): ?string => $record->domains->first()?->name)
                     ->placeholder('—'),
 
-                ToggleColumn::make('active')
-                    ->label(__('console.active'))
-                    ->onIcon(Heroicon::Bolt),
+                TextColumn::make('status')
+                    ->label(__('console.operational_status'))
+                    ->badge()
+                    ->state(fn(Store $record): string => $record->status()->value)
+                    ->formatStateUsing(fn(string $state): string => __("console.store_status_{$state}")),
 
                 TextColumn::make('created_at')
                     ->extraCellAttributes(['dir' => 'ltr'])

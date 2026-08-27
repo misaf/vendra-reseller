@@ -8,6 +8,7 @@ use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraReseller\Notifications\StoresSuspendedNotification;
 use Misaf\VendraReseller\Notifications\SubscriptionActivatedNotification;
 use Misaf\VendraReseller\Notifications\SubscriptionExpiringNotification;
+use Misaf\VendraSubscription\Actions\CancelSubscriptionAction;
 use Misaf\VendraSubscription\Actions\EnforceSubscriptionsAction;
 use Misaf\VendraSubscription\Actions\SubscribeAction;
 use Misaf\VendraSubscription\Enums\SubscriptionStatus;
@@ -66,6 +67,19 @@ it('notifies the owner when properties are suspended', function (): void {
     app(EnforceSubscriptionsAction::class)->execute();
     app(EnforceSubscriptionsAction::class)->execute();
 
+    Notification::assertSentToTimes($reseller, StoresSuspendedNotification::class, 1);
+});
+
+it('suspends stores immediately when an operator cancels the subscription', function (): void {
+    Notification::fake();
+
+    $reseller = Reseller::factory()->create();
+    $subscription = Subscription::factory()->forSubscriber($reseller)->for(Plan::factory())->create();
+    $store = createTestTenant(['reseller_id' => $reseller->getKey(), 'active' => true]);
+
+    app(CancelSubscriptionAction::class)->execute($subscription);
+
+    expect($store->refresh()->billing_suspended_at)->not->toBeNull();
     Notification::assertSentToTimes($reseller, StoresSuspendedNotification::class, 1);
 });
 

@@ -19,11 +19,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Misaf\VendraReseller\Database\Factories\ResellerUserFactory;
+use Misaf\VendraSupport\Contracts\ShouldLogActivity;
 
 #[Fillable(['reseller_id', 'username', 'email', 'email_verified_at', 'password'])]
 #[Hidden(['password', 'remember_token', 'active_reseller_guard', 'active_username_guard', 'active_email_guard'])]
 #[UseFactory(ResellerUserFactory::class)]
-final class ResellerUser extends Authenticatable implements FilamentUser, HasName, MustVerifyEmail
+final class ResellerUser extends Authenticatable implements FilamentUser, HasName, MustVerifyEmail, ShouldLogActivity
 {
     /** @use HasFactory<ResellerUserFactory> */
     use HasFactory;

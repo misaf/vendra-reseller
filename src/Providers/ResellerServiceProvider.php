@@ -16,6 +16,7 @@ use Misaf\VendraReseller\Support\ResellerStoreOwnerResolver;
 use Misaf\VendraStore\Contracts\StoreOwnerResolver;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSubscription\Events\SubscriptionActivated;
+use Misaf\VendraSubscription\Events\SubscriptionCancelled;
 use Misaf\VendraSubscription\Events\SubscriptionExpiringSoon;
 use Misaf\VendraSubscription\Events\SubscriptionGraceExpired;
 
@@ -58,6 +59,7 @@ final class ResellerServiceProvider extends ServiceProvider
         );
 
         Event::listen(SubscriptionActivated::class, NotifyActivatedSubscriber::class);
+        Event::listen(SubscriptionCancelled::class, SuspendSubscriberStores::class);
         Event::listen(SubscriptionExpiringSoon::class, RemindExpiringSubscriber::class);
         Event::listen(SubscriptionGraceExpired::class, SuspendSubscriberStores::class);
     }
