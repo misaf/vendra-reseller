@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
+use Misaf\VendraReseller\Actions\OffboardResellerAction;
 use Misaf\VendraReseller\Filament\Pages\Auth\Login;
 use Misaf\VendraReseller\Filament\Pages\Auth\Register;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\CreateStore;
@@ -26,6 +27,7 @@ use Misaf\VendraStore\Models\Store;
 use Misaf\VendraStore\Models\StoreDomain;
 use Misaf\VendraStore\Models\StorefrontDeployment;
 use Misaf\VendraStore\Models\StorefrontImage;
+use Misaf\VendraStore\Settings\StoreCreationSettings;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
 use Misaf\VendraSupport\Tenancy\Events\TenantProvisioned;
@@ -287,6 +289,24 @@ it('grants reseller panel access only to reseller owners', function (): void {
         ->and($regular->canAccessPanel($panel))->toBeFalse();
 });
 
+/*
+ | The platform freeze is the shared half of the gate: `vendra-store` owns the
+ | rule and the console edits it, so closing it there closes reseller creation
+ | too — without this package ever pointing at `misaf/vendra-console`.
+ */
+it('closes reseller store creation while the platform freeze is on', function (): void {
+    $reseller = Reseller::factory()->create(['active' => true]);
+    Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->maxUnits(2))->create();
+
+    actAsResellerOwner($reseller);
+
+    expect(StoreResource::canCreate())->toBeTrue();
+
+    app(StoreCreationSettings::class)->fill(['open' => false])->save();
+
+    expect(StoreResource::canCreate())->toBeFalse();
+});
+
 it('keeps inactive owners in the panel but blocks store operations', function (): void {
     $reseller = Reseller::factory()->create(['active' => false]);
     Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->maxUnits(2))->create();
@@ -314,6 +334,43 @@ it('shows an owner only their own reseller stores', function (): void {
         ->call('loadTable')
         ->assertCanSeeTableRecords([$storeA])
         ->assertCanNotSeeTableRecords([$storeB]);
+});
+
+/*
+ | Offboarding soft-deletes the Reseller but leaves the ResellerUser able to
+ | sign in. A scope written as `where('reseller_id', $maybeNull)` becomes
+ | `whereNull` in that state — which is every store the platform owns directly.
+ */
+it('shows an owner nothing once their reseller is gone, platform stores included', function (): void {
+    $reseller = Reseller::factory()->create();
+    $ownedStore = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
+    $platformStore = Store::factory()->create(['reseller_id' => null, 'active' => true]);
+
+    actAsResellerOwner($reseller);
+    app(OffboardResellerAction::class)->execute($reseller, 'Contract ended.');
+
+    expect(StoreResource::currentResellerId())->toBeNull()
+        ->and(StoreResource::getEloquentQuery()->count())->toBe(0)
+        ->and(StoreResource::getGlobalSearchResults($platformStore->name))->toBeEmpty();
+
+    livewire(ListStores::class)
+        ->call('loadTable')
+        ->assertCanNotSeeTableRecords([$ownedStore, $platformStore]);
+});
+
+it('keeps platform-owned stores out of an active owner\'s panel', function (): void {
+    $reseller = Reseller::factory()->create();
+    $ownedStore = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
+    $platformStore = Store::factory()->create(['reseller_id' => null, 'active' => true]);
+
+    actAsResellerOwner($reseller);
+
+    expect(StoreResource::getEloquentQuery()->pluck('id')->all())->toBe([$ownedStore->id]);
+
+    livewire(ListStores::class)
+        ->call('loadTable')
+        ->assertCanSeeTableRecords([$ownedStore])
+        ->assertCanNotSeeTableRecords([$platformStore]);
 });
 
 it('lets an owner create a store within the plan limit', function (): void {

@@ -21,6 +21,7 @@ use Misaf\VendraReseller\Filament\Resources\Stores\Tables\StoreTable;
 use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraReseller\Models\ResellerUser;
 use Misaf\VendraStore\Models\Store;
+use Misaf\VendraStore\Support\StoreCreationPolicy;
 
 final class StoreResource extends Resource
 {
@@ -66,8 +67,43 @@ final class StoreResource extends Resource
         return Reseller::query()->find($user->reseller_id);
     }
 
+    /**
+     * Every read of a store in this panel, scoped to the owner's own reseller.
+     *
+     * The single chokepoint on purpose: the table, the record actions resolve
+     * through, and global search all build on this, so scoping the table alone
+     * would leave the others open.
+     *
+     * An owner with no resolvable reseller sees nothing. That is not a
+     * hypothetical: offboarding soft-deletes the `Reseller` and leaves the
+     * `ResellerUser` able to sign in, and `where('reseller_id', null)` is
+     * `whereNull` to Eloquent — which is every store the platform owns
+     * directly.
+     *
+     * @return Builder<Store>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        $resellerId = self::currentResellerId();
+
+        if (null === $resellerId) {
+            return parent::getEloquentQuery()->whereRaw('1 = 0');
+        }
+
+        return parent::getEloquentQuery()->where('reseller_id', $resellerId);
+    }
+
+    /**
+     * Two halves of the same gate: the platform must be open for new stores at
+     * all — the shared rule `vendra-store` owns and the console edits — and the
+     * signed-in owner must still be an active reseller.
+     */
     public static function canCreate(): bool
     {
+        if ( ! app(StoreCreationPolicy::class)->isOpen()) {
+            return false;
+        }
+
         $reseller = self::currentReseller();
 
         return null !== $reseller && $reseller->active;
@@ -94,7 +130,6 @@ final class StoreResource extends Resource
     public static function getGlobalSearchEloquentQuery(): Builder
     {
         return parent::getGlobalSearchEloquentQuery()
-            ->where('reseller_id', self::currentResellerId() ?? 0)
             ->with([
                 'domains' => fn(Relation $relation): Relation => $relation->where('active', true),
             ]);

@@ -9,6 +9,13 @@ A reseller spans several tenants, so **the panel runs outside the tenant
 middleware stack**. There is no current tenant here; everything is scoped by
 reseller.
 
+That scoping lives in one place — `StoreResource::getEloquentQuery()` — because
+the table, the record actions, and global search all build on it. An owner whose
+reseller cannot be resolved sees nothing at all: offboarding soft-deletes the
+`Reseller` while its `ResellerUser` can still sign in, and `where('reseller_id',
+null)` means `whereNull` to Eloquent, which is every store the platform owns
+directly.
+
 ## Requirements
 
 - PHP 8.4+

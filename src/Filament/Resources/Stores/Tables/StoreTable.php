@@ -26,8 +26,9 @@ final class StoreTable
 {
     public static function configure(Table $table): Table
     {
+        // Scoping to the owner's reseller belongs to StoreResource::getEloquentQuery(),
+        // which every read here builds on — including the record actions.
         return $table
-            ->modifyQueryUsing(fn(Builder $query): Builder => $query->where('reseller_id', StoreResource::currentResellerId()))
             ->columns([
                 TextColumn::make('row')
                     ->label('#')
