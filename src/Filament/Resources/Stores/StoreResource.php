@@ -7,6 +7,7 @@ namespace Misaf\VendraReseller\Filament\Resources\Stores;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
+use Filament\Resources\Pages\Page;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -17,8 +18,11 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Config;
 use InvalidArgumentException;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\CreateStore;
+use Misaf\VendraReseller\Filament\Resources\Stores\Pages\EditStore;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\ListStores;
+use Misaf\VendraReseller\Filament\Resources\Stores\Pages\ViewStore;
 use Misaf\VendraReseller\Filament\Resources\Stores\Schemas\StoreForm;
+use Misaf\VendraReseller\Filament\Resources\Stores\Schemas\StoreInfolist;
 use Misaf\VendraReseller\Filament\Resources\Stores\Tables\StoreTable;
 use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraReseller\Models\ResellerUser;
@@ -121,6 +125,16 @@ final class StoreResource extends Resource
         return StoreForm::configure($schema);
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return StoreInfolist::configure($schema);
+    }
+
+    public static function getRecordSubNavigation(Page $page): array
+    {
+        return $page->generateNavigationItems([ViewStore::class, EditStore::class]);
+    }
+
     public static function table(Table $table): Table
     {
         return StoreTable::configure($table);
@@ -176,7 +190,7 @@ final class StoreResource extends Resource
     {
         $store = self::store($record);
 
-        return static::getUrl('index', ['search' => $store->name]);
+        return static::getUrl('view', ['record' => $store]);
     }
 
     public static function getPages(): array
@@ -184,6 +198,8 @@ final class StoreResource extends Resource
         return [
             'index'  => ListStores::route('/'),
             'create' => CreateStore::route('/create'),
+            'view'   => ViewStore::route('/{record}'),
+            'edit'   => EditStore::route('/{record}/edit'),
         ];
     }
 

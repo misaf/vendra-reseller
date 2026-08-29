@@ -16,7 +16,9 @@ use Misaf\VendraReseller\Actions\OffboardResellerAction;
 use Misaf\VendraReseller\Filament\Pages\Auth\Login;
 use Misaf\VendraReseller\Filament\Pages\Auth\Register;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\CreateStore;
+use Misaf\VendraReseller\Filament\Resources\Stores\Pages\EditStore;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\ListStores;
+use Misaf\VendraReseller\Filament\Resources\Stores\Pages\ViewStore;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
 use Misaf\VendraReseller\Filament\Widgets\LatestStores;
 use Misaf\VendraReseller\Filament\Widgets\ResellerOverview;
@@ -42,7 +44,7 @@ use function Pest\Livewire\livewire;
 beforeEach(function (): void {
     Event::fake([TenantProvisioned::class]);
     Artisan::shouldReceive('call')->andReturn(0);
-    Config::set('vendra-container.endpoint', 'http://provisioner:8080');
+    Config::set('container.drivers.docker.host', 'http://provisioner:8080');
     fakeDockerEngine();
 });
 
@@ -125,7 +127,7 @@ it('globally searches only the authenticated reseller stores', function (): void
     $action = $result->actions[0];
 
     expect($result->title)->toBe($store->name)
-        ->and($result->url)->toBe(StoreResource::getUrl('index', ['search' => $store->name]))
+        ->and($result->url)->toBe(StoreResource::getUrl('view', ['record' => $store]))
         ->and($result->details)->toBe([
             __('console.domain') => 'owned-global-search.test',
         ])
@@ -139,6 +141,61 @@ it('globally searches only the authenticated reseller stores', function (): void
             'command+k',
             'ctrl+k',
         ]);
+});
+
+it('uses a store overview as the reseller record landing page', function (): void {
+    $reseller = Reseller::factory()->create();
+    $store = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'name' => 'Acme Flowers']);
+    StoreDomain::factory()->for($store)->create(['name' => 'acme.test', 'active' => true]);
+    actAsResellerOwner($reseller);
+
+    livewire(ListStores::class)
+        ->assertActionVisible(TestAction::make('view')->table($store));
+
+    livewire(ViewStore::class, ['record' => $store->getKey()])
+        ->assertOk()
+        ->assertSee('Acme Flowers')
+        ->assertSee('acme.test');
+});
+
+it('lets a reseller edit store details without exposing protected ownership or provisioning fields', function (): void {
+    $reseller = Reseller::factory()->create();
+    $otherReseller = Reseller::factory()->create();
+    $store = Store::factory()->active()->create([
+        'reseller_id' => $reseller->getKey(),
+        'name'        => 'Original store',
+    ]);
+    $originalSlug = $store->slug;
+    actAsResellerOwner($reseller);
+
+    livewire(EditStore::class, ['record' => $store->getKey()])
+        ->fillForm([
+            'name'        => 'Updated store',
+            'description' => 'Customer-facing store details.',
+            'slug'        => 'protected-slug',
+            'reseller_id' => $otherReseller->getKey(),
+            'active'      => false,
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors()
+        ->assertNotified();
+
+    $store->refresh();
+
+    expect($store->name)->toBe('Updated store')
+        ->and($store->description)->toBe('Customer-facing store details.')
+        ->and($store->slug)->toBe($originalSlug)
+        ->and($store->reseller_id)->toBe($reseller->getKey())
+        ->and($store->active)->toBeTrue();
+});
+
+it('does not resolve another reseller store on view or edit pages', function (): void {
+    $reseller = Reseller::factory()->create();
+    $otherStore = Store::factory()->create(['reseller_id' => Reseller::factory()->create()->getKey()]);
+    actAsResellerOwner($reseller);
+
+    $this->get(StoreResource::getUrl('view', ['record' => $otherStore]))->assertNotFound();
+    $this->get(StoreResource::getUrl('edit', ['record' => $otherStore]))->assertNotFound();
 });
 
 it('uses the Vendra logo in light and dark modes', function (): void {

@@ -26,7 +26,7 @@
         "illuminate/database": "^13.0",
         "illuminate/http": "^13.0",
         "illuminate/support": "^13.0",
-        "misaf/laravel-email-validation": "^1.0",
+        "misaf/laravel-email-verification-emailable": "^1.0",
         "misaf/vendra-localization": "self.version",
         "misaf/vendra-store": "self.version",
         "misaf/vendra-subscription": "self.version",

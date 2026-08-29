@@ -8,6 +8,8 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
@@ -138,12 +140,18 @@ final class StoreTable
             )
             ->recordActions([
                 ActionGroup::make([
-                    ReplaceDomainAction::make(),
-
-                    DeleteAction::make()
-                        ->authorize(fn(): bool => StoreResource::canCreate()),
+                    ViewAction::make(),
+                    EditAction::make(),
+                    ActionGroup::make([
+                        ReplaceDomainAction::make(),
+                    ])->dropdown(false),
+                    ActionGroup::make([
+                        DeleteAction::make()
+                            ->authorize(fn(): bool => StoreResource::canCreate()),
+                    ])->dropdown(false),
                 ]),
             ])
+            ->recordUrl(fn(Store $record): string => StoreResource::getUrl('view', ['record' => $record]))
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
