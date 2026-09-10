@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Filament\Resources\Stores\Tables;
 
+use Illuminate\Support\Arr;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -122,7 +123,7 @@ final class StoreTable
                         ->label(__('console.operational_status'))
                         ->options(self::statusOptions())
                         ->query(function (Builder $query, array $data): Builder {
-                            $value = $data['value'] ?? null;
+                            $value = Arr::get($data, 'value', null);
                             $status = is_string($value) ? StoreStatus::tryFrom($value) : null;
 
                             return $status === null ? $query : $query->withStatus($status);
@@ -132,7 +133,7 @@ final class StoreTable
                         ->label(__('console.storefront_status'))
                         ->options(self::deploymentStatusOptions())
                         ->query(function (Builder $query, array $data): Builder {
-                            $value = $data['value'] ?? null;
+                            $value = Arr::get($data, 'value', null);
                             $status = is_string($value) ? StorefrontDeploymentStatus::tryFrom($value) : null;
 
                             return $status === null

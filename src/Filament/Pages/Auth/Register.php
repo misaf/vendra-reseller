@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Filament\Pages\Auth;
 
+use Illuminate\Support\Arr;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Component;
@@ -88,26 +89,24 @@ final class Register extends \Filament\Auth\Pages\Register
      */
     protected function handleRegistration(#[SensitiveParameter] array $data): Model
     {
-        $planId = $data['plan_id'] ?? null;
-        $username = $data['username'] ?? null;
-        $email = $data['email'] ?? null;
-        $password = $data['password'] ?? null;
+        $planId = Arr::get($data, 'plan_id', null);
+        $username = Arr::get($data, 'username', null);
+        $email = Arr::get($data, 'email', null);
+        $password = Arr::get($data, 'password', null);
 
-        if (! is_numeric($planId)
+        throw_if(! is_numeric($planId)
             || ! is_string($username)
             || ! is_string($email)
-            || ! is_string($password)) {
-            throw new InvalidArgumentException('Invalid reseller registration details.');
-        }
+            || ! is_string($password), InvalidArgumentException::class, 'Invalid reseller registration details.');
 
         $plan = Plan::query()->active()->findOrFail((int) $planId);
 
-        return app(CreateResellerAction::class)->execute(
+        return Arr::get(resolve(CreateResellerAction::class)->execute(
             plan: $plan,
             username: $username,
             email: $email,
             password: $password,
             emailVerified: false,
-        )['owner'];
+        ), 'owner');
     }
 }

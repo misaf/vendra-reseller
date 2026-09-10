@@ -15,6 +15,6 @@ final class ReplaceDomainAction extends BaseReplaceDomainAction
      */
     protected function authorizationCallback(): Closure
     {
-        return fn (): bool => StoreResource::canCreate();
+        return StoreResource::canCreate(...);
     }
 }

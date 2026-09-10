@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraSubscription\Enums\PeriodUnit;
 use Misaf\VendraSubscription\Exceptions\PlanInUseException;
@@ -71,7 +71,7 @@ it('treats an expired subscription as inactive', function (): void {
 it('resolves the plan end date from its period', function (): void {
     $plan = Plan::factory()->period(PeriodUnit::Month, 3)->create();
 
-    $start = Carbon::parse('2026-01-01 00:00:00');
+    $start = Date::parse('2026-01-01 00:00:00');
 
     expect($plan->resolveEndDate($start)->toDateString())->toBe('2026-04-01');
 });

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
@@ -85,19 +86,21 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     }
 
     /**
-     * @param  Builder<Reseller>  $query
-     * @return Builder<Reseller>
+     * @param Builder<self> $query
+     * @return Builder<self>
      */
-    public function scopeActive(Builder $query): Builder
+    #[Scope]
+    protected function active(Builder $query): Builder
     {
         return $query->where('active', true);
     }
 
     /**
-     * @param  Builder<Reseller>  $query
-     * @return Builder<Reseller>
+     * @param Builder<self> $query
+     * @return Builder<self>
      */
-    public function scopeInactive(Builder $query): Builder
+    #[Scope]
+    protected function inactive(Builder $query): Builder
     {
         return $query->where('active', false);
     }

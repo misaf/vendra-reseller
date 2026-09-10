@@ -28,9 +28,9 @@ final readonly class AddResellerToRequestJobContext
             ? $resellerUser->reseller_id
             : ($tenant instanceof Store ? $tenant->reseller_id : null);
 
-        (new RequestJobContext(
+        new RequestJobContext(
             metadata: [ContextKeys::RESELLER_ID => $resellerId],
-        ))->add();
+        )->add();
 
         return $next($request);
     }

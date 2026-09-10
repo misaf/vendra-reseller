@@ -23,9 +23,7 @@ final class CreateStore extends CreateStorePage
     {
         $resellerId = StoreResource::currentResellerId();
 
-        if ($resellerId === null) {
-            throw new InvalidArgumentException('No billing reseller for the current user.');
-        }
+        throw_if($resellerId === null, InvalidArgumentException::class, 'No billing reseller for the current user.');
 
         return Reseller::query()->findOrFail($resellerId);
     }

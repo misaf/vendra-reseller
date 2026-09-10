@@ -29,7 +29,7 @@ it('snapshots the plan price onto the subscription when subscribing', function (
     ResellerUser::factory()->forReseller($reseller)->create();
     $plan = Plan::factory()->priced(2999, 'EUR')->trialDays(1)->create();
 
-    $subscription = app(SubscribeAction::class)->execute($reseller, $plan);
+    $subscription = resolve(SubscribeAction::class)->execute($reseller, $plan);
 
     expect($subscription->price)->toBe(2999)
         ->and($subscription->currency_code)->toBe('EUR');

@@ -14,12 +14,12 @@ use Misaf\VendraStore\Models\Store;
  | both are registered here.
  */
 it('binds the store ownership port to the reseller domain', function (): void {
-    expect(app(StoreOwnerResolver::class))->toBeInstanceOf(ResellerStoreOwnerResolver::class);
+    expect(resolve(StoreOwnerResolver::class))->toBeInstanceOf(ResellerStoreOwnerResolver::class);
 
     $reseller = Reseller::factory()->create();
 
-    expect(app(StoreOwnerResolver::class)->find($reseller->getKey())?->getKey())->toBe($reseller->getKey())
-        ->and(app(StoreOwnerResolver::class)->find(999999))->toBeNull();
+    expect(resolve(StoreOwnerResolver::class)->find($reseller->getKey())?->getKey())->toBe($reseller->getKey())
+        ->and(resolve(StoreOwnerResolver::class)->find(999999))->toBeNull();
 });
 
 it('gives each reseller only its own stores', function (): void {

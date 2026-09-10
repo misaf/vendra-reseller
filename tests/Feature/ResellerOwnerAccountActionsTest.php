@@ -16,7 +16,7 @@ it('updates a reseller owner password and invalidates remember tokens', function
     $owner = ResellerUser::factory()->forReseller($reseller)->create();
     $rememberToken = $owner->getRememberToken();
 
-    app(UpdateResellerOwnerPasswordAction::class)->execute($owner, 'NewSecure123');
+    resolve(UpdateResellerOwnerPasswordAction::class)->execute($owner, 'NewSecure123');
 
     $owner->refresh();
 
@@ -28,7 +28,7 @@ it('updates and verifies the owner email together with the reseller contact', fu
     $reseller = Reseller::factory()->create();
     $owner = ResellerUser::factory()->forReseller($reseller)->create();
 
-    app(UpdateResellerOwnerEmailAction::class)->execute($owner, 'NEW@RESELLER.TEST');
+    resolve(UpdateResellerOwnerEmailAction::class)->execute($owner, 'NEW@RESELLER.TEST');
 
     expect($owner->refresh()->email)->toBe('new@reseller.test')
         ->and($owner->email_verified_at)->not->toBeNull()
@@ -39,12 +39,12 @@ it('disables and re-enables a reseller owner account reversibly', function (): v
     $reseller = Reseller::factory()->create();
     $owner = ResellerUser::factory()->forReseller($reseller)->create();
 
-    app(SetResellerOwnerAccountEnabledAction::class)->execute($owner, false);
+    resolve(SetResellerOwnerAccountEnabledAction::class)->execute($owner, false);
 
     expect($owner->newQuery()->find($owner->getKey()))->toBeNull()
         ->and(ResellerUser::query()->withTrashed()->findOrFail($owner->getKey())->trashed())->toBeTrue();
 
-    app(SetResellerOwnerAccountEnabledAction::class)->execute($owner, true);
+    resolve(SetResellerOwnerAccountEnabledAction::class)->execute($owner, true);
 
     expect($owner->newQuery()->find($owner->getKey()))->not->toBeNull();
 });
@@ -53,7 +53,7 @@ it('replaces the active reseller owner while preserving the former account as hi
     $reseller = Reseller::factory()->create();
     $formerOwner = ResellerUser::factory()->forReseller($reseller)->create();
 
-    $replacement = app(ReplaceResellerOwnerAction::class)->execute(
+    $replacement = resolve(ReplaceResellerOwnerAction::class)->execute(
         $reseller,
         'replacement',
         'replacement@reseller.test',
@@ -63,8 +63,6 @@ it('replaces the active reseller owner while preserving the former account as hi
     expect($formerOwner->newQuery()->find($formerOwner->getKey()))->toBeNull()
         ->and(ResellerUser::query()->withTrashed()->findOrFail($formerOwner->getKey())->trashed())->toBeTrue()
         ->and($reseller->ownerUser()->sole()->is($replacement))->toBeTrue()
-        ->and(Hash::check('SecurePassword123', $replacement->password))->toBeTrue();
-
-    expect(fn () => app(SetResellerOwnerAccountEnabledAction::class)->execute($formerOwner, true))
-        ->toThrow(LogicException::class);
+        ->and(Hash::check('SecurePassword123', $replacement->password))->toBeTrue()
+        ->and(fn() => resolve(SetResellerOwnerAccountEnabledAction::class)->execute($formerOwner, true))->toThrow(LogicException::class);
 });

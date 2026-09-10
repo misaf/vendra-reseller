@@ -27,9 +27,9 @@ use Misaf\VendraTransaction\States\Failed;
  * Collects subscription payments through vendra-transaction by posting an
  * internal withdrawal against the payer's wallet.
  */
-final class TransactionSubscriptionCharger implements SubscriptionCharger
+final readonly class TransactionSubscriptionCharger implements SubscriptionCharger
 {
-    public function __construct(private readonly CreateTransactionAction $createTransactionAction) {}
+    public function __construct(private CreateTransactionAction $createTransactionAction) {}
 
     public function provider(): string
     {
@@ -43,7 +43,7 @@ final class TransactionSubscriptionCharger implements SubscriptionCharger
 
     public function charge(SubscriptionCharge $charge): SubscriptionChargeResult
     {
-        $result = (new RequestJobContext(
+        $result = new RequestJobContext(
             traceId: RequestJobContext::resolveTraceId(),
             operation: 'subscription_charge',
             metadata: [
@@ -51,11 +51,9 @@ final class TransactionSubscriptionCharger implements SubscriptionCharger
                     ? $charge->payer->reseller_id
                     : null,
             ],
-        ))->scope(fn (): SubscriptionChargeResult => $this->chargeWithinContext($charge));
+        )->scope(fn (): SubscriptionChargeResult => $this->chargeWithinContext($charge));
 
-        if (! $result instanceof SubscriptionChargeResult) {
-            throw new LogicException('The scoped subscription charge did not return a result.');
-        }
+        throw_unless($result instanceof SubscriptionChargeResult, LogicException::class, 'The scoped subscription charge did not return a result.');
 
         return $result;
     }

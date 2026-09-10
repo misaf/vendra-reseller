@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Filament\Widgets;
 
+use Illuminate\Contracts\Database\Query\Builder;
 use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -35,7 +36,7 @@ final class ResellerOverview extends StatsOverviewWidget
         $subscription = $reseller->activeSubscription();
         $stores = Store::query()->where('reseller_id', $reseller->getKey());
         $used = $reseller->subscribedUnitCount();
-        $remaining = app(StoreQuota::class)->remainingStores($reseller);
+        $remaining = resolve(StoreQuota::class)->remainingStores($reseller);
         $active = (clone $stores)->withStatus(StoreStatus::Active)->count();
         $provisioning = (clone $stores)->withStatus(StoreStatus::Provisioning)->count()
             + (clone $stores)->withStatus(StoreStatus::Pending)->count();
@@ -44,7 +45,7 @@ final class ResellerOverview extends StatsOverviewWidget
 
         $hasReadyStorefront = (clone $stores)->whereHas(
             'storefrontDeployments',
-            fn ($query) => $query->where('status', StorefrontDeploymentStatus::Ready),
+            fn (Builder $query) => $query->where('status', StorefrontDeploymentStatus::Ready),
         )->exists();
 
         return [

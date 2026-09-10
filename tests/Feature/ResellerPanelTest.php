@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Arr;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Filament\Support\Icons\Heroicon;
@@ -123,7 +124,7 @@ it('globally searches only the authenticated reseller stores', function (): void
     ]);
 
     $result = StoreResource::getGlobalSearchResults('owned-global-search.test')->sole();
-    $action = $result->actions[0];
+    $action = Arr::get($result->actions, 0);
 
     expect($result->title)->toBe($store->name)
         ->and($result->url)->toBe(StoreResource::getUrl('view', ['record' => $store]))
@@ -407,7 +408,7 @@ it('closes reseller store creation while the platform freeze is on', function ()
 
     expect(StoreResource::canCreate())->toBeTrue();
 
-    app(StoreCreationSettings::class)->fill(['open' => false])->save();
+    resolve(StoreCreationSettings::class)->fill(['open' => false])->save();
 
     expect(StoreResource::canCreate())->toBeFalse();
 });
@@ -452,7 +453,7 @@ it('shows an owner nothing once their reseller is gone, platform stores included
     $platformStore = Store::factory()->create(['reseller_id' => null, 'active' => true]);
 
     actAsResellerOwner($reseller);
-    app(OffboardResellerAction::class)->execute($reseller, 'Contract ended.');
+    resolve(OffboardResellerAction::class)->execute($reseller, 'Contract ended.');
 
     expect(StoreResource::currentResellerId())->toBeNull()
         ->and(StoreResource::getEloquentQuery()->count())->toBe(0)

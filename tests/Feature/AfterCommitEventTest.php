@@ -25,7 +25,7 @@ it('dispatches payment state events only after the surrounding transaction commi
     ]);
 
     DB::transaction(function () use ($payment): void {
-        app(ApplySubscriptionPaymentResultAction::class)->execute(
+        resolve(ApplySubscriptionPaymentResultAction::class)->execute(
             $payment,
             new SubscriptionChargeResult(
                 SubscriptionChargeStatus::Failed,
@@ -36,10 +36,7 @@ it('dispatches payment state events only after the surrounding transaction commi
         Event::assertNotDispatched(SubscriptionPaymentFailed::class);
     });
 
-    Event::assertDispatched(
-        SubscriptionPaymentFailed::class,
-        fn (SubscriptionPaymentFailed $event): bool => $event->payment->is($payment),
-    );
+    Event::assertDispatched(fn (SubscriptionPaymentFailed $event): bool => $event->payment->is($payment));
 });
 
 it('discards payment state events when the surrounding transaction rolls back', function (): void {
@@ -50,7 +47,7 @@ it('discards payment state events when the surrounding transaction rolls back', 
     ]);
 
     expect(fn () => DB::transaction(function () use ($payment): never {
-        app(ApplySubscriptionPaymentResultAction::class)->execute(
+        resolve(ApplySubscriptionPaymentResultAction::class)->execute(
             $payment,
             new SubscriptionChargeResult(
                 SubscriptionChargeStatus::Failed,
@@ -76,7 +73,7 @@ it('delivers activation listeners outside the reseller creation transaction', fu
         },
     );
 
-    app(CreateResellerAction::class)->execute(
+    resolve(CreateResellerAction::class)->execute(
         plan: Plan::factory()->create(),
         username: 'reseller-owner',
         email: 'owner@example.com',

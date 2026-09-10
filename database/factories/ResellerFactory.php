@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Database\Factories;
 
+use Illuminate\Support\Arr;
 use Illuminate\Database\Eloquent\Factories\Attributes\UseModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -23,7 +24,7 @@ final class ResellerFactory extends Factory
         return [
             'name' => fake()->unique()->company(),
             'description' => fake()->text(),
-            'slug' => fn (array $attributes) => Str::slug($attributes['name']),
+            'slug' => fn (array $attributes) => Str::slug(Arr::get($attributes, 'name')),
             'active' => true,
             'email' => fake()->unique()->safeEmail(),
         ];

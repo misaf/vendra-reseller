@@ -8,15 +8,15 @@ use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
 
-final class ResellerOffboarded implements ShouldDispatchAfterCommit
+final readonly class ResellerOffboarded implements ShouldDispatchAfterCommit
 {
     use Dispatchable;
 
     public function __construct(
-        public readonly int $resellerId,
-        public readonly string $reason,
-        public readonly CarbonImmutable $offboardedAt,
-        public readonly int $cancelledSubscriptionCount,
-        public readonly int $offboardedTenantCount,
+        public int $resellerId,
+        public string $reason,
+        public CarbonImmutable $offboardedAt,
+        public int $cancelledSubscriptionCount,
+        public int $offboardedTenantCount,
     ) {}
 }

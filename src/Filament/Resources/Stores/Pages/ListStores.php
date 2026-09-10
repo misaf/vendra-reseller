@@ -45,6 +45,6 @@ final class ListStores extends ListRecords
             return null;
         }
 
-        return app(StoreQuota::class)->remainingStores($reseller);
+        return resolve(StoreQuota::class)->remainingStores($reseller);
     }
 }

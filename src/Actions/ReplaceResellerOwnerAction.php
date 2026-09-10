@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\DB;
 use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraReseller\Models\ResellerUser;
 
-final class ReplaceResellerOwnerAction
+final readonly class ReplaceResellerOwnerAction
 {
-    public function __construct(private readonly CreateResellerOwnerAction $createOwner) {}
+    public function __construct(private CreateResellerOwnerAction $createOwner) {}
 
     public function execute(
         Reseller $reseller,

@@ -19,14 +19,14 @@ it('blocks changing to a plan that cannot hold the current properties', function
     $reseller = Reseller::factory()->create();
     Store::factory()->count(2)->create(['reseller_id' => $reseller->getKey()]);
 
-    app(SubscribeAction::class)->execute($reseller, Plan::factory()->maxUnits(1)->create());
+    resolve(SubscribeAction::class)->execute($reseller, Plan::factory()->maxUnits(1)->create());
 })->throws(SubscriptionLimitException::class);
 
 it('allows renewing the same plan while at capacity', function (): void {
     $reseller = Reseller::factory()->create();
     Store::factory()->count(2)->create(['reseller_id' => $reseller->getKey()]);
 
-    $subscription = app(SubscribeAction::class)->execute($reseller, Plan::factory()->maxUnits(2)->create());
+    $subscription = resolve(SubscribeAction::class)->execute($reseller, Plan::factory()->maxUnits(2)->create());
 
     expect($subscription->isActive())->toBeTrue();
 });
@@ -45,7 +45,7 @@ it('offboards a reseller transactionally with an audit reason and one domain eve
     $store = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
     $domain = StoreDomain::factory()->for($store)->create(['active' => true]);
 
-    app(OffboardResellerAction::class)->execute($reseller, 'Customer requested account closure.');
+    resolve(OffboardResellerAction::class)->execute($reseller, 'Customer requested account closure.');
 
     $offboardedReseller = Reseller::query()->withTrashed()->findOrFail($reseller->getKey());
 
@@ -59,13 +59,10 @@ it('offboards a reseller transactionally with an audit reason and one domain eve
         ->and($offboardedReseller->offboarding_reason)->toBe('Customer requested account closure.')
         ->and($offboardedReseller->offboarded_at)->not->toBeNull();
 
-    Event::assertDispatched(
-        ResellerOffboarded::class,
-        fn (ResellerOffboarded $event): bool => $event->resellerId === $reseller->getKey()
-            && $event->reason === 'Customer requested account closure.'
-            && $event->cancelledSubscriptionCount === 2
-            && $event->offboardedTenantCount === 1,
-    );
+    Event::assertDispatched(fn (ResellerOffboarded $event): bool => $event->resellerId === $reseller->getKey()
+        && $event->reason === 'Customer requested account closure.'
+        && $event->cancelledSubscriptionCount === 2
+        && $event->offboardedTenantCount === 1);
     Event::assertDispatchedTimes(ResellerOffboarded::class, 1);
 });
 
@@ -74,9 +71,8 @@ it('rejects deleting a reseller without the explicit offboarding workflow', func
     $store = Store::factory()->create(['reseller_id' => $reseller->getKey()]);
 
     expect(fn (): ?bool => $reseller->delete())
-        ->toThrow(LogicException::class);
-
-    expect($reseller->fresh()?->trashed())->toBeFalse()
+        ->toThrow(LogicException::class)
+        ->and($reseller->fresh()?->trashed())->toBeFalse()
         ->and($store->fresh()?->trashed())->toBeFalse();
 });
 
@@ -86,7 +82,7 @@ it('can be retried without repeating side effects or replacing the audit reason'
     $reseller = Reseller::factory()->create();
     Store::factory()->create(['reseller_id' => $reseller->getKey()]);
 
-    $action = app(OffboardResellerAction::class);
+    $action = resolve(OffboardResellerAction::class);
     $action->execute($reseller, 'Original reason.');
     $action->execute($reseller, 'Retry reason.');
 
@@ -104,7 +100,7 @@ it('rolls back the complete offboarding workflow and discards its event', functi
     $store = Store::factory()->create(['reseller_id' => $reseller->getKey()]);
 
     expect(fn () => DB::transaction(function () use ($reseller): never {
-        app(OffboardResellerAction::class)->execute($reseller, 'This transaction must roll back.');
+        resolve(OffboardResellerAction::class)->execute($reseller, 'This transaction must roll back.');
 
         throw new RuntimeException('Roll back the outer transaction.');
     }))->toThrow(RuntimeException::class);

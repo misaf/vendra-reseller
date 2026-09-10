@@ -14,7 +14,7 @@ it('cancels the previous active subscription when changing plans', function (): 
     $old = Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->maxUnits(1))->create();
     $newPlan = Plan::factory()->maxUnits(5)->create();
 
-    $new = app(SubscribeAction::class)->execute($reseller, $newPlan);
+    $new = resolve(SubscribeAction::class)->execute($reseller, $newPlan);
 
     expect($old->refresh()->status)->toBe(SubscriptionStatus::Cancelled)
         ->and($new->status)->toBe(SubscriptionStatus::Active)
@@ -28,7 +28,7 @@ it('renews by creating a fresh active subscription for the same plan', function 
     $plan = Plan::factory()->maxUnits(2)->create();
     Subscription::factory()->expired()->forSubscriber($reseller)->for($plan)->create();
 
-    $renewed = app(SubscribeAction::class)->execute($reseller, $plan);
+    $renewed = resolve(SubscribeAction::class)->execute($reseller, $plan);
 
     expect($renewed->isActive())->toBeTrue()
         ->and($reseller->activeSubscription()?->getKey())->toBe($renewed->getKey());
@@ -42,7 +42,7 @@ it('clears only billing suspension when the reseller resubscribes', function ():
         'billing_suspended_at' => now(),
     ]);
 
-    app(SubscribeAction::class)->execute($reseller, Plan::factory()->create());
+    resolve(SubscribeAction::class)->execute($reseller, Plan::factory()->create());
 
     expect($store->refresh()->active)->toBeFalse()
         ->and($store->billing_suspended_at)->toBeNull();

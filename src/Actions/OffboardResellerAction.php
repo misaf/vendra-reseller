@@ -11,23 +11,19 @@ use Misaf\VendraReseller\Events\ResellerOffboarded;
 use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraSubscription\Support\SubscriptionRegistry;
 
-final class OffboardResellerAction
+final readonly class OffboardResellerAction
 {
     public const int MAX_REASON_LENGTH = 2000;
 
-    public function __construct(private readonly SubscriptionRegistry $subscriptionRegistry) {}
+    public function __construct(private SubscriptionRegistry $subscriptionRegistry) {}
 
     public function execute(Reseller $reseller, string $reason): Reseller
     {
         $reason = mb_trim($reason);
 
-        if ($reason === '') {
-            throw new InvalidArgumentException('An offboarding reason is required.');
-        }
+        throw_if($reason === '', InvalidArgumentException::class, 'An offboarding reason is required.');
 
-        if (Str::length($reason) > self::MAX_REASON_LENGTH) {
-            throw new InvalidArgumentException('The offboarding reason may not exceed '.self::MAX_REASON_LENGTH.' characters.');
-        }
+        throw_if(Str::length($reason) > self::MAX_REASON_LENGTH, InvalidArgumentException::class, 'The offboarding reason may not exceed '.self::MAX_REASON_LENGTH.' characters.');
 
         return DB::transaction(function () use ($reseller, $reason): Reseller {
             $lockedReseller = Reseller::query()
@@ -55,13 +51,7 @@ final class OffboardResellerAction
             $tenants->each->delete();
             $lockedReseller->delete();
 
-            ResellerOffboarded::dispatch(
-                resellerId: $lockedReseller->id,
-                reason: $reason,
-                offboardedAt: $offboardedAt->toImmutable(),
-                cancelledSubscriptionCount: $cancelledSubscriptionCount,
-                offboardedTenantCount: $tenants->count(),
-            );
+            event(new ResellerOffboarded(resellerId: $lockedReseller->id, reason: $reason, offboardedAt: $offboardedAt->toImmutable(), cancelledSubscriptionCount: $cancelledSubscriptionCount, offboardedTenantCount: $tenants->count()));
 
             return $lockedReseller;
         }, attempts: 5);

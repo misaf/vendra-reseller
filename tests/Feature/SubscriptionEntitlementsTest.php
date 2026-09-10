@@ -10,8 +10,8 @@ use Misaf\VendraSubscription\Models\Subscription;
 it('starts a trial on the reseller\'s first subscription only', function (): void {
     $reseller = Reseller::factory()->create();
 
-    $first = app(SubscribeAction::class)->execute($reseller, Plan::factory()->trialDays(14)->create());
-    $second = app(SubscribeAction::class)->execute($reseller, Plan::factory()->trialDays(14)->create());
+    $first = resolve(SubscribeAction::class)->execute($reseller, Plan::factory()->trialDays(14)->create());
+    $second = resolve(SubscribeAction::class)->execute($reseller, Plan::factory()->trialDays(14)->create());
 
     expect($first->trial_ends_at)->not->toBeNull()
         ->and($first->isOnTrial())->toBeTrue()

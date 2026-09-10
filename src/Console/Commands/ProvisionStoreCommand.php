@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Console\Commands;
 
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
+use Illuminate\Support\Arr;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Illuminate\Support\Facades\Validator;
@@ -15,9 +18,8 @@ use Misaf\VendraStore\Actions\ProvisionStoreAction;
 use Misaf\VendraStore\Models\StoreDomain;
 use Misaf\VendraSubscription\Models\Plan;
 
-final class ProvisionStoreCommand extends Command implements PromptsForMissingInput
-{
-    protected $signature = 'vendra-subscription:provision
+#[Description('Provision a store (tenant) with a domain, owner user, and role assignment')]
+#[Signature('vendra-subscription:provision
         {name : Tenant name}
         {domain : Tenant domain}
         {username : Username for the tenant owner}
@@ -26,10 +28,9 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
         {--password= : Password for the tenant owner (random when omitted)}
         {--reseller= : Attach the store to an existing reseller (id or slug)}
         {--plan= : Create a reseller for this store subscribed to the given plan (id or slug)}
-        {--seed : Run default tenant seeders after provisioning}';
-
-    protected $description = 'Provision a store (tenant) with a domain, owner user, and role assignment';
-
+        {--seed : Run default tenant seeders after provisioning}')]
+final class ProvisionStoreCommand extends Command implements PromptsForMissingInput
+{
     public function __construct(
         private readonly ProvisionStoreAction $provisionTenantAction,
         private readonly CreateResellerAction $createResellerAction,
@@ -82,11 +83,11 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
 
         $this->info('Store provisioned.');
         $this->table(['Field', 'Value'], [
-            ['Domain', $data['domain']],
+            ['Domain', Arr::get($data, 'domain')],
             ['Reseller', $reseller === null ? '[none]' : $reseller->name],
-            ['Username', $result['user']->username],
-            ['Email', $result['user']->email],
-            ['Password', $passwordWasProvided ? '[provided]' : $result['password']],
+            ['Username', Arr::get($result, 'user')->username],
+            ['Email', Arr::get($result, 'user')->email],
+            ['Password', $passwordWasProvided ? '[provided]' : Arr::get($result, 'password')],
             ['Seeders', $shouldSeed ? 'Run' : 'Skipped'],
         ]);
 
@@ -135,12 +136,12 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
                 return false;
             }
 
-            return $this->createResellerAction->execute(
+            return Arr::get($this->createResellerAction->execute(
                 plan: $plan,
-                username: $data['username'],
-                email: $data['email'],
+                username: Arr::get($data, 'username'),
+                email: Arr::get($data, 'email'),
                 password: $password,
-            )['reseller'];
+            ), 'reseller');
         }
 
         return null;

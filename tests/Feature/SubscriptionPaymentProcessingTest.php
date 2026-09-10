@@ -62,7 +62,7 @@ it('marks an exhausted payment for reconciliation without treating an ambiguous 
         ->forPayer($payer)
         ->create(['status' => SubscriptionPaymentStatus::Processing]);
 
-    (new ProcessSubscriptionPayment($payment->getKey()))->failed(new RuntimeException('Provider timed out.'));
+    new ProcessSubscriptionPayment($payment->getKey())->failed(new RuntimeException('Provider timed out.'));
 
     expect($payment->refresh()->status)->toBe(SubscriptionPaymentStatus::NeedsReconciliation)
         ->and($payment->failure_code)->toBe('processing_exhausted')
@@ -82,7 +82,7 @@ it('activates a paid subscription idempotently', function (): void {
         ->for($replacement)
         ->forPayer($payer)
         ->create(['status' => SubscriptionPaymentStatus::Paid]);
-    $action = app(ActivateSubscriptionAction::class);
+    $action = resolve(ActivateSubscriptionAction::class);
 
     $action->execute($payment);
     $action->execute($payment->refresh());

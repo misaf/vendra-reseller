@@ -15,7 +15,7 @@ it('reactivates a cancelled reseller subscription as a new period and restores b
     $cancelled = Subscription::factory()->forSubscriber($reseller)->for($plan)->cancelled()->create();
     $store = Store::factory()->active()->suspended()->create(['reseller_id' => $reseller->id]);
 
-    $reactivated = app(ReactivateSubscriptionAction::class)->execute($cancelled);
+    $reactivated = resolve(ReactivateSubscriptionAction::class)->execute($cancelled);
 
     expect($reactivated->status)->toBe(SubscriptionStatus::Active)
         ->and($reactivated->plan_id)->toBe($plan->id)

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Actions;
 
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use LogicException;
@@ -34,7 +34,7 @@ final class CreateResellerOwnerAction
                 'reseller_id' => $lockedReseller->getKey(),
                 'username' => $username,
                 'email' => $email,
-                'email_verified_at' => $emailVerified ? Carbon::now() : null,
+                'email_verified_at' => $emailVerified ? Date::now() : null,
                 'password' => Hash::make($password),
             ]);
 

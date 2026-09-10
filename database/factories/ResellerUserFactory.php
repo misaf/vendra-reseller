@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Database\Factories;
 
+use Illuminate\Support\Facades\Date;
 use Illuminate\Database\Eloquent\Factories\Attributes\UseModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Misaf\VendraReseller\Models\Reseller;
@@ -28,7 +28,7 @@ final class ResellerUserFactory extends Factory
             'reseller_id' => Reseller::factory(),
             'username' => fake()->unique()->userName(),
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => Carbon::now(),
+            'email_verified_at' => Date::now(),
             'password' => Hash::make('password'),
             'remember_token' => Str::random(10),
         ];

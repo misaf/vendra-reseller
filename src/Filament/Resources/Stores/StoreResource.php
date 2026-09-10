@@ -111,7 +111,7 @@ final class StoreResource extends Resource
      */
     public static function canCreate(): bool
     {
-        if (! app(StoreCreationPolicy::class)->isOpen()) {
+        if (! resolve(StoreCreationPolicy::class)->isOpen()) {
             return false;
         }
 
@@ -205,9 +205,7 @@ final class StoreResource extends Resource
 
     private static function store(Model $record): Store
     {
-        if (! $record instanceof Store) {
-            throw new InvalidArgumentException('Store resources require a Store record.');
-        }
+        throw_unless($record instanceof Store, InvalidArgumentException::class, 'Store resources require a Store record.');
 
         return $record;
     }

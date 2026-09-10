@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Filament\Actions;
 
+use Illuminate\Support\Arr;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\Textarea;
 use Misaf\VendraReseller\Actions\OffboardResellerAction as DomainOffboardResellerAction;
@@ -30,7 +31,7 @@ final class OffboardResellerAction extends DeleteAction
                 array $data,
                 DomainOffboardResellerAction $offboardReseller,
             ): bool {
-                $reason = $data['offboarding_reason'] ?? null;
+                $reason = Arr::get($data, 'offboarding_reason', null);
 
                 if (! is_string($reason)) {
                     return false;

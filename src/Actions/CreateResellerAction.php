@@ -12,11 +12,11 @@ use Misaf\VendraSubscription\Actions\SubscribeAction;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
 
-final class CreateResellerAction
+final readonly class CreateResellerAction
 {
     public function __construct(
-        private readonly CreateResellerOwnerAction $createResellerOwnerAction,
-        private readonly SubscribeAction $subscribeAction,
+        private CreateResellerOwnerAction $createResellerOwnerAction,
+        private SubscribeAction $subscribeAction,
     ) {}
 
     /**

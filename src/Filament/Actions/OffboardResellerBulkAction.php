@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Filament\Actions;
 
+use Illuminate\Support\Arr;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\Textarea;
 use Illuminate\Database\Eloquent\Collection;
@@ -32,7 +33,7 @@ final class OffboardResellerBulkAction extends DeleteBulkAction
                 array $data,
                 OffboardResellerAction $offboardReseller,
             ): void {
-                $reason = $data['offboarding_reason'] ?? null;
+                $reason = Arr::get($data, 'offboarding_reason', null);
 
                 if (! is_string($reason)) {
                     return;

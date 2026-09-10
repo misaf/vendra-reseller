@@ -18,7 +18,7 @@ it('binds the reseller as a subscription subscriber', function (): void {
 it('locks the subscriber to its own row for a subscription transaction', function (): void {
     $reseller = Reseller::factory()->create();
 
-    $locked = app(SubscriptionRegistry::class)->lockSubscriber($reseller);
+    $locked = resolve(SubscriptionRegistry::class)->lockSubscriber($reseller);
 
     expect($locked)
         ->toBeInstanceOf(Reseller::class)

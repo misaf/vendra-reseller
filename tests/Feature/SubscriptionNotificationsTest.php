@@ -21,7 +21,7 @@ it('notifies the owner when a subscription is activated', function (): void {
 
     $reseller = Reseller::factory()->create();
 
-    app(SubscribeAction::class)->execute($reseller, Plan::factory()->create());
+    resolve(SubscribeAction::class)->execute($reseller, Plan::factory()->create());
 
     Notification::assertSentTo($reseller, SubscriptionActivatedNotification::class);
 });
@@ -31,7 +31,7 @@ it('does not notify a reseller without an owner contact', function (): void {
 
     $reseller = Reseller::factory()->withoutOwner()->create();
 
-    app(SubscribeAction::class)->execute($reseller, Plan::factory()->create());
+    resolve(SubscribeAction::class)->execute($reseller, Plan::factory()->create());
 
     Notification::assertNothingSent();
 });
@@ -46,8 +46,8 @@ it('reminds the owner once about a soon-to-expire subscription', function (): vo
         'ends_at' => now()->addDays(3),
     ]);
 
-    app(EnforceSubscriptionsAction::class)->execute();
-    app(EnforceSubscriptionsAction::class)->execute();
+    resolve(EnforceSubscriptionsAction::class)->execute();
+    resolve(EnforceSubscriptionsAction::class)->execute();
 
     Notification::assertSentToTimes($reseller, SubscriptionExpiringNotification::class, 1);
     expect($subscription->refresh()->expiry_reminder_sent_at)->not->toBeNull();
@@ -64,8 +64,8 @@ it('notifies the owner when properties are suspended', function (): void {
     ]);
     createTestTenant(['reseller_id' => $reseller->getKey(), 'active' => true]);
 
-    app(EnforceSubscriptionsAction::class)->execute();
-    app(EnforceSubscriptionsAction::class)->execute();
+    resolve(EnforceSubscriptionsAction::class)->execute();
+    resolve(EnforceSubscriptionsAction::class)->execute();
 
     Notification::assertSentToTimes($reseller, StoresSuspendedNotification::class, 1);
 });
@@ -77,7 +77,7 @@ it('suspends stores immediately when an operator cancels the subscription', func
     $subscription = Subscription::factory()->forSubscriber($reseller)->for(Plan::factory())->create();
     $store = createTestTenant(['reseller_id' => $reseller->getKey(), 'active' => true]);
 
-    app(CancelSubscriptionAction::class)->execute($subscription);
+    resolve(CancelSubscriptionAction::class)->execute($subscription);
 
     expect($store->refresh()->billing_suspended_at)->not->toBeNull();
     Notification::assertSentToTimes($reseller, StoresSuspendedNotification::class, 1);
@@ -86,7 +86,7 @@ it('suspends stores immediately when an operator cancels the subscription', func
 it('queues subscription notifications off the request lifecycle', function (string $notification): void {
     expect(new ReflectionClass($notification))
         ->implementsInterface(ShouldQueueAfterCommit::class)->toBeTrue()
-        ->and((new ReflectionClass($notification))->implementsInterface(NotTenantAware::class))->toBeTrue();
+        ->and(new ReflectionClass($notification)->implementsInterface(NotTenantAware::class))->toBeTrue();
 })->with([
     SubscriptionActivatedNotification::class,
     SubscriptionExpiringNotification::class,
@@ -98,7 +98,7 @@ it('sends subscription notifications on the transactional-email queue', function
 
     $reseller = Reseller::factory()->create();
 
-    app(SubscribeAction::class)->execute($reseller, Plan::factory()->create());
+    resolve(SubscribeAction::class)->execute($reseller, Plan::factory()->create());
 
     Notification::assertSentTo(
         $reseller,
