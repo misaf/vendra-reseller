@@ -38,7 +38,7 @@ it('dispatches payment state events only after the surrounding transaction commi
 
     Event::assertDispatched(
         SubscriptionPaymentFailed::class,
-        fn(SubscriptionPaymentFailed $event): bool => $event->payment->is($payment),
+        fn (SubscriptionPaymentFailed $event): bool => $event->payment->is($payment),
     );
 });
 
@@ -49,7 +49,7 @@ it('discards payment state events when the surrounding transaction rolls back', 
         'status' => SubscriptionPaymentStatus::Processing,
     ]);
 
-    expect(fn() => DB::transaction(function () use ($payment): never {
+    expect(fn () => DB::transaction(function () use ($payment): never {
         app(ApplySubscriptionPaymentResultAction::class)->execute(
             $payment,
             new SubscriptionChargeResult(

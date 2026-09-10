@@ -34,7 +34,8 @@ function fakeSubscriptionCharger(
     SubscriptionChargeStatus $status = SubscriptionChargeStatus::Paid,
     bool $available = true,
 ): object {
-    $charger = new class ($status, $available) implements SubscriptionCharger {
+    $charger = new class($status, $available) implements SubscriptionCharger
+    {
         /** @var array<int, SubscriptionCharge> */
         public array $charges = [];
 
@@ -68,7 +69,7 @@ function fakeSubscriptionCharger(
             return new SubscriptionChargeResult(
                 $this->status,
                 providerReference: 'provider-payment-1',
-                errorCode: SubscriptionChargeStatus::Failed === $this->status ? 'declined' : null,
+                errorCode: $this->status === SubscriptionChargeStatus::Failed ? 'declined' : null,
             );
         }
 
@@ -120,7 +121,7 @@ it('persists and processes a paid subscription without holding a database transa
         ->and(Context::allHidden())->toBe([]);
     Queue::assertPushed(
         ProcessSubscriptionPayment::class,
-        fn(ProcessSubscriptionPayment $job): bool => $job->paymentId === $payment->getKey(),
+        fn (ProcessSubscriptionPayment $job): bool => $job->paymentId === $payment->getKey(),
     );
 
     Context::flush();
@@ -195,7 +196,7 @@ it('rejects a paid subscription when no payment provider is available', function
     fakeSubscriptionCharger(available: false);
     $reseller = resellerWithOwner();
 
-    expect(fn() => app(SubscribeAction::class)->execute(
+    expect(fn () => app(SubscribeAction::class)->execute(
         $reseller,
         Plan::factory()->priced(1_000, 'USD')->create(),
     ))->toThrow(SubscriptionPaymentException::class, 'No subscription payment provider');
@@ -209,7 +210,7 @@ it('rejects a paid subscription when the reseller has no payer', function (): vo
     fakeSubscriptionCharger();
     $reseller = Reseller::factory()->create();
 
-    expect(fn() => app(SubscribeAction::class)->execute(
+    expect(fn () => app(SubscribeAction::class)->execute(
         $reseller,
         Plan::factory()->priced(1_000, 'USD')->create(),
     ))->toThrow(SubscriptionPaymentException::class, 'no payer');
@@ -266,7 +267,7 @@ it('rejects overlapping subscription changes while a payment is unresolved', fun
         'status' => SubscriptionPaymentStatus::Processing,
     ]);
 
-    expect(fn() => app(SubscribeAction::class)->execute(
+    expect(fn () => app(SubscribeAction::class)->execute(
         $reseller,
         Plan::factory()->create(),
     ))->toThrow(SubscriptionPaymentException::class, 'already in progress');

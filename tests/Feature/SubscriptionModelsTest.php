@@ -84,5 +84,5 @@ it('prevents deleting a plan referenced by a subscription', function (): void {
 })->throws(PlanInUseException::class);
 
 it('hides the generated active-reseller guard', function (): void {
-    expect((new Subscription())->getHidden())->toContain('active_subscriber_guard');
+    expect((new Subscription)->getHidden())->toContain('active_subscriber_guard');
 });

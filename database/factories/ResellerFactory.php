@@ -21,28 +21,28 @@ final class ResellerFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'        => fake()->unique()->company(),
+            'name' => fake()->unique()->company(),
             'description' => fake()->text(),
-            'slug'        => fn(array $attributes) => Str::slug($attributes['name']),
-            'active'      => true,
-            'email'       => fake()->unique()->safeEmail(),
+            'slug' => fn (array $attributes) => Str::slug($attributes['name']),
+            'active' => true,
+            'email' => fake()->unique()->safeEmail(),
         ];
     }
 
     public function withoutOwner(): static
     {
-        return $this->state(fn(): array => [
+        return $this->state(fn (): array => [
             'email' => null,
         ]);
     }
 
     public function active(): static
     {
-        return $this->state(fn(): array => ['active' => true]);
+        return $this->state(fn (): array => ['active' => true]);
     }
 
     public function inactive(): static
     {
-        return $this->state(fn(): array => ['active' => false]);
+        return $this->state(fn (): array => ['active' => false]);
     }
 }

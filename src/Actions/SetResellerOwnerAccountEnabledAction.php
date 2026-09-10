@@ -36,7 +36,7 @@ final class SetResellerOwnerAccountEnabledAction
                 }
 
                 $lockedOwner->restore();
-            } elseif ( ! $lockedOwner->trashed()) {
+            } elseif (! $lockedOwner->trashed()) {
                 $lockedOwner->delete();
             }
 

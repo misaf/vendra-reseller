@@ -25,25 +25,25 @@ final class ResellerUserFactory extends Factory
     public function definition(): array
     {
         return [
-            'reseller_id'       => Reseller::factory(),
-            'username'          => fake()->unique()->userName(),
-            'email'             => fake()->unique()->safeEmail(),
+            'reseller_id' => Reseller::factory(),
+            'username' => fake()->unique()->userName(),
+            'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => Carbon::now(),
-            'password'          => Hash::make('password'),
-            'remember_token'    => Str::random(10),
+            'password' => Hash::make('password'),
+            'remember_token' => Str::random(10),
         ];
     }
 
     public function forReseller(Reseller|int $reseller): static
     {
-        return $this->state(fn(): array => [
+        return $this->state(fn (): array => [
             'reseller_id' => $reseller instanceof Model ? $reseller->getKey() : $reseller,
         ]);
     }
 
     public function unverified(): static
     {
-        return $this->state(fn(): array => [
+        return $this->state(fn (): array => [
             'email_verified_at' => null,
         ]);
     }

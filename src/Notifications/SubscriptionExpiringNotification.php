@@ -32,7 +32,7 @@ final class SubscriptionExpiringNotification extends Notification implements Not
     {
         $endsAt = $this->subscription->ends_at?->toFormattedDateString() ?? 'soon';
 
-        return (new MailMessage())
+        return (new MailMessage)
             ->subject('Your subscription is expiring soon')
             ->line("Your subscription expires on {$endsAt}.")
             ->line('Renew now to keep your stores online.');

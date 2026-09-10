@@ -28,6 +28,7 @@ final class ResellerUser extends Authenticatable implements FilamentUser, HasNam
 {
     /** @use HasFactory<ResellerUserFactory> */
     use HasFactory;
+
     use Notifiable;
     use SoftDeletes;
 
@@ -37,15 +38,15 @@ final class ResellerUser extends Authenticatable implements FilamentUser, HasNam
     protected function casts(): array
     {
         return [
-            'reseller_id'       => 'integer',
+            'reseller_id' => 'integer',
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
+            'password' => 'hashed',
         ];
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return 'reseller' === $panel->getId();
+        return $panel->getId() === 'reseller';
     }
 
     public function getFilamentName(): string
@@ -67,7 +68,7 @@ final class ResellerUser extends Authenticatable implements FilamentUser, HasNam
     protected function email(): Attribute
     {
         return Attribute::make(
-            set: fn(string $value): string => Str::lower(mb_trim($value)),
+            set: fn (string $value): string => Str::lower(mb_trim($value)),
         );
     }
 }

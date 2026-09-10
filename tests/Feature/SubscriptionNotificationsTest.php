@@ -41,9 +41,9 @@ it('reminds the owner once about a soon-to-expire subscription', function (): vo
 
     $reseller = Reseller::factory()->create();
     $subscription = Subscription::factory()->forSubscriber($reseller)->for(Plan::factory())->create([
-        'status'    => SubscriptionStatus::Active,
+        'status' => SubscriptionStatus::Active,
         'starts_at' => now()->subDays(20),
-        'ends_at'   => now()->addDays(3),
+        'ends_at' => now()->addDays(3),
     ]);
 
     app(EnforceSubscriptionsAction::class)->execute();
@@ -58,9 +58,9 @@ it('notifies the owner when properties are suspended', function (): void {
 
     $reseller = Reseller::factory()->create();
     Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->graceDays(0))->create([
-        'status'    => SubscriptionStatus::Active,
+        'status' => SubscriptionStatus::Active,
         'starts_at' => now()->subMonths(2),
-        'ends_at'   => now()->subDays(2),
+        'ends_at' => now()->subDays(2),
     ]);
     createTestTenant(['reseller_id' => $reseller->getKey(), 'active' => true]);
 
@@ -103,6 +103,6 @@ it('sends subscription notifications on the transactional-email queue', function
     Notification::assertSentTo(
         $reseller,
         SubscriptionActivatedNotification::class,
-        fn(SubscriptionActivatedNotification $notification): bool => 'transactional-email' === $notification->queue,
+        fn (SubscriptionActivatedNotification $notification): bool => $notification->queue === 'transactional-email',
     );
 });

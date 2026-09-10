@@ -66,7 +66,7 @@ final class StoreResource extends Resource
     {
         $user = Filament::auth()->user();
 
-        if ( ! $user instanceof ResellerUser) {
+        if (! $user instanceof ResellerUser) {
             return null;
         }
 
@@ -92,15 +92,15 @@ final class StoreResource extends Resource
     {
         $resellerId = self::currentResellerId();
 
-        if (null === $resellerId) {
+        if ($resellerId === null) {
             return parent::getEloquentQuery()->whereRaw('1 = 0');
         }
 
         return parent::getEloquentQuery()
             ->where('reseller_id', $resellerId)
             ->with([
-                'storefrontDeployments' => fn(Relation $relation): Relation => $relation->orderByDesc('id'),
-                'domains'               => fn(Relation $relation): Relation => $relation->where('active', true),
+                'storefrontDeployments' => fn (Relation $relation): Relation => $relation->orderByDesc('id'),
+                'domains' => fn (Relation $relation): Relation => $relation->where('active', true),
             ]);
     }
 
@@ -111,13 +111,13 @@ final class StoreResource extends Resource
      */
     public static function canCreate(): bool
     {
-        if ( ! app(StoreCreationPolicy::class)->isOpen()) {
+        if (! app(StoreCreationPolicy::class)->isOpen()) {
             return false;
         }
 
         $reseller = self::currentReseller();
 
-        return null !== $reseller && $reseller->active;
+        return $reseller !== null && $reseller->active;
     }
 
     public static function form(Schema $schema): Schema
@@ -152,7 +152,7 @@ final class StoreResource extends Resource
     {
         return parent::getGlobalSearchEloquentQuery()
             ->with([
-                'domains' => fn(Relation $relation): Relation => $relation->where('active', true),
+                'domains' => fn (Relation $relation): Relation => $relation->where('active', true),
             ]);
     }
 
@@ -180,7 +180,7 @@ final class StoreResource extends Resource
             Action::make('openAdmin')
                 ->label(__('console.admin_url'))
                 ->url(
-                    'https://' . $store->slug . '.' . Config::string('vendra-tenant.central_host'),
+                    'https://'.$store->slug.'.'.Config::string('vendra-tenant.central_host'),
                     shouldOpenInNewTab: true,
                 ),
         ];
@@ -190,22 +190,22 @@ final class StoreResource extends Resource
     {
         $store = self::store($record);
 
-        return static::getUrl('view', ['record' => $store]);
+        return self::getUrl('view', ['record' => $store]);
     }
 
     public static function getPages(): array
     {
         return [
-            'index'  => ListStores::route('/'),
+            'index' => ListStores::route('/'),
             'create' => CreateStore::route('/create'),
-            'view'   => ViewStore::route('/{record}'),
-            'edit'   => EditStore::route('/{record}/edit'),
+            'view' => ViewStore::route('/{record}'),
+            'edit' => EditStore::route('/{record}/edit'),
         ];
     }
 
     private static function store(Model $record): Store
     {
-        if ( ! $record instanceof Store) {
+        if (! $record instanceof Store) {
             throw new InvalidArgumentException('Store resources require a Store record.');
         }
 

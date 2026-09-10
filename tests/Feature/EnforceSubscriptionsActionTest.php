@@ -18,9 +18,9 @@ function lapsedReseller(int $graceDays, Carbon $endsAt): Reseller
     $plan = Plan::factory()->graceDays($graceDays)->create();
 
     Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-        'status'    => SubscriptionStatus::Active,
+        'status' => SubscriptionStatus::Active,
         'starts_at' => now()->subMonths(2),
-        'ends_at'   => $endsAt,
+        'ends_at' => $endsAt,
     ]);
 
     return $reseller;
@@ -72,7 +72,7 @@ it('does not convert manual disablement into billing suspension', function (): v
     $reseller = lapsedReseller(graceDays: 0, endsAt: now()->subDays(2));
     $store = createTestTenant([
         'reseller_id' => $reseller->getKey(),
-        'active'      => false,
+        'active' => false,
     ]);
 
     app(EnforceSubscriptionsAction::class)->execute();

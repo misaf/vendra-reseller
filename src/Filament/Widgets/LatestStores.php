@@ -31,19 +31,19 @@ final class LatestStores extends BaseWidget
 
     public static function canView(): bool
     {
-        $reseller = (new self())->currentReseller();
+        $reseller = (new self)->currentReseller();
 
-        return null !== $reseller && $reseller->stores()->exists();
+        return $reseller !== null && $reseller->stores()->exists();
     }
 
     public function table(Table $table): Table
     {
         return $table
             ->heading(self::getHeading())
-            ->query(fn(): Builder => Store::query()
+            ->query(fn (): Builder => Store::query()
                 ->where('reseller_id', $this->currentReseller()?->getKey() ?? 0)
                 ->with([
-                    'domains' => fn(Relation $relation): Relation => $relation->where('active', true),
+                    'domains' => fn (Relation $relation): Relation => $relation->where('active', true),
                 ]))
             ->columns([
                 TextColumn::make('name')
@@ -54,14 +54,14 @@ final class LatestStores extends BaseWidget
                 TextColumn::make('domain')
                     ->label(__('console.domain'))
                     ->icon(Heroicon::GlobeAlt)
-                    ->state(fn(Store $record): ?string => $record->domains->first()?->name)
+                    ->state(fn (Store $record): ?string => $record->domains->first()?->name)
                     ->placeholder('—'),
 
                 TextColumn::make('status')
                     ->label(__('console.operational_status'))
                     ->badge()
-                    ->state(fn(Store $record): string => $record->status()->value)
-                    ->formatStateUsing(fn(string $state): string => __("console.store_status_{$state}")),
+                    ->state(fn (Store $record): string => $record->status()->value)
+                    ->formatStateUsing(fn (string $state): string => __("console.store_status_{$state}")),
 
                 TextColumn::make('created_at')
                     ->extraCellAttributes(['dir' => 'ltr'])
@@ -70,11 +70,11 @@ final class LatestStores extends BaseWidget
                     ->sortable()
                     ->when(
                         app()->isLocale('fa'),
-                        fn(TextColumn $column) => $column->jalaliDateTime('Y-m-d H:i', latinNumbers: true),
-                        fn(TextColumn $column) => $column->dateTime('Y-m-d H:i')
+                        fn (TextColumn $column) => $column->jalaliDateTime('Y-m-d H:i', latinNumbers: true),
+                        fn (TextColumn $column) => $column->dateTime('Y-m-d H:i')
                     ),
             ])
-            ->recordUrl(fn(Store $record): string => StoreResource::getUrl('view', ['record' => $record]))
+            ->recordUrl(fn (Store $record): string => StoreResource::getUrl('view', ['record' => $record]))
             ->defaultSort('id', 'desc')
             ->paginated([5, 10, 25]);
     }

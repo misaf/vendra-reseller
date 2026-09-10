@@ -61,10 +61,10 @@ it('offboards a reseller transactionally with an audit reason and one domain eve
 
     Event::assertDispatched(
         ResellerOffboarded::class,
-        fn(ResellerOffboarded $event): bool => $event->resellerId === $reseller->getKey()
-            && 'Customer requested account closure.' === $event->reason
-            && 2 === $event->cancelledSubscriptionCount
-            && 1 === $event->offboardedTenantCount,
+        fn (ResellerOffboarded $event): bool => $event->resellerId === $reseller->getKey()
+            && $event->reason === 'Customer requested account closure.'
+            && $event->cancelledSubscriptionCount === 2
+            && $event->offboardedTenantCount === 1,
     );
     Event::assertDispatchedTimes(ResellerOffboarded::class, 1);
 });
@@ -73,7 +73,7 @@ it('rejects deleting a reseller without the explicit offboarding workflow', func
     $reseller = Reseller::factory()->create();
     $store = Store::factory()->create(['reseller_id' => $reseller->getKey()]);
 
-    expect(fn(): ?bool => $reseller->delete())
+    expect(fn (): ?bool => $reseller->delete())
         ->toThrow(LogicException::class);
 
     expect($reseller->fresh()?->trashed())->toBeFalse()
@@ -103,7 +103,7 @@ it('rolls back the complete offboarding workflow and discards its event', functi
     $subscription = Subscription::factory()->forSubscriber($reseller)->for(Plan::factory())->create();
     $store = Store::factory()->create(['reseller_id' => $reseller->getKey()]);
 
-    expect(fn() => DB::transaction(function () use ($reseller): never {
+    expect(fn () => DB::transaction(function () use ($reseller): never {
         app(OffboardResellerAction::class)->execute($reseller, 'This transaction must roll back.');
 
         throw new RuntimeException('Roll back the outer transaction.');

@@ -39,22 +39,22 @@ final class ResellerPanelServiceProvider extends PanelProvider
     {
         return $panel
             ->id('reseller')
-            ->brandLogo(fn(): string => asset('images/vendra-logo.svg'))
+            ->brandLogo(fn (): string => asset('images/vendra-logo.svg'))
             ->brandLogoHeight('2rem')
             ->brandName('Vendra Reseller')
-            ->darkModeBrandLogo(fn(): string => asset('images/vendra-logo-dark.svg'))
+            ->darkModeBrandLogo(fn (): string => asset('images/vendra-logo-dark.svg'))
             ->databaseNotifications()
             ->databaseTransactions()
-            ->discoverResources(__DIR__ . '/../Filament/Resources', 'Misaf\\VendraReseller\\Filament\\Resources')
-            ->discoverPages(__DIR__ . '/../Filament/Pages', 'Misaf\\VendraReseller\\Filament\\Pages')
-            ->discoverWidgets(__DIR__ . '/../Filament/Widgets', 'Misaf\\VendraReseller\\Filament\\Widgets')
+            ->discoverResources(__DIR__.'/../Filament/Resources', 'Misaf\\VendraReseller\\Filament\\Resources')
+            ->discoverPages(__DIR__.'/../Filament/Pages', 'Misaf\\VendraReseller\\Filament\\Pages')
+            ->discoverWidgets(__DIR__.'/../Filament/Widgets', 'Misaf\\VendraReseller\\Filament\\Widgets')
             ->pages([Dashboard::class])
             ->globalSearchFieldKeyBindingSuffix()
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->homeUrl('/')
             ->authGuard('reseller')
             ->authPasswordBroker('reseller_users')
-            ->domain('reseller.' . Uri::of(config()->string('app.url'))->host())
+            ->domain('reseller.'.Uri::of(config()->string('app.url'))->host())
             ->login(Login::class)
             ->registration(Register::class)
             ->passwordReset()
@@ -78,7 +78,7 @@ final class ResellerPanelServiceProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->font(
-                fn(): string => app()->isLocale('fa') ? 'Vazirmatn' : 'Google',
+                fn (): string => app()->isLocale('fa') ? 'Vazirmatn' : 'Google',
                 provider: SpatieGoogleFontProvider::class,
             )
             ->path('')

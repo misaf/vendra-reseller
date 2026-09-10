@@ -37,8 +37,8 @@ it('renews by creating a fresh active subscription for the same plan', function 
 it('clears only billing suspension when the reseller resubscribes', function (): void {
     $reseller = Reseller::factory()->create();
     $store = createTestTenant([
-        'reseller_id'          => $reseller->getKey(),
-        'active'               => false,
+        'reseller_id' => $reseller->getKey(),
+        'active' => false,
         'billing_suspended_at' => now(),
     ]);
 
@@ -53,7 +53,7 @@ it('rejects a second active subscription for the same reseller', function (): vo
 
     Subscription::factory()->forSubscriber($reseller)->create();
 
-    expect(fn(): Subscription => Subscription::factory()->forSubscriber($reseller)->create())
+    expect(fn (): Subscription => Subscription::factory()->forSubscriber($reseller)->create())
         ->toThrow(QueryException::class);
 });
 

@@ -32,7 +32,7 @@ final class OffboardResellerAction extends DeleteAction
             ): bool {
                 $reason = $data['offboarding_reason'] ?? null;
 
-                if ( ! is_string($reason)) {
+                if (! is_string($reason)) {
                     return false;
                 }
 

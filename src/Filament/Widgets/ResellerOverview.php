@@ -28,7 +28,7 @@ final class ResellerOverview extends StatsOverviewWidget
     {
         $reseller = $this->currentReseller();
 
-        if (null === $reseller) {
+        if ($reseller === null) {
             return [];
         }
 
@@ -44,7 +44,7 @@ final class ResellerOverview extends StatsOverviewWidget
 
         $hasReadyStorefront = (clone $stores)->whereHas(
             'storefrontDeployments',
-            fn($query) => $query->where('status', StorefrontDeploymentStatus::Ready),
+            fn ($query) => $query->where('status', StorefrontDeploymentStatus::Ready),
         )->exists();
 
         return [
@@ -52,8 +52,8 @@ final class ResellerOverview extends StatsOverviewWidget
                 ->icon(Heroicon::OutlinedCheckBadge)
                 ->color(self::subscriptionColor($subscription)),
 
-            Stat::make(__('console.store_capacity'), "{$used} / " . ($remaining + $used))
-                ->description(__('console.remaining_stores') . ': ' . $remaining)
+            Stat::make(__('console.store_capacity'), "{$used} / ".($remaining + $used))
+                ->description(__('console.remaining_stores').': '.$remaining)
                 ->icon(Heroicon::OutlinedRectangleStack)
                 ->color($remaining <= 0 ? 'danger' : 'primary')
                 ->url(StoreResource::getUrl('index')),
@@ -64,7 +64,7 @@ final class ResellerOverview extends StatsOverviewWidget
                 ->url(self::storeStatusUrl(StoreStatus::Active)),
 
             Stat::make(__('console.stores_needing_attention'), $needsAttention)
-                ->description(__('console.stores_provisioning') . ': ' . $provisioning . ' · ' . __('console.failed_stores') . ': ' . $failed)
+                ->description(__('console.stores_provisioning').': '.$provisioning.' · '.__('console.failed_stores').': '.$failed)
                 ->icon(Heroicon::OutlinedExclamationTriangle)
                 ->color($needsAttention > 0 ? 'danger' : 'gray')
                 ->url(StoreResource::getUrl('index', [
@@ -86,11 +86,11 @@ final class ResellerOverview extends StatsOverviewWidget
 
     private static function subscriptionLabel(?Subscription $subscription): string
     {
-        if ( ! $subscription instanceof Subscription) {
+        if (! $subscription instanceof Subscription) {
             return __('console.no_active_subscription');
         }
 
-        if (SubscriptionStatus::Active === $subscription->status) {
+        if ($subscription->status === SubscriptionStatus::Active) {
             if ($subscription->isOnTrial()) {
                 return __('console.trial_until', ['date' => $subscription->trial_ends_at?->format('Y-m-d') ?? '']);
             }
@@ -103,16 +103,16 @@ final class ResellerOverview extends StatsOverviewWidget
 
     private static function subscriptionColor(?Subscription $subscription): string
     {
-        if ( ! $subscription instanceof Subscription) {
+        if (! $subscription instanceof Subscription) {
             return 'gray';
         }
 
         return match ($subscription->status) {
-            SubscriptionStatus::Active         => $subscription->isOnTrial() ? 'info' : 'success',
+            SubscriptionStatus::Active => $subscription->isOnTrial() ? 'info' : 'success',
             SubscriptionStatus::PendingPayment => 'warning',
             SubscriptionStatus::PastDue,
-            SubscriptionStatus::Expired        => 'danger',
-            SubscriptionStatus::Cancelled      => 'gray',
+            SubscriptionStatus::Expired => 'danger',
+            SubscriptionStatus::Cancelled => 'gray',
         };
     }
 

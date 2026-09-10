@@ -59,10 +59,10 @@ describe('reseller overview subscription status', function (): void {
         $reseller = Reseller::factory()->active()->create();
         $plan = Plan::factory()->create();
         Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status'        => SubscriptionStatus::Active,
+            'status' => SubscriptionStatus::Active,
             'trial_ends_at' => now()->addDays(10),
-            'starts_at'     => now(),
-            'ends_at'       => now()->addMonth(),
+            'starts_at' => now(),
+            'ends_at' => now()->addMonth(),
         ]);
 
         actAsReseller($reseller);
@@ -76,7 +76,7 @@ describe('reseller overview subscription status', function (): void {
         $reseller = Reseller::factory()->active()->create();
         $plan = Plan::factory()->create();
         Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status'  => SubscriptionStatus::Expired,
+            'status' => SubscriptionStatus::Expired,
             'ends_at' => now()->subDay(),
         ]);
 
@@ -91,7 +91,7 @@ describe('reseller overview subscription status', function (): void {
         $reseller = Reseller::factory()->active()->create();
         $plan = Plan::factory()->create();
         Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status'  => SubscriptionStatus::PastDue,
+            'status' => SubscriptionStatus::PastDue,
             'ends_at' => now()->subDay(),
         ]);
 
@@ -232,7 +232,7 @@ describe('reseller subscription detail widget', function (): void {
         $reseller = Reseller::factory()->active()->create();
         $plan = Plan::factory()->create();
         Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status'  => SubscriptionStatus::Expired,
+            'status' => SubscriptionStatus::Expired,
             'ends_at' => now()->subDay(),
         ]);
 
@@ -247,7 +247,7 @@ describe('reseller subscription detail widget', function (): void {
         $reseller = Reseller::factory()->active()->create();
         $plan = Plan::factory()->create();
         Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status'  => SubscriptionStatus::PastDue,
+            'status' => SubscriptionStatus::PastDue,
             'ends_at' => now()->subDay(),
         ]);
 
@@ -262,10 +262,10 @@ describe('reseller subscription detail widget', function (): void {
         $reseller = Reseller::factory()->active()->create();
         $plan = Plan::factory()->create();
         Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status'        => SubscriptionStatus::Active,
+            'status' => SubscriptionStatus::Active,
             'trial_ends_at' => now()->addDays(7),
-            'starts_at'     => now(),
-            'ends_at'       => now()->addMonth(),
+            'starts_at' => now(),
+            'ends_at' => now()->addMonth(),
         ]);
 
         actAsReseller($reseller);
@@ -279,9 +279,9 @@ describe('reseller subscription detail widget', function (): void {
         $reseller = Reseller::factory()->active()->create();
         $plan = Plan::factory()->create();
         Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status'    => SubscriptionStatus::Active,
+            'status' => SubscriptionStatus::Active,
             'starts_at' => now()->subMonth(),
-            'ends_at'   => now()->addMonth(),
+            'ends_at' => now()->addMonth(),
         ]);
 
         actAsReseller($reseller);
@@ -349,7 +349,7 @@ describe('reseller dashboard subscription widget colors', function (): void {
         $reseller = Reseller::factory()->active()->create();
         $plan = Plan::factory()->create();
         Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status'  => SubscriptionStatus::PastDue,
+            'status' => SubscriptionStatus::PastDue,
             'ends_at' => now()->subDay(),
         ]);
 

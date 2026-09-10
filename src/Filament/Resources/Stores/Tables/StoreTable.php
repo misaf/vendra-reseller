@@ -45,20 +45,20 @@ final class StoreTable
                 TextColumn::make('domain')
                     ->label(__('console.domain'))
                     ->icon(Heroicon::GlobeAlt)
-                    ->state(fn(Store $record): ?string => $record->domains->first()?->name)
+                    ->state(fn (Store $record): ?string => $record->domains->first()?->name)
                     ->placeholder('—'),
 
                 TextColumn::make('storefront_status')
                     ->label(__('console.storefront_status'))
                     ->badge()
-                    ->state(fn(Store $record): ?string => self::deployment($record)?->status->value)
+                    ->state(fn (Store $record): ?string => self::deployment($record)?->status->value)
                     ->placeholder(__('console.storefront_not_requested')),
 
                 TextColumn::make('admin_url')
                     ->label(__('console.admin_url'))
                     ->icon(Heroicon::OutlinedBuildingOffice2)
-                    ->state(fn(Store $record): string => 'https://' . $record->slug . '.' . Config::string('vendra-tenant.central_host'))
-                    ->url(fn(Store $record): string => 'https://' . $record->slug . '.' . Config::string('vendra-tenant.central_host'))
+                    ->state(fn (Store $record): string => 'https://'.$record->slug.'.'.Config::string('vendra-tenant.central_host'))
+                    ->url(fn (Store $record): string => 'https://'.$record->slug.'.'.Config::string('vendra-tenant.central_host'))
                     ->openUrlInNewTab()
                     ->copyable()
                     ->copyMessage(__('console.url_copied')),
@@ -66,11 +66,11 @@ final class StoreTable
                 TextColumn::make('storefront_url')
                     ->label(__('console.storefront_url'))
                     ->icon(Heroicon::OutlinedShoppingBag)
-                    ->state(fn(Store $record): ?string => self::deployment($record)?->domain)
+                    ->state(fn (Store $record): ?string => self::deployment($record)?->domain)
                     ->placeholder('—')
-                    ->url(fn(Store $record): ?string => null === self::deployment($record)?->domain
+                    ->url(fn (Store $record): ?string => self::deployment($record)?->domain === null
                         ? null
-                        : 'https://' . self::deployment($record)?->domain)
+                        : 'https://'.self::deployment($record)?->domain)
                     ->openUrlInNewTab()
                     ->copyable()
                     ->copyMessage(__('console.url_copied')),
@@ -78,8 +78,8 @@ final class StoreTable
                 TextColumn::make('status')
                     ->label(__('console.operational_status'))
                     ->badge()
-                    ->state(fn(Store $record): string => $record->status()->value)
-                    ->formatStateUsing(fn(string $state): string => __("console.store_status_{$state}")),
+                    ->state(fn (Store $record): string => $record->status()->value)
+                    ->formatStateUsing(fn (string $state): string => __("console.store_status_{$state}")),
 
                 TextColumn::make('created_at')
                     ->extraCellAttributes(['dir' => 'ltr'])
@@ -88,8 +88,8 @@ final class StoreTable
                     ->sortable()
                     ->when(
                         app()->isLocale('fa'),
-                        fn(TextColumn $column) => $column->jalaliDateTime('Y-m-d H:i', latinNumbers: true),
-                        fn(TextColumn $column) => $column->dateTime('Y-m-d H:i')
+                        fn (TextColumn $column) => $column->jalaliDateTime('Y-m-d H:i', latinNumbers: true),
+                        fn (TextColumn $column) => $column->dateTime('Y-m-d H:i')
                     ),
 
                 TextColumn::make('updated_at')
@@ -98,8 +98,8 @@ final class StoreTable
                     ->sinceTooltip()
                     ->when(
                         app()->isLocale('fa'),
-                        fn(TextColumn $column) => $column->jalaliDateTime('Y-m-d H:i', latinNumbers: true),
-                        fn(TextColumn $column) => $column->dateTime('Y-m-d H:i')
+                        fn (TextColumn $column) => $column->jalaliDateTime('Y-m-d H:i', latinNumbers: true),
+                        fn (TextColumn $column) => $column->dateTime('Y-m-d H:i')
                     ),
             ])
             ->description(__('console.tables.description.stores'))
@@ -113,9 +113,9 @@ final class StoreTable
                         ->trueLabel(__('console.active'))
                         ->falseLabel(__('console.inactive'))
                         ->queries(
-                            true: fn(Builder $query): Builder => $query->where('active', true),
-                            false: fn(Builder $query): Builder => $query->where('active', false),
-                            blank: fn(Builder $query): Builder => $query,
+                            true: fn (Builder $query): Builder => $query->where('active', true),
+                            false: fn (Builder $query): Builder => $query->where('active', false),
+                            blank: fn (Builder $query): Builder => $query,
                         ),
 
                     SelectFilter::make('status')
@@ -125,7 +125,7 @@ final class StoreTable
                             $value = $data['value'] ?? null;
                             $status = is_string($value) ? StoreStatus::tryFrom($value) : null;
 
-                            return null === $status ? $query : $query->withStatus($status);
+                            return $status === null ? $query : $query->withStatus($status);
                         }),
 
                     SelectFilter::make('storefront_status')
@@ -135,11 +135,11 @@ final class StoreTable
                             $value = $data['value'] ?? null;
                             $status = is_string($value) ? StorefrontDeploymentStatus::tryFrom($value) : null;
 
-                            return null === $status
+                            return $status === null
                                 ? $query
                                 : $query->whereHas(
                                     'storefrontDeployments',
-                                    fn(Builder $query): Builder => $query->where('status', $status),
+                                    fn (Builder $query): Builder => $query->where('status', $status),
                                 );
                         }),
                 ],
@@ -154,15 +154,15 @@ final class StoreTable
                     ])->dropdown(false),
                     ActionGroup::make([
                         DeleteAction::make()
-                            ->authorize(fn(): bool => StoreResource::canCreate()),
+                            ->authorize(fn (): bool => StoreResource::canCreate()),
                     ])->dropdown(false),
                 ]),
             ])
-            ->recordUrl(fn(Store $record): string => StoreResource::getUrl('view', ['record' => $record]))
+            ->recordUrl(fn (Store $record): string => StoreResource::getUrl('view', ['record' => $record]))
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
-                        ->authorize(fn(): bool => StoreResource::canCreate()),
+                        ->authorize(fn (): bool => StoreResource::canCreate()),
                 ]),
             ])
             ->defaultSort(column: 'id', direction: 'desc');
@@ -179,7 +179,7 @@ final class StoreTable
     private static function statusOptions(): array
     {
         return collect(StoreStatus::cases())
-            ->mapWithKeys(fn(StoreStatus $status): array => [
+            ->mapWithKeys(fn (StoreStatus $status): array => [
                 $status->value => __("console.store_status_{$status->value}"),
             ])
             ->all();
@@ -189,7 +189,7 @@ final class StoreTable
     private static function deploymentStatusOptions(): array
     {
         return collect(StorefrontDeploymentStatus::cases())
-            ->mapWithKeys(fn(StorefrontDeploymentStatus $status): array => [
+            ->mapWithKeys(fn (StorefrontDeploymentStatus $status): array => [
                 $status->value => __("console.deployment_status_{$status->value}"),
             ])
             ->all();

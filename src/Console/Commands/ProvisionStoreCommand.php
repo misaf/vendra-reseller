@@ -43,10 +43,10 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
     protected function promptForMissingArgumentsUsing(): array
     {
         return [
-            'name'     => ['Tenant name', 'Acme'],
-            'domain'   => ['Tenant domain', 'acme.test'],
+            'name' => ['Tenant name', 'Acme'],
+            'domain' => ['Tenant domain', 'acme.test'],
             'username' => ['Username for the tenant owner', 'admin_acme'],
-            'email'    => ['Email address for the tenant owner', 'admin@acme.test'],
+            'email' => ['Email address for the tenant owner', 'admin@acme.test'],
         ];
     }
 
@@ -58,23 +58,23 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
 
         $data = $this->validatedInput();
 
-        if (null === $data) {
+        if ($data === null) {
             return self::FAILURE;
         }
 
         $shouldSeed = $this->shouldSeedTenant();
         $validatedPassword = $this->validatedPassword();
 
-        if (false === $validatedPassword) {
+        if ($validatedPassword === false) {
             return self::FAILURE;
         }
 
-        $passwordWasProvided = null !== $validatedPassword;
+        $passwordWasProvided = $validatedPassword !== null;
         $password = $validatedPassword
             ?? Str::password(length: 8, letters: true, numbers: true, symbols: false);
         $reseller = $this->resolveReseller($data, $password);
 
-        if (false === $reseller) {
+        if ($reseller === false) {
             return self::FAILURE;
         }
 
@@ -83,7 +83,7 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
         $this->info('Store provisioned.');
         $this->table(['Field', 'Value'], [
             ['Domain', $data['domain']],
-            ['Reseller', null === $reseller ? '[none]' : $reseller->name],
+            ['Reseller', $reseller === null ? '[none]' : $reseller->name],
             ['Username', $result['user']->username],
             ['Email', $result['user']->email],
             ['Password', $passwordWasProvided ? '[provided]' : $result['password']],
@@ -100,19 +100,19 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
      * or false when an option references something that cannot be resolved.
      */
     /**
-     * @param array{name: string, domain: string, username: string, email: string} $data
+     * @param  array{name: string, domain: string, username: string, email: string}  $data
      */
     private function resolveReseller(array $data, string $password): Reseller|false|null
     {
         $resellerOption = $this->option('reseller');
 
-        if (null !== $resellerOption) {
+        if ($resellerOption !== null) {
             $reseller = Reseller::query()
                 ->where('id', $resellerOption)
                 ->orWhere('slug', $resellerOption)
                 ->first();
 
-            if (null === $reseller) {
+            if ($reseller === null) {
                 $this->error(sprintf('Reseller [%s] was not found.', $resellerOption));
 
                 return false;
@@ -123,13 +123,13 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
 
         $planOption = $this->option('plan');
 
-        if (null !== $planOption) {
+        if ($planOption !== null) {
             $plan = Plan::query()
                 ->where('id', $planOption)
                 ->orWhere('slug', $planOption)
                 ->first();
 
-            if (null === $plan) {
+            if ($plan === null) {
                 $this->error(sprintf('Plan [%s] was not found.', $planOption));
 
                 return false;
@@ -148,13 +148,13 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
 
     private function shouldSkipExistingTenant(): bool
     {
-        if ( ! (bool) $this->option('if-missing')) {
+        if (! (bool) $this->option('if-missing')) {
             return false;
         }
 
         $domain = (string) $this->argument('domain');
 
-        if ( ! StoreDomain::query()->where('name', $domain)->exists()) {
+        if (! StoreDomain::query()->where('name', $domain)->exists()) {
             return false;
         }
 
@@ -170,7 +170,7 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
     {
         $password = $this->option('password');
 
-        if (null === $password) {
+        if ($password === null) {
             return null;
         }
 
@@ -201,14 +201,14 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
     private function validatedInput(): ?array
     {
         $input = [
-            'name'     => $this->argument('name'),
-            'domain'   => $this->argument('domain'),
+            'name' => $this->argument('name'),
+            'domain' => $this->argument('domain'),
             'username' => $this->argument('username'),
-            'email'    => $this->argument('email'),
+            'email' => $this->argument('email'),
         ];
 
         $validator = Validator::make($input, [
-            'name'   => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'domain' => [
                 'required',
                 'string',
@@ -216,7 +216,7 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
                 Rule::unique('store_domains', 'name')->withoutTrashed(),
             ],
             'username' => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->withoutTrashed()],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->withoutTrashed()],
         ]);
 
         if ($validator->fails()) {
@@ -239,7 +239,7 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
             return true;
         }
 
-        if ( ! $this->input->isInteractive()) {
+        if (! $this->input->isInteractive()) {
             return false;
         }
 

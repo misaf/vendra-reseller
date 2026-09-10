@@ -19,9 +19,9 @@ final class SubscriptionDetail extends StatsOverviewWidget
 
     public static function canView(): bool
     {
-        $reseller = (new self())->currentReseller();
+        $reseller = (new self)->currentReseller();
 
-        return null !== $reseller && $reseller->stores()->exists();
+        return $reseller !== null && $reseller->stores()->exists();
     }
 
     protected function getStats(): array
@@ -29,7 +29,7 @@ final class SubscriptionDetail extends StatsOverviewWidget
         $reseller = $this->currentReseller();
         $subscription = $reseller?->activeSubscription();
 
-        if ( ! $subscription instanceof Subscription) {
+        if (! $subscription instanceof Subscription) {
             $latestSubscription = $reseller?->subscriptions()->latest('starts_at')->first();
 
             if ($latestSubscription instanceof Subscription) {
@@ -37,7 +37,7 @@ final class SubscriptionDetail extends StatsOverviewWidget
                     Stat::make(__('console.subscription_status'), __("console.status_{$latestSubscription->status->value}"))
                         ->icon(Heroicon::OutlinedCheckBadge)
                         ->color($this->statusColor($latestSubscription->status))
-                        ->description(__('console.ends_at') . ': ' . ($latestSubscription->ends_at?->format('Y-m-d') ?? __('console.never'))),
+                        ->description(__('console.ends_at').': '.($latestSubscription->ends_at?->format('Y-m-d') ?? __('console.never'))),
                 ];
             }
 
@@ -53,7 +53,7 @@ final class SubscriptionDetail extends StatsOverviewWidget
                 ->icon(Heroicon::OutlinedCheckBadge)
                 ->color($this->statusColor($subscription->status)),
 
-            Stat::make(__('console.trial'), $subscription->isOnTrial() && null !== $subscription->trial_ends_at
+            Stat::make(__('console.trial'), $subscription->isOnTrial() && $subscription->trial_ends_at !== null
                 ? __('console.trial_until', ['date' => $subscription->trial_ends_at->format('Y-m-d')])
                 : __('console.no_trial'))
                 ->icon(Heroicon::OutlinedClock)
@@ -67,11 +67,11 @@ final class SubscriptionDetail extends StatsOverviewWidget
     private function statusColor(SubscriptionStatus $status): string
     {
         return match ($status) {
-            SubscriptionStatus::Active         => 'success',
+            SubscriptionStatus::Active => 'success',
             SubscriptionStatus::PendingPayment => 'warning',
             SubscriptionStatus::PastDue,
-            SubscriptionStatus::Expired        => 'danger',
-            SubscriptionStatus::Cancelled      => 'gray',
+            SubscriptionStatus::Expired => 'danger',
+            SubscriptionStatus::Cancelled => 'gray',
         };
     }
 }

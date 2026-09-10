@@ -17,7 +17,7 @@ trait InteractsWithCurrentReseller
     {
         $user = Filament::auth()->user();
 
-        if ( ! $user instanceof ResellerUser) {
+        if (! $user instanceof ResellerUser) {
             return null;
         }
 

@@ -51,9 +51,9 @@ final class TransactionSubscriptionCharger implements SubscriptionCharger
                     ? $charge->payer->reseller_id
                     : null,
             ],
-        ))->scope(fn(): SubscriptionChargeResult => $this->chargeWithinContext($charge));
+        ))->scope(fn (): SubscriptionChargeResult => $this->chargeWithinContext($charge));
 
-        if ( ! $result instanceof SubscriptionChargeResult) {
+        if (! $result instanceof SubscriptionChargeResult) {
             throw new LogicException('The scoped subscription charge did not return a result.');
         }
 
@@ -113,8 +113,8 @@ final class TransactionSubscriptionCharger implements SubscriptionCharger
         $status = match (true) {
             $transaction->status instanceof Approved => SubscriptionChargeStatus::Paid,
             $transaction->status instanceof Declined,
-            $transaction->status instanceof Failed  => SubscriptionChargeStatus::Failed,
-            default                                 => SubscriptionChargeStatus::Processing,
+            $transaction->status instanceof Failed => SubscriptionChargeStatus::Failed,
+            default => SubscriptionChargeStatus::Processing,
         };
 
         return new SubscriptionChargeResult(

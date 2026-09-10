@@ -31,11 +31,11 @@ final class CreateResellerOwnerAction
             }
 
             $owner = ResellerUser::query()->create([
-                'reseller_id'       => $lockedReseller->getKey(),
-                'username'          => $username,
-                'email'             => $email,
+                'reseller_id' => $lockedReseller->getKey(),
+                'username' => $username,
+                'email' => $email,
                 'email_verified_at' => $emailVerified ? Carbon::now() : null,
-                'password'          => Hash::make($password),
+                'password' => Hash::make($password),
             ]);
 
             $lockedReseller->update(['email' => $email]);

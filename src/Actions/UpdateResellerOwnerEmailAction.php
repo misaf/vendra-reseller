@@ -36,7 +36,7 @@ final class UpdateResellerOwnerEmailAction
             ])->validate();
 
             $lockedOwner->forceFill([
-                'email'             => $email,
+                'email' => $email,
                 'email_verified_at' => $verified ? now() : null,
             ])->save();
 

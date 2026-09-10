@@ -46,9 +46,9 @@ it('requeues stale payment operations and paid subscriptions awaiting activation
         ->assertSuccessful();
 
     Queue::assertPushed(ProcessSubscriptionPayment::class, 2);
-    Queue::assertPushed(fn(ProcessSubscriptionPayment $job): bool => $job->paymentId === $pendingPayment->getKey());
-    Queue::assertPushed(fn(ProcessSubscriptionPayment $job): bool => $job->paymentId === $paidPayment->getKey());
-    Queue::assertNotPushed(fn(ProcessSubscriptionPayment $job): bool => $job->paymentId === $deferredPayment->getKey());
+    Queue::assertPushed(fn (ProcessSubscriptionPayment $job): bool => $job->paymentId === $pendingPayment->getKey());
+    Queue::assertPushed(fn (ProcessSubscriptionPayment $job): bool => $job->paymentId === $paidPayment->getKey());
+    Queue::assertNotPushed(fn (ProcessSubscriptionPayment $job): bool => $job->paymentId === $deferredPayment->getKey());
 });
 
 it('marks an exhausted payment for reconciliation without treating an ambiguous outcome as failed', function (): void {

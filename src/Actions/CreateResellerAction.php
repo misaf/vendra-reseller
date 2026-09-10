@@ -35,10 +35,10 @@ final class CreateResellerAction
     ): array {
         return DB::transaction(function () use ($plan, $username, $email, $password, $startsAt, $active, $emailVerified): array {
             $reseller = Reseller::query()->create([
-                'name'   => $username,
-                'slug'   => $username,
+                'name' => $username,
+                'slug' => $username,
                 'active' => $active,
-                'email'  => $email,
+                'email' => $email,
             ]);
 
             $owner = $this->createResellerOwnerAction->execute(
@@ -52,8 +52,8 @@ final class CreateResellerAction
             $subscription = $this->subscribeAction->execute($reseller, $plan, $startsAt);
 
             return [
-                'reseller'     => $reseller,
-                'owner'        => $owner,
+                'reseller' => $reseller,
+                'owner' => $owner,
                 'subscription' => $subscription,
             ];
         });

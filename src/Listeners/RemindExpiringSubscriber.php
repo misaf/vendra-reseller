@@ -19,7 +19,7 @@ final class RemindExpiringSubscriber
     {
         $subscriber = $event->subscription->subscriber;
 
-        if ( ! $subscriber instanceof SubscriptionSubscriber || ! $subscriber->hasOwnerContact()) {
+        if (! $subscriber instanceof SubscriptionSubscriber || ! $subscriber->hasOwnerContact()) {
             return;
         }
 

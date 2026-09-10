@@ -32,20 +32,20 @@ final class StoreForm
                     ->columnSpanFull(),
 
                 TextInput::make('domain')
-                    ->afterStateUpdated(fn(Livewire $livewire) => $livewire->validateOnly('data.domain'))
+                    ->afterStateUpdated(fn (Livewire $livewire) => $livewire->validateOnly('data.domain'))
                     ->helperText(__('console.domain_helper_text'))
                     ->label(__('console.domain'))
                     ->live(onBlur: true)
                     ->maxLength(255)
                     ->required()
                     ->rules(StoreDomain::activeDomainRules())
-                    ->dehydrateStateUsing(fn(?string $state): ?string => null === $state
+                    ->dehydrateStateUsing(fn (?string $state): ?string => $state === null
                         ? null
                         : StoreDomain::normalizeDomain($state))
                     ->visibleOn('create'),
 
                 TextInput::make('email')
-                    ->afterStateUpdated(fn(Livewire $livewire) => $livewire->validateOnly('data.email'))
+                    ->afterStateUpdated(fn (Livewire $livewire) => $livewire->validateOnly('data.email'))
                     ->label(__('console.email'))
                     ->email()
                     ->extraAttributes(['dir' => 'ltr'])
@@ -55,7 +55,7 @@ final class StoreForm
                     ->rules([
                         'bail',
                         'email:rfc,strict,spoof,filter,filter_unicode',
-                        new EmailValidation(),
+                        new EmailValidation,
                     ])
                     ->visibleOn('create'),
 

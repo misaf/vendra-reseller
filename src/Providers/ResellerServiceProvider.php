@@ -55,7 +55,7 @@ final class ResellerServiceProvider extends ServiceProvider
          */
         Store::resolveRelationUsing(
             'reseller',
-            fn(Store $store): BelongsTo => $store->belongsTo(Reseller::class, 'reseller_id', 'id', 'reseller'),
+            fn (Store $store): BelongsTo => $store->belongsTo(Reseller::class, 'reseller_id', 'id', 'reseller'),
         );
 
         Event::listen(SubscriptionActivated::class, NotifyActivatedSubscriber::class);

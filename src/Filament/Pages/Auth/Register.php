@@ -43,7 +43,7 @@ final class Register extends \Filament\Auth\Pages\Register
             ->required()
             ->unique(
                 table: ResellerUser::class,
-                modifyRuleUsing: fn(Unique $rule): Unique => $rule->withoutTrashed(),
+                modifyRuleUsing: fn (Unique $rule): Unique => $rule->withoutTrashed(),
             );
     }
 
@@ -56,7 +56,7 @@ final class Register extends \Filament\Auth\Pages\Register
             ->required()
             ->unique(
                 table: ResellerUser::class,
-                modifyRuleUsing: fn(Unique $rule): Unique => $rule->withoutTrashed(),
+                modifyRuleUsing: fn (Unique $rule): Unique => $rule->withoutTrashed(),
             );
     }
 
@@ -77,7 +77,7 @@ final class Register extends \Filament\Auth\Pages\Register
     {
         return Select::make('plan_id')
             ->label(__('console.subscription_plan'))
-            ->options(fn(): array => Plan::query()->active()->pluck('name', 'id')->all())
+            ->options(fn (): array => Plan::query()->active()->pluck('name', 'id')->all())
             ->rule(Rule::exists(Plan::class, 'id')->where('active', true))
             ->required()
             ->native(false);
@@ -93,7 +93,7 @@ final class Register extends \Filament\Auth\Pages\Register
         $email = $data['email'] ?? null;
         $password = $data['password'] ?? null;
 
-        if ( ! is_numeric($planId)
+        if (! is_numeric($planId)
             || ! is_string($username)
             || ! is_string($email)
             || ! is_string($password)) {

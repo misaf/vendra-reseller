@@ -15,7 +15,7 @@ final class ResellerObserver
 {
     public function deleting(Reseller $reseller): void
     {
-        if (null === $reseller->offboarded_at) {
+        if ($reseller->offboarded_at === null) {
             throw new LogicException("Reseller [{$reseller->id}] must be offboarded through OffboardResellerAction before deletion.");
         }
     }

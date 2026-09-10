@@ -17,13 +17,13 @@ final class CreateStore extends CreateStorePage
     /**
      * A reseller only ever creates stores under its own billing account.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     protected function resolveOwner(array $data): ?SubscriptionSubscriber
     {
         $resellerId = StoreResource::currentResellerId();
 
-        if (null === $resellerId) {
+        if ($resellerId === null) {
             throw new InvalidArgumentException('No billing reseller for the current user.');
         }
 

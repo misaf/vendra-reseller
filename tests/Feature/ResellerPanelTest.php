@@ -67,23 +67,23 @@ function actAsResellerOwner(Reseller $reseller): ResellerUser
 function resellerStorefrontFormData(): array
 {
     return [
-        'storefront_image_id'             => StorefrontImage::factory()->create()->id,
-        'storefront_slug'                 => 'acme-flowers',
-        'storefront_name_en'              => 'Acme Flowers',
-        'storefront_name_fa'              => 'گل‌فروشی اکمی',
-        'storefront_business_type'        => 'Florist',
-        'storefront_price_currency'       => 'IRR',
-        'storefront_locality'             => 'Tehran',
-        'storefront_country'              => 'IR',
-        'storefront_mobile_phone'         => '09120000000',
-        'storefront_office_phone'         => '02100000000',
-        'storefront_contact_email'        => 'contact@acme.test',
-        'storefront_hours_open'           => '08:00',
-        'storefront_hours_close'          => '21:00',
-        'storefront_map_query'            => '35.7,51.4',
-        'storefront_whatsapp_phone'       => '+989120000000',
-        'storefront_telegram_username'    => 'acmeflowers',
-        'storefront_instagram_username'   => 'acmeflowers',
+        'storefront_image_id' => StorefrontImage::factory()->create()->id,
+        'storefront_slug' => 'acme-flowers',
+        'storefront_name_en' => 'Acme Flowers',
+        'storefront_name_fa' => 'گل‌فروشی اکمی',
+        'storefront_business_type' => 'Florist',
+        'storefront_price_currency' => 'IRR',
+        'storefront_locality' => 'Tehran',
+        'storefront_country' => 'IR',
+        'storefront_mobile_phone' => '09120000000',
+        'storefront_office_phone' => '02100000000',
+        'storefront_contact_email' => 'contact@acme.test',
+        'storefront_hours_open' => '08:00',
+        'storefront_hours_close' => '21:00',
+        'storefront_map_query' => '35.7,51.4',
+        'storefront_whatsapp_phone' => '+989120000000',
+        'storefront_telegram_username' => 'acmeflowers',
+        'storefront_instagram_username' => 'acmeflowers',
     ];
 }
 
@@ -111,14 +111,14 @@ it('globally searches only the authenticated reseller stores', function (): void
 
     $store = Store::factory()->create([
         'reseller_id' => $reseller->getKey(),
-        'name'        => 'Owned Search Property',
+        'name' => 'Owned Search Property',
     ]);
     $otherStore = Store::factory()->create([
         'reseller_id' => $otherReseller->getKey(),
-        'name'        => 'Other Search Property',
+        'name' => 'Other Search Property',
     ]);
     StoreDomain::factory()->for($store)->create([
-        'name'   => 'owned-global-search.test',
+        'name' => 'owned-global-search.test',
         'active' => true,
     ]);
 
@@ -132,7 +132,7 @@ it('globally searches only the authenticated reseller stores', function (): void
         ])
         ->and($action->getLabel())->toBe(__('console.admin_url'))
         ->and($action->getUrl())->toBe(
-            'https://' . $store->slug . '.' . Config::string('vendra-tenant.central_host'),
+            'https://'.$store->slug.'.'.Config::string('vendra-tenant.central_host'),
         )
         ->and($action->shouldOpenUrlInNewTab())->toBeTrue()
         ->and(StoreResource::getGlobalSearchResults($otherStore->name))->toBeEmpty()
@@ -162,18 +162,18 @@ it('lets a reseller edit store details without exposing protected ownership or p
     $otherReseller = Reseller::factory()->create();
     $store = Store::factory()->active()->create([
         'reseller_id' => $reseller->getKey(),
-        'name'        => 'Original store',
+        'name' => 'Original store',
     ]);
     $originalSlug = $store->slug;
     actAsResellerOwner($reseller);
 
     livewire(EditStore::class, ['record' => $store->getKey()])
         ->fillForm([
-            'name'        => 'Updated store',
+            'name' => 'Updated store',
             'description' => 'Customer-facing store details.',
-            'slug'        => 'protected-slug',
+            'slug' => 'protected-slug',
             'reseller_id' => $otherReseller->getKey(),
-            'active'      => false,
+            'active' => false,
         ])
         ->call('save')
         ->assertHasNoFormErrors()
@@ -230,7 +230,7 @@ it('verifies the authenticated reseller owner from a signed email link', functio
         'filament.reseller.auth.email-verification.verify',
         now()->addHour(),
         [
-            'id'   => $owner->getKey(),
+            'id' => $owner->getKey(),
             'hash' => sha1($owner->getEmailForVerification()),
         ],
     );
@@ -247,11 +247,11 @@ it('registers a reseller with an initial subscription', function (): void {
 
     livewire(Register::class)
         ->fillForm([
-            'username'             => 'new_reseller',
-            'email'                => 'new@reseller.test',
-            'password'             => 'Secure123',
+            'username' => 'new_reseller',
+            'email' => 'new@reseller.test',
+            'password' => 'Secure123',
             'passwordConfirmation' => 'Secure123',
-            'plan_id'              => $plan->getKey(),
+            'plan_id' => $plan->getKey(),
         ])
         ->call('register')
         ->assertHasNoFormErrors();
@@ -272,11 +272,11 @@ it('rejects inactive plans during reseller registration', function (): void {
 
     livewire(Register::class)
         ->fillForm([
-            'username'             => 'new_reseller',
-            'email'                => 'new@reseller.test',
-            'password'             => 'Secure123',
+            'username' => 'new_reseller',
+            'email' => 'new@reseller.test',
+            'password' => 'Secure123',
             'passwordConfirmation' => 'Secure123',
-            'plan_id'              => $plan->getKey(),
+            'plan_id' => $plan->getKey(),
         ])
         ->call('register')
         ->assertHasFormErrors(['plan_id']);
@@ -301,7 +301,7 @@ it('allows a tenant-independent reseller owner to sign in', function (): void {
 
     livewire(Login::class)
         ->fillForm([
-            'email'    => 'owner@reseller.test',
+            'email' => 'owner@reseller.test',
             'password' => 'password',
         ])
         ->call('authenticate')
@@ -369,7 +369,7 @@ it('shows reseller quota and operational counts without platform-wide data', fun
     livewire(ResellerOverview::class)
         ->assertOk()
         ->assertSee('2 / 3')
-        ->assertSee(__('console.remaining_stores') . ': 1')
+        ->assertSee(__('console.remaining_stores').': 1')
         ->assertSee(__('console.active_stores'))
         ->assertSee(__('console.failed_stores'));
 });
@@ -487,19 +487,19 @@ it('lets an owner create a store within the plan limit', function (): void {
     livewire(CreateStore::class)
         ->fillForm([
             'domain' => 'acme.test',
-            'email'  => 'admin@gmail.com',
+            'email' => 'admin@gmail.com',
             ...resellerStorefrontFormData(),
         ])
         ->call('create')
         ->assertHasNoFormErrors();
 
     assertDatabaseHas('stores', [
-        'name'        => 'Acme',
+        'name' => 'Acme',
         'reseller_id' => $reseller->getKey(),
     ]);
     assertDatabaseHas('users', [
         'username' => 'admin',
-        'email'    => 'admin@gmail.com',
+        'email' => 'admin@gmail.com',
     ]);
     expect(StorefrontDeployment::query()->where('slug', 'acme-flowers')->exists())->toBeTrue();
 });
@@ -512,11 +512,11 @@ it('requires storefront configuration when a reseller creates a store', function
     livewire(CreateStore::class)
         ->fillForm([
             'domain' => 'required-storefront.test',
-            'email'  => 'admin@required-storefront.test',
+            'email' => 'admin@required-storefront.test',
         ])
         ->call('create')
         ->assertHasFormErrors([
-            'storefront_slug'    => 'required',
+            'storefront_slug' => 'required',
             'storefront_name_en' => 'required',
             'storefront_name_fa' => 'required',
         ]);
@@ -546,8 +546,8 @@ it('lets an owner replace their store domain, keeping the old one as trashed his
         ->callAction(TestAction::make('replaceDomain')->table($store), ['domain' => 'new.test'])
         ->assertHasNoErrors();
 
-    expect($store->execute(fn() => $store->storeDomains()->where('active', true)->value('name')))->toBe('new.test')
-        ->and($store->execute(fn() => $store->storeDomains()->onlyTrashed()->where('name', 'old.test')->exists()))->toBeTrue();
+    expect($store->execute(fn () => $store->storeDomains()->where('active', true)->value('name')))->toBe('new.test')
+        ->and($store->execute(fn () => $store->storeDomains()->onlyTrashed()->where('name', 'old.test')->exists()))->toBeTrue();
 });
 
 it('validates the replacement domain format and active-domain uniqueness', function (): void {
@@ -579,7 +579,7 @@ it('blocks an owner from exceeding the plan limit', function (): void {
     livewire(CreateStore::class)
         ->fillForm([
             'domain' => 'second.test',
-            'email'  => 'admin@second.test',
+            'email' => 'admin@second.test',
         ])
         ->call('create');
 

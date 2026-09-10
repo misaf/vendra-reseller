@@ -20,7 +20,7 @@ final class SuspendSubscriberStores
     {
         $subscriber = $event->subscription->subscriber;
 
-        if ( ! $subscriber instanceof SubscriptionSubscriber) {
+        if (! $subscriber instanceof SubscriptionSubscriber) {
             return;
         }
 

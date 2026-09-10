@@ -34,12 +34,12 @@ final class OffboardResellerBulkAction extends DeleteBulkAction
             ): void {
                 $reason = $data['offboarding_reason'] ?? null;
 
-                if ( ! is_string($reason)) {
+                if (! is_string($reason)) {
                     return;
                 }
 
                 $records->each(function (Model $record) use ($offboardReseller, $reason): void {
-                    if ( ! $record instanceof Reseller) {
+                    if (! $record instanceof Reseller) {
                         return;
                     }
 

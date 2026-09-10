@@ -57,14 +57,14 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     protected function casts(): array
     {
         return [
-            'id'                 => 'integer',
-            'name'               => 'string',
-            'description'        => 'string',
-            'slug'               => 'string',
-            'active'             => 'boolean',
-            'email'              => 'string',
+            'id' => 'integer',
+            'name' => 'string',
+            'description' => 'string',
+            'slug' => 'string',
+            'active' => 'boolean',
+            'email' => 'string',
             'offboarding_reason' => 'string',
-            'offboarded_at'      => 'datetime',
+            'offboarded_at' => 'datetime',
         ];
     }
 
@@ -81,7 +81,7 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
      */
     public function hasOwnerContact(): bool
     {
-        return null !== $this->email;
+        return $this->email !== null;
     }
 
     /**
@@ -203,5 +203,4 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
             ->saveSlugsTo('slug')
             ->preventOverwrite();
     }
-
 }

@@ -18,16 +18,16 @@ final class ListStores extends ListRecords
     {
         $remaining = $this->remainingStores();
 
-        return null === $remaining
+        return $remaining === null
             ? null
-            : __('console.remaining_stores') . ': ' . $remaining;
+            : __('console.remaining_stores').': '.$remaining;
     }
 
     protected function getHeaderActions(): array
     {
         return [
             CreateAction::make()
-                ->disabled(fn(): bool => (int) $this->remainingStores() <= 0),
+                ->disabled(fn (): bool => (int) $this->remainingStores() <= 0),
         ];
     }
 
@@ -35,13 +35,13 @@ final class ListStores extends ListRecords
     {
         $resellerId = StoreResource::currentResellerId();
 
-        if (null === $resellerId) {
+        if ($resellerId === null) {
             return null;
         }
 
         $reseller = Reseller::query()->find($resellerId);
 
-        if (null === $reseller) {
+        if ($reseller === null) {
             return null;
         }
 

@@ -21,12 +21,12 @@ final class OffboardResellerAction
     {
         $reason = mb_trim($reason);
 
-        if ('' === $reason) {
+        if ($reason === '') {
             throw new InvalidArgumentException('An offboarding reason is required.');
         }
 
         if (Str::length($reason) > self::MAX_REASON_LENGTH) {
-            throw new InvalidArgumentException('The offboarding reason may not exceed ' . self::MAX_REASON_LENGTH . ' characters.');
+            throw new InvalidArgumentException('The offboarding reason may not exceed '.self::MAX_REASON_LENGTH.' characters.');
         }
 
         return DB::transaction(function () use ($reseller, $reason): Reseller {
@@ -36,7 +36,7 @@ final class OffboardResellerAction
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if (null !== $lockedReseller->offboarded_at) {
+            if ($lockedReseller->offboarded_at !== null) {
                 return $lockedReseller;
             }
 
@@ -47,9 +47,9 @@ final class OffboardResellerAction
             $offboardedAt = now();
 
             $lockedReseller->forceFill([
-                'active'              => false,
-                'offboarded_at'       => $offboardedAt,
-                'offboarding_reason'  => $reason,
+                'active' => false,
+                'offboarded_at' => $offboardedAt,
+                'offboarding_reason' => $reason,
             ])->save();
 
             $tenants->each->delete();

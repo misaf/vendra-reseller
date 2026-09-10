@@ -16,10 +16,10 @@ it('skips provisioning an existing tenant domain when requested', function (): v
     StoreDomain::factory()->for($tenant)->create(['name' => 'existing.test']);
 
     $this->artisan('vendra-subscription:provision', [
-        'name'         => 'Existing Tenant',
-        'domain'       => 'existing.test',
-        'username'     => 'admin',
-        'email'        => 'admin@example.com',
+        'name' => 'Existing Tenant',
+        'domain' => 'existing.test',
+        'username' => 'admin',
+        'email' => 'admin@example.com',
         '--if-missing' => true,
     ])
         ->expectsOutput('Tenant domain [existing.test] already exists; provisioning skipped.')
@@ -35,10 +35,10 @@ it('provisions a tenant with a provided password without printing it', function 
     Queue::fake();
 
     $this->artisan('vendra-subscription:provision', [
-        'name'       => 'Acme',
-        'domain'     => 'acme.test',
-        'username'   => 'admin_acme',
-        'email'      => 'admin@acme.test',
+        'name' => 'Acme',
+        'domain' => 'acme.test',
+        'username' => 'admin_acme',
+        'email' => 'admin@acme.test',
         '--password' => 'secret-password',
     ])
         ->expectsConfirmation('Run default tenant seeders?', 'no')
@@ -56,12 +56,12 @@ it('provisions a property under a new reseller subscribed to the given plan', fu
     $plan = Plan::factory()->maxUnits(3)->create();
 
     $this->artisan('vendra-subscription:provision', [
-        'name'       => 'Acme',
-        'domain'     => 'acme.test',
-        'username'   => 'admin_acme',
-        'email'      => 'admin@acme.test',
+        'name' => 'Acme',
+        'domain' => 'acme.test',
+        'username' => 'admin_acme',
+        'email' => 'admin@acme.test',
         '--password' => 'secret-password',
-        '--plan'     => (string) $plan->getKey(),
+        '--plan' => (string) $plan->getKey(),
     ])
         ->expectsConfirmation('Run default tenant seeders?', 'no')
         ->assertSuccessful();
@@ -77,12 +77,12 @@ it('provisions a property under a new reseller subscribed to the given plan', fu
 
 it('fails when the provided plan cannot be resolved', function (): void {
     $this->artisan('vendra-subscription:provision', [
-        'name'       => 'Acme',
-        'domain'     => 'acme.test',
-        'username'   => 'admin_acme',
-        'email'      => 'admin@acme.test',
+        'name' => 'Acme',
+        'domain' => 'acme.test',
+        'username' => 'admin_acme',
+        'email' => 'admin@acme.test',
         '--password' => 'secret-password',
-        '--plan'     => 'nonexistent',
+        '--plan' => 'nonexistent',
     ])
         ->expectsConfirmation('Run default tenant seeders?', 'no')
         ->assertFailed();
@@ -93,10 +93,10 @@ it('fails when the provided plan cannot be resolved', function (): void {
 
 it('rejects a provided password shorter than eight characters', function (): void {
     $this->artisan('vendra-subscription:provision', [
-        'name'       => 'Acme',
-        'domain'     => 'acme.test',
-        'username'   => 'admin_acme',
-        'email'      => 'admin@acme.test',
+        'name' => 'Acme',
+        'domain' => 'acme.test',
+        'username' => 'admin_acme',
+        'email' => 'admin@acme.test',
         '--password' => 'short',
     ])
         ->expectsConfirmation('Run default tenant seeders?', 'no')
@@ -111,10 +111,10 @@ it('rejects an existing tenant domain without the option', function (): void {
     StoreDomain::factory()->for($tenant)->create(['name' => 'existing.test']);
 
     $this->artisan('vendra-subscription:provision', [
-        'name'     => 'Duplicate Tenant',
-        'domain'   => 'existing.test',
+        'name' => 'Duplicate Tenant',
+        'domain' => 'existing.test',
         'username' => 'admin',
-        'email'    => 'admin@example.com',
+        'email' => 'admin@example.com',
     ])
         ->assertFailed();
 

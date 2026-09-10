@@ -30,7 +30,7 @@ final class SubscriptionActivatedNotification extends Notification implements No
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage())
+        return (new MailMessage)
             ->subject('Your subscription is active')
             ->line("Your reseller is now subscribed to the {$this->plan->name} plan.")
             ->line("You can run up to {$this->plan->max_units} store(s).");
