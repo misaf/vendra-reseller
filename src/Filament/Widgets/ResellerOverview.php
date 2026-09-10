@@ -53,7 +53,7 @@ final class ResellerOverview extends StatsOverviewWidget
                 ->color(self::subscriptionColor($subscription)),
 
             Stat::make(__('console.store_capacity'), "{$used} / " . ($remaining + $used))
-                ->description(__('console.stores_remaining') . ': ' . $remaining)
+                ->description(__('console.remaining_stores') . ': ' . $remaining)
                 ->icon(Heroicon::OutlinedRectangleStack)
                 ->color($remaining <= 0 ? 'danger' : 'primary')
                 ->url(StoreResource::getUrl('index')),

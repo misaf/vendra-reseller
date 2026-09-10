@@ -17,6 +17,13 @@ final class SubscriptionDetail extends StatsOverviewWidget
 
     protected static ?int $sort = 2;
 
+    public static function canView(): bool
+    {
+        $reseller = (new self())->currentReseller();
+
+        return null !== $reseller && $reseller->stores()->exists();
+    }
+
     protected function getStats(): array
     {
         $reseller = $this->currentReseller();

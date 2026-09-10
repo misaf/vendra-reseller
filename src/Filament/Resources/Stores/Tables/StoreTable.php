@@ -54,19 +54,26 @@ final class StoreTable
                     ->state(fn(Store $record): ?string => self::deployment($record)?->status->value)
                     ->placeholder(__('console.storefront_not_requested')),
 
-                TextColumn::make('admin_access')
+                TextColumn::make('admin_url')
                     ->label(__('console.admin_url'))
+                    ->icon(Heroicon::OutlinedBuildingOffice2)
                     ->state(fn(Store $record): string => 'https://' . $record->slug . '.' . Config::string('vendra-tenant.central_host'))
-                    ->description(function (Store $record): ?string {
-                        $domain = $record->domains->first()?->name;
-
-                        return null === $domain ? null : 'https://admin.' . $domain;
-                    })
                     ->url(fn(Store $record): string => 'https://' . $record->slug . '.' . Config::string('vendra-tenant.central_host'))
                     ->openUrlInNewTab()
                     ->copyable()
-                    ->copyMessage(__('console.url_copied'))
-                    ->placeholder('—'),
+                    ->copyMessage(__('console.url_copied')),
+
+                TextColumn::make('storefront_url')
+                    ->label(__('console.storefront_url'))
+                    ->icon(Heroicon::OutlinedShoppingBag)
+                    ->state(fn(Store $record): ?string => self::deployment($record)?->domain)
+                    ->placeholder('—')
+                    ->url(fn(Store $record): ?string => null === self::deployment($record)?->domain
+                        ? null
+                        : 'https://' . self::deployment($record)?->domain)
+                    ->openUrlInNewTab()
+                    ->copyable()
+                    ->copyMessage(__('console.url_copied')),
 
                 TextColumn::make('status')
                     ->label(__('console.operational_status'))
