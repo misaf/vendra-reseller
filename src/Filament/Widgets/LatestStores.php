@@ -11,6 +11,7 @@ use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
+use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
 use Misaf\VendraStore\Models\Store;
 
 final class LatestStores extends BaseWidget
@@ -20,6 +21,13 @@ final class LatestStores extends BaseWidget
     protected static ?int $sort = 4;
 
     protected int|string|array $columnSpan = 'full';
+
+    protected static ?string $heading = null;
+
+    public static function getHeading(): ?string
+    {
+        return __('console.stores');
+    }
 
     public static function canView(): bool
     {
@@ -31,7 +39,7 @@ final class LatestStores extends BaseWidget
     public function table(Table $table): Table
     {
         return $table
-            ->heading(__('console.stores'))
+            ->heading(self::getHeading())
             ->query(fn(): Builder => Store::query()
                 ->where('reseller_id', $this->currentReseller()?->getKey() ?? 0)
                 ->with([
@@ -66,6 +74,7 @@ final class LatestStores extends BaseWidget
                         fn(TextColumn $column) => $column->dateTime('Y-m-d H:i')
                     ),
             ])
+            ->recordUrl(fn(Store $record): string => StoreResource::getUrl('view', ['record' => $record]))
             ->defaultSort('id', 'desc')
             ->paginated([5, 10, 25]);
     }

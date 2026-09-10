@@ -35,7 +35,7 @@ final class StoreInfolist
                 ])->columnSpanFull(),
             Section::make(__('console.storefront_configuration'))
                 ->schema([
-                    Grid::make(2)->schema([
+                    Grid::make(3)->schema([
                         TextEntry::make('store_status')->label(__('console.operational_status'))
                             ->badge()->state(fn(Store $record): string => $record->status()->value)
                             ->formatStateUsing(fn(string $state): string => __("console.store_status_{$state}")),
@@ -43,6 +43,9 @@ final class StoreInfolist
                             ->badge()->state(fn(Store $record): ?string => self::deployment($record)?->status->value)
                             ->formatStateUsing(fn(string $state): string => __("console.deployment_status_{$state}"))
                             ->placeholder(__('console.storefront_not_requested')),
+                        TextEntry::make('desired_state')->label(__('console.desired_state'))
+                            ->state(fn(Store $record): ?string => self::deployment($record)?->desired_state->value)
+                            ->placeholder('—'),
                     ]),
                     TextEntry::make('provisioning_error')->label(__('console.provisioning_error'))
                         ->visible(fn(Store $record): bool => filled($record->provisioning_error))
