@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Database\Factories;
 
-use Illuminate\Support\Arr;
 use Illuminate\Database\Eloquent\Factories\Attributes\UseModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Misaf\VendraReseller\Models\Reseller;
 

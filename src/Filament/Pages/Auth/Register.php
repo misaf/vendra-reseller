@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Filament\Pages\Auth;
 
-use Illuminate\Support\Arr;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Rules\Unique;

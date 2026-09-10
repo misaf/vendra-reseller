@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Filament\Resources\Stores\Tables;
 
-use Illuminate\Support\Arr;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -18,6 +17,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Config;
 use Misaf\VendraReseller\Filament\Resources\Stores\Actions\ReplaceDomainAction;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;

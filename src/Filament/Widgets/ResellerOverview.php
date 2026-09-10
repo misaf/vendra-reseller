@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Filament\Widgets;
 
-use Illuminate\Contracts\Database\Query\Builder;
 use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Contracts\Database\Query\Builder;
 use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
 use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;

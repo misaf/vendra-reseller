@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use Illuminate\Support\Arr;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Enums\FiltersLayout;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
@@ -464,7 +464,7 @@ it('shows an owner nothing once their reseller is gone, platform stores included
         ->assertCanNotSeeTableRecords([$ownedStore, $platformStore]);
 });
 
-it('keeps platform-owned stores out of an active owner\'s panel', function (): void {
+it("keeps platform-owned stores out of an active owner's panel", function (): void {
     $reseller = Reseller::factory()->create();
     $ownedStore = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
     $platformStore = Store::factory()->create(['reseller_id' => null, 'active' => true]);

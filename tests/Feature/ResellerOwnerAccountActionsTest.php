@@ -64,5 +64,5 @@ it('replaces the active reseller owner while preserving the former account as hi
         ->and(ResellerUser::query()->withTrashed()->findOrFail($formerOwner->getKey())->trashed())->toBeTrue()
         ->and($reseller->ownerUser()->sole()->is($replacement))->toBeTrue()
         ->and(Hash::check('SecurePassword123', $replacement->password))->toBeTrue()
-        ->and(fn() => resolve(SetResellerOwnerAccountEnabledAction::class)->execute($formerOwner, true))->toThrow(LogicException::class);
+        ->and(fn () => resolve(SetResellerOwnerAccountEnabledAction::class)->execute($formerOwner, true))->toThrow(LogicException::class);
 });

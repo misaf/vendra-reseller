@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Filament\Actions;
 
-use Illuminate\Support\Arr;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\Textarea;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Misaf\VendraReseller\Actions\OffboardResellerAction;
 use Misaf\VendraReseller\Models\Reseller;
 

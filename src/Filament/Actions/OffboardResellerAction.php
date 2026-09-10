@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Filament\Actions;
 
-use Illuminate\Support\Arr;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\Textarea;
+use Illuminate\Support\Arr;
 use Misaf\VendraReseller\Actions\OffboardResellerAction as DomainOffboardResellerAction;
 use Misaf\VendraReseller\Models\Reseller;
 

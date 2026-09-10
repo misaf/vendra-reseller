@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -86,7 +86,7 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     }
 
     /**
-     * @param Builder<self> $query
+     * @param  Builder<self>  $query
      * @return Builder<self>
      */
     #[Scope]
@@ -96,7 +96,7 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     }
 
     /**
-     * @param Builder<self> $query
+     * @param  Builder<self>  $query
      * @return Builder<self>
      */
     #[Scope]

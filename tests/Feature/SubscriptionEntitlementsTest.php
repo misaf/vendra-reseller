@@ -7,7 +7,7 @@ use Misaf\VendraSubscription\Actions\SubscribeAction;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
 
-it('starts a trial on the reseller\'s first subscription only', function (): void {
+it("starts a trial on the reseller's first subscription only", function (): void {
     $reseller = Reseller::factory()->create();
 
     $first = resolve(SubscribeAction::class)->execute($reseller, Plan::factory()->trialDays(14)->create());
