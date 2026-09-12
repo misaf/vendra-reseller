@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Queue\Attributes\Timeout;
+use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Misaf\VendraReseller\Models\Reseller;
@@ -103,9 +105,17 @@ it('activates a paid subscription idempotently', function (): void {
 it('uses a unique bounded job for each durable payment operation', function (): void {
     $job = new ProcessSubscriptionPayment(123);
 
+    $attribute = function (string $attributeClass): object {
+        $attributes = (new ReflectionClass(ProcessSubscriptionPayment::class))->getAttributes($attributeClass);
+
+        expect($attributes)->toHaveCount(1);
+
+        return $attributes[0]->newInstance();
+    };
+
     expect($job)->toBeInstanceOf(ShouldBeUnique::class)
         ->and($job->uniqueId())->toBe('123')
-        ->and($job->tries)->toBe(5)
-        ->and($job->timeout)->toBeLessThan(config()->integer('queue.connections.database.retry_after'))
+        ->and($attribute(Tries::class)->tries)->toBe(5)
+        ->and($attribute(Timeout::class)->timeout)->toBeLessThan(config()->integer('queue.connections.database.retry_after'))
         ->and($job->backoff())->toBe([5, 30, 120, 300]);
 });
