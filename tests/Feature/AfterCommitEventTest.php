@@ -75,8 +75,8 @@ it('delivers activation listeners outside the reseller creation transaction', fu
 
     resolve(CreateResellerAction::class)->execute(
         plan: Plan::factory()->create(),
-        username: 'reseller-owner',
-        email: 'owner@example.com',
+        username: 'reseller-user',
+        email: 'user@example.com',
         password: 'secret-password',
     );
 

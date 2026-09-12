@@ -7,15 +7,15 @@ namespace Misaf\VendraReseller\Actions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Misaf\VendraReseller\Models\ResellerUser;
+use Misaf\VendraUser\Models\User;
 
-final class UpdateResellerOwnerPasswordAction
+final class UpdateResellerUserPasswordAction
 {
-    public function execute(ResellerUser $owner, string $password): ResellerUser
+    public function execute(User $user, string $password): User
     {
-        return DB::transaction(function () use ($owner, $password): ResellerUser {
-            $lockedOwner = ResellerUser::query()
-                ->whereKey($owner->getKey())
+        return DB::transaction(function () use ($user, $password): User {
+            $lockedOwner = User::query()
+                ->whereKey($user->getKey())
                 ->lockForUpdate()
                 ->firstOrFail();
 

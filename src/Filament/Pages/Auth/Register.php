@@ -15,8 +15,8 @@ use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Rules\Unique;
 use InvalidArgumentException;
 use Misaf\VendraReseller\Actions\CreateResellerAction;
-use Misaf\VendraReseller\Models\ResellerUser;
 use Misaf\VendraSubscription\Models\Plan;
+use Misaf\VendraUser\Models\User;
 use SensitiveParameter;
 
 final class Register extends \Filament\Auth\Pages\Register
@@ -43,7 +43,7 @@ final class Register extends \Filament\Auth\Pages\Register
             ->rules(['alpha_dash:ascii'])
             ->required()
             ->unique(
-                table: ResellerUser::class,
+                table: User::class,
                 modifyRuleUsing: fn (Unique $rule): Unique => $rule->withoutTrashed(),
             );
     }
@@ -56,7 +56,7 @@ final class Register extends \Filament\Auth\Pages\Register
             ->maxLength(255)
             ->required()
             ->unique(
-                table: ResellerUser::class,
+                table: User::class,
                 modifyRuleUsing: fn (Unique $rule): Unique => $rule->withoutTrashed(),
             );
     }
@@ -107,6 +107,6 @@ final class Register extends \Filament\Auth\Pages\Register
             email: $email,
             password: $password,
             emailVerified: false,
-        ), 'owner');
+        ), 'user');
     }
 }

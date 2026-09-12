@@ -10,7 +10,6 @@ use Misaf\VendraReseller\Filament\Widgets\LatestStores;
 use Misaf\VendraReseller\Filament\Widgets\ResellerOverview;
 use Misaf\VendraReseller\Filament\Widgets\SubscriptionDetail;
 use Misaf\VendraReseller\Models\Reseller;
-use Misaf\VendraReseller\Models\ResellerUser;
 use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraStore\Models\StorefrontDeployment;
@@ -18,6 +17,7 @@ use Misaf\VendraSubscription\Enums\SubscriptionStatus;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
 use Misaf\VendraSupport\Tenancy\Events\TenantProvisioned;
+use Misaf\VendraUser\Models\User;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Livewire\livewire;
@@ -30,13 +30,14 @@ beforeEach(function (): void {
     fakeDockerEngine();
 });
 
-function actAsReseller(Reseller $reseller): ResellerUser
+function actAsReseller(Reseller $reseller): User
 {
-    $owner = ResellerUser::factory()->forReseller($reseller->getKey())->create();
-    actingAs($owner, 'reseller');
+    $user = User::factory()->create(['tenant_id' => null]);
+    $reseller->users()->attach($user->getKey());
+    actingAs($user, 'reseller');
     Filament::setCurrentPanel(Filament::getPanel('reseller'));
 
-    return $owner;
+    return $user;
 }
 
 describe('reseller overview subscription status', function (): void {

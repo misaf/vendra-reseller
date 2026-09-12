@@ -7,22 +7,22 @@ namespace Misaf\VendraReseller\Actions;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Misaf\VendraReseller\Models\Reseller;
-use Misaf\VendraReseller\Models\ResellerUser;
 use Misaf\VendraSubscription\Actions\SubscribeAction;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
+use Misaf\VendraUser\Models\User;
 
 final readonly class CreateResellerAction
 {
     public function __construct(
-        private CreateResellerOwnerAction $createResellerOwnerAction,
+        private CreateResellerUserAction $createResellerUserAction,
         private SubscribeAction $subscribeAction,
     ) {}
 
     /**
      * Create a billing reseller and subscribe it to the given plan.
      *
-     * @return array{reseller: Reseller, owner: ResellerUser, subscription: Subscription}
+     * @return array{reseller: Reseller, user: User, subscription: Subscription}
      */
     public function execute(
         Plan $plan,
@@ -41,7 +41,7 @@ final readonly class CreateResellerAction
                 'email' => $email,
             ]);
 
-            $owner = $this->createResellerOwnerAction->execute(
+            $user = $this->createResellerUserAction->execute(
                 $reseller,
                 $username,
                 $email,
@@ -53,7 +53,7 @@ final readonly class CreateResellerAction
 
             return [
                 'reseller' => $reseller,
-                'owner' => $owner,
+                'user' => $user,
                 'subscription' => $subscription,
             ];
         });

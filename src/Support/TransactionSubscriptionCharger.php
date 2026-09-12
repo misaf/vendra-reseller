@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Misaf\VendraReseller\Support;
 
 use LogicException;
-use Misaf\VendraReseller\Models\ResellerUser;
+use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraSupport\Context\ContextKeys;
 use Misaf\VendraSupport\Context\RequestJobContext;
 use Misaf\VendraSupport\Contracts\SubscriptionCharger;
@@ -22,6 +22,7 @@ use Misaf\VendraTransaction\Services\TransactionGatewayRegistry as TransactionGa
 use Misaf\VendraTransaction\States\Approved;
 use Misaf\VendraTransaction\States\Declined;
 use Misaf\VendraTransaction\States\Failed;
+use Misaf\VendraUser\Models\User;
 
 /**
  * Collects subscription payments through vendra-transaction by posting an
@@ -47,8 +48,8 @@ final readonly class TransactionSubscriptionCharger implements SubscriptionCharg
             traceId: RequestJobContext::resolveTraceId(),
             operation: 'subscription_charge',
             metadata: [
-                ContextKeys::RESELLER_ID => $charge->payer instanceof ResellerUser
-                    ? $charge->payer->reseller_id
+                ContextKeys::RESELLER_ID => $charge->payer instanceof User
+                    ? Reseller::forUser($charge->payer)?->getKey()
                     : null,
             ],
         )->scope(fn (): SubscriptionChargeResult => $this->chargeWithinContext($charge));

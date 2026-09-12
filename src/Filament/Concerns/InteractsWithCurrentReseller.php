@@ -6,21 +6,21 @@ namespace Misaf\VendraReseller\Filament\Concerns;
 
 use Filament\Facades\Filament;
 use Misaf\VendraReseller\Models\Reseller;
-use Misaf\VendraReseller\Models\ResellerUser;
+use Misaf\VendraUser\Models\User;
 
 trait InteractsWithCurrentReseller
 {
     /**
-     * The billing reseller of the currently authenticated owner, if any.
+     * The billing reseller of the currently authenticated user, if any.
      */
     protected function currentReseller(): ?Reseller
     {
         $user = Filament::auth()->user();
 
-        if (! $user instanceof ResellerUser) {
+        if (! $user instanceof User) {
             return null;
         }
 
-        return Reseller::query()->find($user->reseller_id);
+        return Reseller::forUser($user);
     }
 }

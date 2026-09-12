@@ -3,23 +3,23 @@
 declare(strict_types=1);
 
 use Misaf\VendraReseller\Models\Reseller;
-use Misaf\VendraReseller\Support\ResellerStoreOwnerResolver;
-use Misaf\VendraStore\Contracts\StoreOwnerResolver;
+use Misaf\VendraReseller\Support\EloquentStoreResellerResolver;
+use Misaf\VendraStore\Contracts\StoreResellerResolver;
 use Misaf\VendraStore\Models\Store;
 
 /*
  | Reseller hasMany Stores, and the arrow points reseller → store: the store
- | package holds only `reseller_id` and asks through StoreOwnerResolver, which
+ | package holds only `reseller_id` and asks through StoreResellerResolver, which
  | this package binds. Both halves of the business API are asserted here because
  | both are registered here.
  */
-it('binds the store ownership port to the reseller domain', function (): void {
-    expect(resolve(StoreOwnerResolver::class))->toBeInstanceOf(ResellerStoreOwnerResolver::class);
+it('binds the store billing-reseller port to the reseller domain', function (): void {
+    expect(resolve(StoreResellerResolver::class))->toBeInstanceOf(EloquentStoreResellerResolver::class);
 
     $reseller = Reseller::factory()->create();
 
-    expect(resolve(StoreOwnerResolver::class)->find($reseller->getKey())?->getKey())->toBe($reseller->getKey())
-        ->and(resolve(StoreOwnerResolver::class)->find(999999))->toBeNull();
+    expect(resolve(StoreResellerResolver::class)->find($reseller->getKey())?->getKey())->toBe($reseller->getKey())
+        ->and(resolve(StoreResellerResolver::class)->find(999999))->toBeNull();
 });
 
 it('gives each reseller only its own stores', function (): void {

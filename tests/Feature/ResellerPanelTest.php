@@ -9,6 +9,7 @@ use Filament\Tables\Enums\FiltersLayout;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -25,7 +26,6 @@ use Misaf\VendraReseller\Filament\Widgets\LatestStores;
 use Misaf\VendraReseller\Filament\Widgets\ResellerOverview;
 use Misaf\VendraReseller\Filament\Widgets\SubscriptionDetail;
 use Misaf\VendraReseller\Models\Reseller;
-use Misaf\VendraReseller\Models\ResellerUser;
 use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
 use Misaf\VendraStore\Enums\StoreStatus;
 use Misaf\VendraStore\Models\Store;
@@ -36,6 +36,7 @@ use Misaf\VendraStore\Settings\StoreCreationSettings;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
 use Misaf\VendraSupport\Tenancy\Events\TenantProvisioned;
+use Misaf\VendraUser\Models\User;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseHas;
@@ -49,20 +50,25 @@ beforeEach(function (): void {
     fakeDockerEngine();
 });
 
-function resellerOwner(Reseller $reseller): ResellerUser
+function resellerUser(Reseller $reseller, array $attributes = []): User
 {
-    return ResellerUser::factory()
-        ->forReseller($reseller->getKey())
-        ->create();
+    $user = User::factory()->create([
+        'tenant_id' => null,
+        ...$attributes,
+    ]);
+
+    $reseller->users()->attach($user->getKey());
+
+    return $user;
 }
 
-function actAsResellerOwner(Reseller $reseller): ResellerUser
+function actAsResellerUser(Reseller $reseller): User
 {
-    $owner = resellerOwner($reseller);
-    actingAs($owner, 'reseller');
+    $user = resellerUser($reseller);
+    actingAs($user, 'reseller');
     Filament::setCurrentPanel(Filament::getPanel('reseller'));
 
-    return $owner;
+    return $user;
 }
 
 function resellerStorefrontFormData(): array
@@ -90,7 +96,7 @@ function resellerStorefrontFormData(): array
 
 it('uses the package table presentation conventions for stores', function (): void {
     $reseller = Reseller::factory()->create();
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
 
     $component = livewire(ListStores::class)
         ->assertTableColumnExists('row')
@@ -108,7 +114,7 @@ it('uses the package table presentation conventions for stores', function (): vo
 it('globally searches only the authenticated reseller stores', function (): void {
     $reseller = Reseller::factory()->create();
     $otherReseller = Reseller::factory()->create();
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
 
     $store = Store::factory()->create([
         'reseller_id' => $reseller->getKey(),
@@ -147,7 +153,7 @@ it('uses a store overview as the reseller record landing page', function (): voi
     $reseller = Reseller::factory()->create();
     $store = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'name' => 'Acme Flowers']);
     StoreDomain::factory()->for($store)->create(['name' => 'acme.test', 'active' => true]);
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
 
     livewire(ListStores::class)
         ->assertActionVisible(TestAction::make('view')->table($store));
@@ -158,7 +164,7 @@ it('uses a store overview as the reseller record landing page', function (): voi
         ->assertSee('acme.test');
 });
 
-it('lets a reseller edit store details without exposing protected ownership or provisioning fields', function (): void {
+it('lets a reseller edit store details without exposing protected billing or provisioning fields', function (): void {
     $reseller = Reseller::factory()->create();
     $otherReseller = Reseller::factory()->create();
     $store = Store::factory()->active()->create([
@@ -166,7 +172,7 @@ it('lets a reseller edit store details without exposing protected ownership or p
         'name' => 'Original store',
     ]);
     $originalSlug = $store->slug;
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
 
     livewire(EditStore::class, ['record' => $store->getKey()])
         ->fillForm([
@@ -192,7 +198,7 @@ it('lets a reseller edit store details without exposing protected ownership or p
 it('does not resolve another reseller store on view or edit pages', function (): void {
     $reseller = Reseller::factory()->create();
     $otherStore = Store::factory()->create(['reseller_id' => Reseller::factory()->create()->getKey()]);
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
 
     $this->get(StoreResource::getUrl('view', ['record' => $otherStore]))->assertNotFound();
     $this->get(StoreResource::getUrl('edit', ['record' => $otherStore]))->assertNotFound();
@@ -219,26 +225,23 @@ it('renders reseller registration without a current tenant', function (): void {
     $this->get('https://reseller.vendra.test/register')->assertSuccessful();
 });
 
-it('verifies the authenticated reseller owner from a signed email link', function (): void {
+it('verifies the authenticated reseller user from a signed email link', function (): void {
     $reseller = Reseller::factory()->create();
-    $owner = ResellerUser::factory()
-        ->forReseller($reseller)
-        ->unverified()
-        ->create();
-    actingAs($owner, 'reseller');
+    $user = resellerUser($reseller, ['email_verified_at' => null]);
+    actingAs($user, 'reseller');
 
     $verificationUrl = URL::temporarySignedRoute(
         'filament.reseller.auth.email-verification.verify',
         now()->addHour(),
         [
-            'id' => $owner->getKey(),
-            'hash' => sha1($owner->getEmailForVerification()),
+            'id' => $user->getKey(),
+            'hash' => sha1($user->getEmailForVerification()),
         ],
     );
 
     $this->get($verificationUrl)->assertRedirect();
 
-    expect($owner->fresh()?->hasVerifiedEmail())->toBeTrue();
+    expect($user->fresh()?->hasVerifiedEmail())->toBeTrue();
 });
 
 it('registers a reseller with an initial subscription', function (): void {
@@ -257,14 +260,16 @@ it('registers a reseller with an initial subscription', function (): void {
         ->call('register')
         ->assertHasNoFormErrors();
 
-    $owner = ResellerUser::query()->where('email', 'new@reseller.test')->sole();
-    $reseller = $owner->reseller()->sole();
+    $user = User::query()->where('email', 'new@reseller.test')->sole();
+    $reseller = Reseller::forUser($user);
 
-    expect(auth('reseller')->id())->toBe($owner->getKey())
-        ->and($owner->email_verified_at)->toBeNull()
-        ->and(Hash::check('Secure123', $owner->password))->toBeTrue()
-        ->and($reseller->name)->toBe('new_reseller')
-        ->and($reseller->activeSubscription()?->plan_id)->toBe($plan->getKey());
+    expect(auth('reseller')->id())->toBe($user->getKey())
+        ->and($user->email_verified_at)->toBeNull()
+        ->and($user->tenant_id)->toBeNull()
+        ->and($user->canAccessPanel(Filament::getPanel('reseller')))->toBeTrue()
+        ->and(Hash::check('Secure123', $user->password))->toBeTrue()
+        ->and($reseller?->name)->toBe('new_reseller')
+        ->and($reseller?->activeSubscription()?->plan_id)->toBe($plan->getKey());
 });
 
 it('rejects inactive plans during reseller registration', function (): void {
@@ -282,43 +287,42 @@ it('rejects inactive plans during reseller registration', function (): void {
         ->call('register')
         ->assertHasFormErrors(['plan_id']);
 
-    expect(ResellerUser::query()->count())->toBe(0);
+    expect(Reseller::query()->count())->toBe(0)
+        ->and(User::query()->count())->toBe(0);
 });
 
-it('allows a reseller owner to open the reseller dashboard without a current tenant', function (): void {
+it('allows a reseller user to open the reseller dashboard without a current tenant', function (): void {
     $reseller = Reseller::factory()->create();
 
-    actingAs(resellerOwner($reseller), 'reseller');
+    actingAs(resellerUser($reseller), 'reseller');
 
     $this->get('https://reseller.vendra.test')->assertSuccessful();
 });
 
-it('allows a tenant-independent reseller owner to sign in', function (): void {
+it('allows a tenant-independent reseller user to sign in', function (): void {
     $reseller = Reseller::factory()->create();
-    $owner = ResellerUser::factory()->forReseller($reseller)->create([
-        'email' => 'owner@reseller.test',
-    ]);
+    $user = resellerUser($reseller, ['email' => 'user@reseller.test']);
     Filament::setCurrentPanel(Filament::getPanel('reseller'));
 
     livewire(Login::class)
         ->fillForm([
-            'email' => 'owner@reseller.test',
+            'email' => 'user@reseller.test',
             'password' => 'password',
         ])
         ->call('authenticate')
         ->assertHasNoFormErrors();
 
-    expect(auth('reseller')->id())->toBe($owner->getKey())
+    expect(auth('reseller')->id())->toBe($user->getKey())
         ->and(auth()->id())->toBeNull();
 });
 
-it('renders the reseller dashboard with its widgets for an owner', function (): void {
+it('renders the reseller dashboard with its widgets for a user', function (): void {
     $reseller = Reseller::factory()->create();
     Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->maxUnits(3))->create();
     $store = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
     StoreDomain::factory()->for($store)->create(['name' => 'shop.test', 'active' => true]);
 
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
 
     livewire(ResellerOverview::class)
         ->assertOk()
@@ -344,7 +348,7 @@ it('scopes operational store and deployment filters to the authenticated reselle
     StorefrontDeployment::factory()->for($readyStore)->create(['status' => StorefrontDeploymentStatus::Ready]);
     StorefrontDeployment::factory()->for($otherFailedStore)->create(['status' => StorefrontDeploymentStatus::Failed]);
 
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
 
     livewire(ListStores::class)
         ->call('loadTable')
@@ -365,7 +369,7 @@ it('shows reseller quota and operational counts without platform-wide data', fun
     Store::factory()->provisioningFailed()->create(['reseller_id' => $reseller->getKey()]);
     Store::factory()->active()->count(2)->create(['reseller_id' => $otherReseller->getKey()]);
 
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
 
     livewire(ResellerOverview::class)
         ->assertOk()
@@ -378,21 +382,40 @@ it('shows reseller quota and operational counts without platform-wide data', fun
 it('hides subscription and store widgets until the reseller has a store', function (): void {
     $reseller = Reseller::factory()->create();
 
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
 
     expect(SubscriptionDetail::canView())->toBeFalse()
         ->and(LatestStores::canView())->toBeFalse();
 });
 
-it('grants reseller panel access only to reseller owners', function (): void {
+it('grants reseller panel access only to reseller users', function (): void {
     $reseller = Reseller::factory()->create();
-    $owner = resellerOwner($reseller);
+    $user = resellerUser($reseller);
     $regular = vendraTestingModelFactory(testUserModel())->forTenant(createTestTenant())->create();
 
     $panel = Filament::getPanel('reseller');
 
-    expect($owner->canAccessPanel($panel))->toBeTrue()
+    expect($user->canAccessPanel($panel))->toBeTrue()
         ->and($regular->canAccessPanel($panel))->toBeFalse();
+});
+
+it('derives reseller panel access from the membership, not the identity', function (): void {
+    $reseller = Reseller::factory()->create();
+    $user = resellerUser($reseller);
+
+    $panel = Filament::getPanel('reseller');
+
+    expect($user->canAccessPanel($panel))->toBeTrue()
+        ->and(Reseller::forUser($user)?->is($reseller))->toBeTrue();
+
+    DB::table('reseller_users')
+        ->where('reseller_id', $reseller->getKey())
+        ->where('user_id', $user->getKey())
+        ->update(['deleted_at' => now()]);
+
+    expect($user->canAccessPanel($panel))->toBeFalse()
+        ->and(Reseller::forUser($user))->toBeNull()
+        ->and(User::query()->find($user->getKey()))->not->toBeNull();
 });
 
 /*
@@ -404,7 +427,7 @@ it('closes reseller store creation while the platform freeze is on', function ()
     $reseller = Reseller::factory()->create(['active' => true]);
     Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->maxUnits(2))->create();
 
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
 
     expect(StoreResource::canCreate())->toBeTrue();
 
@@ -413,14 +436,14 @@ it('closes reseller store creation while the platform freeze is on', function ()
     expect(StoreResource::canCreate())->toBeFalse();
 });
 
-it('keeps inactive owners in the panel but blocks store operations', function (): void {
+it('keeps inactive users in the panel but blocks store operations', function (): void {
     $reseller = Reseller::factory()->create(['active' => false]);
     Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->maxUnits(2))->create();
     $store = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
 
-    $owner = actAsResellerOwner($reseller);
+    $user = actAsResellerUser($reseller);
 
-    expect($owner->canAccessPanel(Filament::getPanel('reseller')))->toBeTrue()
+    expect($user->canAccessPanel(Filament::getPanel('reseller')))->toBeTrue()
         ->and(StoreResource::canCreate())->toBeFalse();
 
     livewire(ListStores::class)
@@ -428,13 +451,13 @@ it('keeps inactive owners in the panel but blocks store operations', function ()
         ->assertActionHidden(TestAction::make('delete')->table($store));
 });
 
-it('shows an owner only their own reseller stores', function (): void {
+it('shows a user only their own reseller stores', function (): void {
     $resellerA = Reseller::factory()->create();
     $resellerB = Reseller::factory()->create();
     $storeA = Store::factory()->create(['reseller_id' => $resellerA->getKey(), 'active' => true]);
     $storeB = Store::factory()->create(['reseller_id' => $resellerB->getKey(), 'active' => true]);
 
-    actAsResellerOwner($resellerA);
+    actAsResellerUser($resellerA);
 
     livewire(ListStores::class)
         ->call('loadTable')
@@ -443,16 +466,17 @@ it('shows an owner only their own reseller stores', function (): void {
 });
 
 /*
- | Offboarding soft-deletes the Reseller but leaves the ResellerUser able to
- | sign in. A scope written as `where('reseller_id', $maybeNull)` becomes
- | `whereNull` in that state — which is every store the platform owns directly.
+ | Offboarding soft-deletes the Reseller but leaves the user's canonical
+ | identity — and its membership — able to sign in. A scope written as
+ | `where('reseller_id', $maybeNull)` becomes `whereNull` in that state —
+ | which is every store the platform owns directly.
  */
-it('shows an owner nothing once their reseller is gone, platform stores included', function (): void {
+it('shows a user nothing once their reseller is gone, platform stores included', function (): void {
     $reseller = Reseller::factory()->create();
     $ownedStore = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
     $platformStore = Store::factory()->create(['reseller_id' => null, 'active' => true]);
 
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
     resolve(OffboardResellerAction::class)->execute($reseller, 'Contract ended.');
 
     expect(StoreResource::currentResellerId())->toBeNull()
@@ -464,12 +488,12 @@ it('shows an owner nothing once their reseller is gone, platform stores included
         ->assertCanNotSeeTableRecords([$ownedStore, $platformStore]);
 });
 
-it("keeps platform-owned stores out of an active owner's panel", function (): void {
+it("keeps platform-owned stores out of an active user's panel", function (): void {
     $reseller = Reseller::factory()->create();
     $ownedStore = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
     $platformStore = Store::factory()->create(['reseller_id' => null, 'active' => true]);
 
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
 
     expect(StoreResource::getEloquentQuery()->pluck('id')->all())->toBe([$ownedStore->id]);
 
@@ -479,11 +503,11 @@ it("keeps platform-owned stores out of an active owner's panel", function (): vo
         ->assertCanNotSeeTableRecords([$platformStore]);
 });
 
-it('lets an owner create a store within the plan limit', function (): void {
+it('lets a user create a store within the plan limit', function (): void {
     $reseller = Reseller::factory()->create();
     Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->maxUnits(2))->create();
 
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
 
     livewire(CreateStore::class)
         ->fillForm([
@@ -508,7 +532,7 @@ it('lets an owner create a store within the plan limit', function (): void {
 it('requires storefront configuration when a reseller creates a store', function (): void {
     $reseller = Reseller::factory()->create();
     Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->maxUnits(2))->create();
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
 
     livewire(CreateStore::class)
         ->fillForm([
@@ -523,11 +547,11 @@ it('requires storefront configuration when a reseller creates a store', function
         ]);
 });
 
-it('lets an owner soft-delete their own store', function (): void {
+it('lets a user soft-delete their own store', function (): void {
     $reseller = Reseller::factory()->create();
     $store = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
 
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
 
     livewire(ListStores::class)
         ->callAction(TestAction::make('delete')->table($store))
@@ -536,12 +560,12 @@ it('lets an owner soft-delete their own store', function (): void {
     expect($store->fresh()?->trashed())->toBeTrue();
 });
 
-it('lets an owner replace their store domain, keeping the old one as trashed history', function (): void {
+it('lets a user replace their store domain, keeping the old one as trashed history', function (): void {
     $reseller = Reseller::factory()->create();
     $store = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
     StoreDomain::factory()->for($store)->create(['name' => 'old.test', 'active' => true]);
 
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
 
     livewire(ListStores::class)
         ->callAction(TestAction::make('replaceDomain')->table($store), ['domain' => 'new.test'])
@@ -559,7 +583,7 @@ it('validates the replacement domain format and active-domain uniqueness', funct
     $other = Store::factory()->create();
     StoreDomain::factory()->for($other)->create(['name' => 'taken.test', 'active' => true]);
 
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
 
     livewire(ListStores::class)
         ->callAction(TestAction::make('replaceDomain')->table($store), ['domain' => 'not a domain'])
@@ -570,12 +594,12 @@ it('validates the replacement domain format and active-domain uniqueness', funct
         ->assertHasActionErrors(['domain' => 'unique']);
 });
 
-it('blocks an owner from exceeding the plan limit', function (): void {
+it('blocks a user from exceeding the plan limit', function (): void {
     $reseller = Reseller::factory()->create();
     Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->maxUnits(1))->create();
     Store::factory()->create(['reseller_id' => $reseller->getKey()]);
 
-    actAsResellerOwner($reseller);
+    actAsResellerUser($reseller);
 
     livewire(CreateStore::class)
         ->fillForm([

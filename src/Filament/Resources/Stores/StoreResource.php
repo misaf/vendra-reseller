@@ -25,9 +25,9 @@ use Misaf\VendraReseller\Filament\Resources\Stores\Schemas\StoreForm;
 use Misaf\VendraReseller\Filament\Resources\Stores\Schemas\StoreInfolist;
 use Misaf\VendraReseller\Filament\Resources\Stores\Tables\StoreTable;
 use Misaf\VendraReseller\Models\Reseller;
-use Misaf\VendraReseller\Models\ResellerUser;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraStore\Support\StoreCreationPolicy;
+use Misaf\VendraUser\Models\User;
 
 final class StoreResource extends Resource
 {
@@ -55,7 +55,7 @@ final class StoreResource extends Resource
     }
 
     /**
-     * The billing reseller of the currently authenticated owner.
+     * The billing reseller of the currently authenticated user.
      */
     public static function currentResellerId(): ?int
     {
@@ -66,25 +66,25 @@ final class StoreResource extends Resource
     {
         $user = Filament::auth()->user();
 
-        if (! $user instanceof ResellerUser) {
+        if (! $user instanceof User) {
             return null;
         }
 
-        return Reseller::query()->find($user->reseller_id);
+        return Reseller::forUser($user);
     }
 
     /**
-     * Every read of a store in this panel, scoped to the owner's own reseller.
+     * Every read of a store in this panel, scoped to the user's own reseller.
      *
      * The single chokepoint on purpose: the table, the record actions resolve
      * through, and global search all build on this, so scoping the table alone
      * would leave the others open.
      *
-     * An owner with no resolvable reseller sees nothing. That is not a
-     * hypothetical: offboarding soft-deletes the `Reseller` and leaves the
-     * `ResellerUser` able to sign in, and `where('reseller_id', null)` is
-     * `whereNull` to Eloquent — which is every store the platform owns
-     * directly.
+     * A user with no resolvable reseller sees nothing. That is not a
+     * hypothetical: offboarding soft-deletes the `Reseller` while the user's
+     * membership — and canonical identity — stay intact, and
+     * `where('reseller_id', null)` is `whereNull` to Eloquent — which is
+     * every store the platform owns directly.
      *
      * @return Builder<Store>
      */
@@ -107,7 +107,7 @@ final class StoreResource extends Resource
     /**
      * Two halves of the same gate: the platform must be open for new stores at
      * all — the shared rule `vendra-store` owns and the console edits — and the
-     * signed-in owner must still be an active reseller.
+     * signed-in user must still be an active reseller.
      */
     public static function canCreate(): bool
     {

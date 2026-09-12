@@ -1,6 +1,6 @@
 ---
 name: vendra-reseller-development
-description: "Create, modify, review, or test the Vendra Reseller module in packages/vendra-reseller, changing the reseller domain and the reseller self-service panel. Use for Reseller, ResellerUser, CreateResellerAction, CreateResellerOwnerAction, OffboardResellerAction, OffboardResellerBulkAction, ResellerOffboarded, InteractsWithCurrentReseller, ResellerPanelServiceProvider, ResellerServiceProvider, ProvisionStoreCommand, AddResellerToRequestJobContext, TransactionSubscriptionCharger, NotifyActivatedSubscriber, RemindExpiringSubscriber, SuspendSubscriberStores, SubscriptionActivatedNotification, SubscriptionExpiringNotification, StoresSuspendedNotification, ResellerOverview, LatestStores, SubscriptionDetail, and the panel's store resource."
+description: "Create, modify, review, or test the Vendra Reseller module in packages/vendra-reseller, changing the reseller domain and the reseller self-service panel. Use for Reseller, reseller_users memberships, CreateResellerAction, CreateResellerUserAction, OffboardResellerAction, OffboardResellerBulkAction, ResellerOffboarded, InteractsWithCurrentReseller, ResellerPanelServiceProvider, ResellerServiceProvider, ProvisionStoreCommand, AddResellerToRequestJobContext, TransactionSubscriptionCharger, NotifyActivatedSubscriber, RemindExpiringSubscriber, SuspendSubscriberStores, SubscriptionActivatedNotification, SubscriptionExpiringNotification, StoresSuspendedNotification, ResellerOverview, LatestStores, SubscriptionDetail, and the panel's store resource."
 ---
 
 # Vendra Reseller
@@ -33,8 +33,8 @@ description: "Create, modify, review, or test the Vendra Reseller module in pack
 
 ## Reseller Lifecycle
 
-- `Actions\CreateResellerAction` and `Actions\CreateResellerOwnerAction` create the reseller and its first panel user.
-- Owner changes use `UpdateResellerOwnerPasswordAction`, `UpdateResellerOwnerEmailAction`, `SetResellerOwnerAccountEnabledAction`, and `ReplaceResellerOwnerAction`; preserve replaced owners as soft-deleted account history.
+- `Actions\CreateResellerAction` and `Actions\CreateResellerUserAction` create the reseller and its first panel user (a canonical `User` with a `reseller_users` membership, `tenant_id` null).
+- User-account changes use `UpdateResellerUserPasswordAction`, `UpdateResellerUserEmailAction`, `SetResellerUserAccountEnabledAction`, and `ReplaceResellerUserAction`; disable and replacement retire memberships as soft-deleted history while the canonical identity survives.
 - `Actions\OffboardResellerAction` is the only supported removal path. `Reseller::deleting` throws for a reseller that was not offboarded first, and `Events\ResellerOffboarded` is the extension point.
 - `Models\Reseller` implements `SubscriptionSubscriber` and `ShouldLogActivity`. Read quota state through `Misaf\VendraStore\Support\StoreQuota`; do not recompute plan limits inline.
 
@@ -52,7 +52,7 @@ description: "Create, modify, review, or test the Vendra Reseller module in pack
 
 ## Testing
 
-- Build resellers, owners, and subscriptions from the package factories, and assert quota and suspension behaviour through the actions rather than the panel where possible.
+- Build resellers and subscriptions from the package factories and users as canonical users with a membership (`$reseller->users()->attach($user)`); assert quota and suspension behaviour through the actions rather than the panel where possible.
 - Panel tests must not assume a current tenant.
 
 ## Filament

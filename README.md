@@ -1,8 +1,8 @@
 # Vendra Reseller
 
 The reseller domain and the reseller self-service panel for Laravel. A reseller
-is the billing owner of one or more stores: it holds the subscription, the
-plan limits are enforced against it, and its owner manages its stores from
+is billed for one or more stores: it holds the subscription, the
+plan limits are enforced against it, and its user manages its stores from
 its own Filament panel.
 
 A reseller spans several tenants, so **the panel runs outside the tenant
@@ -10,11 +10,16 @@ middleware stack**. There is no current tenant here; everything is scoped by
 reseller.
 
 That scoping lives in one place — `StoreResource::getEloquentQuery()` — because
-the table, the record actions, and global search all build on it. An owner whose
+the table, the record actions, and global search all build on it. A user whose
 reseller cannot be resolved sees nothing at all: offboarding soft-deletes the
-`Reseller` while its `ResellerUser` can still sign in, and `where('reseller_id',
-null)` means `whereNull` to Eloquent, which is every store the platform owns
-directly.
+`Reseller` while the user's canonical identity and membership can still sign
+in, and `where('reseller_id', null)` means `whereNull` to Eloquent, which is
+every store the platform owns directly.
+
+Reseller users are canonical users (`misaf/vendra-user`): `reseller_users` is a
+membership pivot linking a user to its reseller, not a user table. Identity
+columns live on `users`; disabling or replacing a user retires memberships
+while the identity — and any tenant access it holds — stays intact.
 
 ## Requirements
 
@@ -22,7 +27,8 @@ directly.
 - Laravel 13
 - Filament 5
 - `misaf/vendra-store`, `misaf/vendra-subscription`, `misaf/vendra-transaction`,
-  `misaf/vendra-tenant`, `misaf/vendra-localization` and `misaf/vendra-support`
+  `misaf/vendra-tenant`, `misaf/vendra-localization`, `misaf/vendra-user`
+  and `misaf/vendra-support`
 
 ## Installation
 
@@ -31,9 +37,14 @@ composer require misaf/vendra-reseller
 php artisan migrate
 ```
 
-The `resellers` and `reseller_users` tables and the `reseller` guard,
-`reseller_users` provider, and `reseller_password_reset_tokens` broker are
-configured by the host application's `config/auth.php` and migrations.
+The `resellers` table and the `reseller_users` membership pivot are created by
+migrations; the host application's `config/auth.php` points the `reseller`
+guard at the platform-scoped `reseller` provider and the `reseller`
+password broker, which stores its reset tokens in
+`reseller_password_reset_tokens` so neither a tenant user sharing the email nor
+the console panel can consume them. A user may
+enter the panel while holding an active membership — one active membership per
+reseller is enforced, and disabled history is kept as soft-deleted rows.
 
 The panel is served on `reseller.<app host>`, derived from `app.url` — nothing
 here hard-codes a host.
@@ -48,22 +59,24 @@ use Misaf\VendraReseller\Actions\CreateResellerAction;
 $reseller = app(CreateResellerAction::class)->execute(
     plan: $plan,
     username: 'acme',
-    email: 'owner@acme.test',
+    email: 'user@acme.test',
     password: $password,
 );
 ```
 
-This creates the reseller, its first panel user (`CreateResellerOwnerAction`),
+This creates the reseller, its first panel user (`CreateResellerUserAction`),
 and the subscription to the given plan.
 
-### Owner accounts
+### User accounts
 
 Credential and lifecycle changes go through
-`UpdateResellerOwnerPasswordAction`, `UpdateResellerOwnerEmailAction`,
-`SetResellerOwnerAccountEnabledAction`, and `ReplaceResellerOwnerAction`.
-Replacement soft-deletes the previous login as account history and creates the
-new owner through `CreateResellerOwnerAction`; email changes also keep the
-reseller contact email synchronized.
+`UpdateResellerUserPasswordAction`, `UpdateResellerUserEmailAction`,
+`SetResellerUserAccountEnabledAction`, and `ReplaceResellerUserAction`, all
+operating on the canonical `User` and its membership. Replacement retires the
+previous membership as history — the former identity is never deleted — and
+creates the new user through `CreateResellerUserAction`; disabling retires
+the membership so panel access stops while the identity survives; email changes
+also keep the reseller contact email synchronized.
 
 ### Offboarding
 
@@ -120,7 +133,7 @@ php artisan vendra-subscription:provision {name} {domain} {username} {email} \
     [--reseller=] [--plan=] [--password=] [--if-missing] [--seed]
 ```
 
-Provisions a store with its domain, owner user, and role assignment. It calls
+Provisions a store with its domain, administrator user, and role assignment. It calls
 `Misaf\VendraStore\Actions\ProvisionStoreAction` — the reseller-specific
 part is only which reseller is attached (`--reseller`), or created and
 subscribed (`--plan`).
@@ -133,7 +146,7 @@ registers the console command and the event listeners. The split is deliberate.
 
 Store screens are reused, not copied: the panel's resources extend
 `misaf/vendra-store`'s `CreateStorePage`, `StorefrontConfigurationFields`
-and `ReplaceDomainAction`, supplying the authenticated owner as the reseller.
+and `ReplaceDomainAction`, supplying the authenticated user's reseller.
 Resolve the acting reseller with `Filament\Concerns\InteractsWithCurrentReseller`;
 `Http\Middleware\AddResellerToRequestJobContext` carries it into queued work.
 
@@ -142,11 +155,12 @@ remaining capacity, subscription state, and counts for active, provisioning,
 and failed stores. Store listings expose derived store and storefront-deployment
 statuses and filters, with all queries still rooted in
 `StoreResource::getEloquentQuery()`. Runtime administration and container details
-remain platform-owner concerns and are not exposed here.
+remain console concerns and are not exposed here.
 
 ## Testing
 
-Build resellers, owners, and subscriptions from the package factories and assert
+Build resellers from the package factory and users as canonical users with a
+`reseller_users` membership (`$reseller->users()->attach($user)`), then assert
 quota and suspension behaviour through the actions. Panel tests must not assume
 a current tenant.
 

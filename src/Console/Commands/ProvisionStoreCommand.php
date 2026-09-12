@@ -18,14 +18,14 @@ use Misaf\VendraStore\Actions\ProvisionStoreAction;
 use Misaf\VendraStore\Models\StoreDomain;
 use Misaf\VendraSubscription\Models\Plan;
 
-#[Description('Provision a store (tenant) with a domain, owner user, and role assignment')]
+#[Description('Provision a store (tenant) with a domain, administrator user, and role assignment')]
 #[Signature('vendra-subscription:provision
         {name : Tenant name}
         {domain : Tenant domain}
-        {username : Username for the tenant owner}
-        {email : Email address for the tenant owner}
+        {username : Username for the tenant administrator}
+        {email : Email address for the tenant administrator}
         {--if-missing : Skip provisioning when the tenant domain already exists}
-        {--password= : Password for the tenant owner (random when omitted)}
+        {--password= : Password for the tenant administrator (random when omitted)}
         {--reseller= : Attach the store to an existing reseller (id or slug)}
         {--plan= : Create a reseller for this store subscribed to the given plan (id or slug)}
         {--seed : Run default tenant seeders after provisioning}')]
@@ -46,8 +46,8 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
         return [
             'name' => ['Tenant name', 'Acme'],
             'domain' => ['Tenant domain', 'acme.test'],
-            'username' => ['Username for the tenant owner', 'admin_acme'],
-            'email' => ['Email address for the tenant owner', 'admin@acme.test'],
+            'username' => ['Username for the tenant administrator', 'admin_acme'],
+            'email' => ['Email address for the tenant administrator', 'admin@acme.test'],
         ];
     }
 

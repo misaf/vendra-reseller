@@ -6,13 +6,21 @@ use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Misaf\VendraReseller\Models\Reseller;
-use Misaf\VendraReseller\Models\ResellerUser;
 use Misaf\VendraSubscription\Actions\ActivateSubscriptionAction;
 use Misaf\VendraSubscription\Enums\SubscriptionPaymentStatus;
 use Misaf\VendraSubscription\Enums\SubscriptionStatus;
 use Misaf\VendraSubscription\Jobs\ProcessSubscriptionPayment;
 use Misaf\VendraSubscription\Models\Subscription;
 use Misaf\VendraSubscription\Models\SubscriptionPayment;
+use Misaf\VendraUser\Models\User;
+
+function paymentPayerFor(Reseller $reseller): User
+{
+    $payer = User::factory()->create(['tenant_id' => null]);
+    $reseller->users()->attach($payer->getKey());
+
+    return $payer;
+}
 
 it('is registered as not tenant aware so it survives dispatch from host-level flows without a current tenant', function (): void {
     expect(config('multitenancy.not_tenant_aware_jobs'))->toContain(ProcessSubscriptionPayment::class);
@@ -21,7 +29,7 @@ it('is registered as not tenant aware so it survives dispatch from host-level fl
 it('requeues stale payment operations and paid subscriptions awaiting activation', function (): void {
     Queue::fake();
     $reseller = Reseller::factory()->create();
-    $payer = ResellerUser::factory()->forReseller($reseller)->create();
+    $payer = paymentPayerFor($reseller);
     $pendingSubscription = Subscription::factory()
         ->forSubscriber($reseller)
         ->create(['status' => SubscriptionStatus::PendingPayment]);
@@ -53,7 +61,7 @@ it('requeues stale payment operations and paid subscriptions awaiting activation
 
 it('marks an exhausted payment for reconciliation without treating an ambiguous outcome as failed', function (): void {
     $reseller = Reseller::factory()->create();
-    $payer = ResellerUser::factory()->forReseller($reseller)->create();
+    $payer = paymentPayerFor($reseller);
     $subscription = Subscription::factory()
         ->forSubscriber($reseller)
         ->create(['status' => SubscriptionStatus::PendingPayment]);
@@ -73,7 +81,7 @@ it('marks an exhausted payment for reconciliation without treating an ambiguous 
 it('activates a paid subscription idempotently', function (): void {
     Notification::fake();
     $reseller = Reseller::factory()->create();
-    $payer = ResellerUser::factory()->forReseller($reseller)->create();
+    $payer = paymentPayerFor($reseller);
     $current = Subscription::factory()->forSubscriber($reseller)->create();
     $replacement = Subscription::factory()
         ->forSubscriber($reseller)

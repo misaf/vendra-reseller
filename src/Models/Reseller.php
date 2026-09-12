@@ -11,19 +11,21 @@ use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Misaf\VendraReseller\Database\Factories\ResellerFactory;
 use Misaf\VendraReseller\Observers\ResellerObserver;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSubscription\Contracts\SubscriptionSubscriber;
 use Misaf\VendraSubscription\Models\Subscription;
 use Misaf\VendraSupport\Contracts\ShouldLogActivity;
+use Misaf\VendraUser\Models\User;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
@@ -70,7 +72,7 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     }
 
     /**
-     * Route mail notifications to the reseller owner's email.
+     * Route mail notifications to the reseller's contact email.
      */
     public function routeNotificationForMail(): ?string
     {
@@ -78,9 +80,9 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     }
 
     /**
-     * Whether the reseller has an owner contact to notify.
+     * Whether the reseller has a contact email to notify.
      */
-    public function hasOwnerContact(): bool
+    public function hasContactEmail(): bool
     {
         return $this->email !== null;
     }
@@ -134,11 +136,69 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     }
 
     /**
-     * @return HasOne<ResellerUser, $this>
+     * Canonical users holding an active membership in this reseller.
+     *
+     * Identity lives on `users`; this pivot only records who may act for
+     * the reseller. Disabled and replaced users stay in the table as
+     * soft-deleted rows, so this relation resolves the active user only.
+     *
+     * @return BelongsToMany<User, $this>
      */
-    public function ownerUser(): HasOne
+    public function users(): BelongsToMany
     {
-        return $this->hasOne(ResellerUser::class);
+        return $this->belongsToMany(User::class, 'reseller_users')
+            ->wherePivotNull('deleted_at')
+            ->withTimestamps();
+    }
+
+    /**
+     * The reseller's current user, if the single active membership exists.
+     *
+     * Not a relation — reach for {@see users()} when you need the pivot.
+     */
+    public function user(): ?User
+    {
+        return $this->users()->first();
+    }
+
+    /**
+     * The user of the latest membership, including disabled history.
+     *
+     * Used by the console to re-enable a disabled user account.
+     */
+    public function latestUser(): ?User
+    {
+        $membership = DB::table('reseller_users')
+            ->where('reseller_id', $this->getKey())
+            ->orderByDesc('id')
+            ->first();
+
+        if ($membership === null) {
+            return null;
+        }
+
+        return User::query()->find($membership->user_id);
+    }
+
+    /**
+     * Resolve the reseller the given user currently acts for, if any.
+     *
+     * A user with no active membership — or whose reseller was offboarded —
+     * resolves to null and therefore sees nothing in the reseller panel.
+     */
+    public static function forUser(User $user): ?self
+    {
+        $membership = DB::table('reseller_users')
+            ->where('user_id', $user->getKey())
+            ->whereNull('deleted_at')
+            ->orderBy('id')
+            ->first();
+
+        if ($membership === null) {
+            return null;
+        }
+
+        return self::query()->find($membership->reseller_id);
     }
 
     /**
@@ -157,14 +217,14 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
         return $this->active;
     }
 
-    public function notifyOwner(Notification $notification): void
+    public function notifyContact(Notification $notification): void
     {
         $this->notify($notification);
     }
 
-    public function subscriptionPayer(): ?ResellerUser
+    public function subscriptionPayer(): ?User
     {
-        return $this->ownerUser()->first();
+        return $this->user();
     }
 
     public function subscribedUnitCount(): int

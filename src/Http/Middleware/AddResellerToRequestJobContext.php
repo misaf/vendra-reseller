@@ -7,10 +7,11 @@ namespace Misaf\VendraReseller\Http\Middleware;
 use Closure;
 use Illuminate\Contracts\Auth\Factory;
 use Illuminate\Http\Request;
-use Misaf\VendraReseller\Models\ResellerUser;
+use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSupport\Context\ContextKeys;
 use Misaf\VendraSupport\Context\RequestJobContext;
+use Misaf\VendraUser\Models\User;
 use Symfony\Component\HttpFoundation\Response;
 
 final readonly class AddResellerToRequestJobContext
@@ -24,8 +25,8 @@ final readonly class AddResellerToRequestJobContext
     {
         $resellerUser = $this->auth->guard('reseller')->user();
         $tenant = Store::current();
-        $resellerId = $resellerUser instanceof ResellerUser
-            ? $resellerUser->reseller_id
+        $resellerId = $resellerUser instanceof User
+            ? Reseller::forUser($resellerUser)?->getKey()
             : ($tenant instanceof Store ? $tenant->reseller_id : null);
 
         new RequestJobContext(

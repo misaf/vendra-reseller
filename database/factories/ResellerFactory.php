@@ -30,7 +30,7 @@ final class ResellerFactory extends Factory
         ];
     }
 
-    public function withoutOwner(): static
+    public function withoutContactEmail(): static
     {
         return $this->state(fn (): array => [
             'email' => null,

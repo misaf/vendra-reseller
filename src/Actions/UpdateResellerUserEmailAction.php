@@ -8,20 +8,20 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Misaf\VendraReseller\Models\Reseller;
-use Misaf\VendraReseller\Models\ResellerUser;
+use Misaf\VendraUser\Models\User;
 
-final class UpdateResellerOwnerEmailAction
+final class UpdateResellerUserEmailAction
 {
-    public function execute(ResellerUser $owner, string $email, bool $verified = true): ResellerUser
+    public function execute(Reseller $reseller, User $user, string $email, bool $verified = true): User
     {
-        return DB::transaction(function () use ($owner, $email, $verified): ResellerUser {
+        return DB::transaction(function () use ($reseller, $user, $email, $verified): User {
             $lockedReseller = Reseller::query()
-                ->whereKey($owner->reseller_id)
+                ->whereKey($reseller->getKey())
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $lockedOwner = ResellerUser::query()
-                ->whereKey($owner->getKey())
+            $lockedOwner = User::query()
+                ->whereKey($user->getKey())
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -29,7 +29,7 @@ final class UpdateResellerOwnerEmailAction
                 'email' => [
                     'required',
                     'email',
-                    Rule::unique(ResellerUser::class, 'email')
+                    Rule::unique(User::class, 'email')
                         ->withoutTrashed()
                         ->ignore($lockedOwner->getKey()),
                 ],

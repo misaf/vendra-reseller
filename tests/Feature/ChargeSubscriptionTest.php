@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Misaf\VendraReseller\Models\Reseller;
-use Misaf\VendraReseller\Models\ResellerUser;
 use Misaf\VendraReseller\Support\TransactionSubscriptionCharger;
 use Misaf\VendraSubscription\Actions\ChargeSubscriptionAction;
 use Misaf\VendraSubscription\Actions\SubscribeAction;
@@ -30,6 +29,7 @@ use Misaf\VendraTransaction\Enums\TransactionTypeEnum;
 use Misaf\VendraTransaction\Facades\WalletResolver;
 use Misaf\VendraTransaction\Models\Transaction;
 use Misaf\VendraTransaction\Services\TransactionGatewayRegistry as TransactionGatewayRegistryClass;
+use Misaf\VendraUser\Models\User;
 
 function fakeSubscriptionCharger(
     SubscriptionChargeStatus $status = SubscriptionChargeStatus::Paid,
@@ -85,10 +85,11 @@ function fakeSubscriptionCharger(
     return $charger;
 }
 
-function resellerWithOwner(): Reseller
+function resellerWithUser(): Reseller
 {
     $reseller = Reseller::factory()->create();
-    ResellerUser::factory()->forReseller($reseller)->create();
+    $user = User::factory()->create(['tenant_id' => null]);
+    $reseller->users()->attach($user->getKey());
 
     return $reseller;
 }
@@ -103,7 +104,7 @@ function processSubscriptionPayment(SubscriptionPayment $payment): void
 it('persists and processes a paid subscription without holding a database transaction during collection', function (): void {
     Queue::fake();
     $charger = fakeSubscriptionCharger();
-    $reseller = resellerWithOwner();
+    $reseller = resellerWithUser();
     $oldSubscription = Subscription::factory()->forSubscriber($reseller)->create();
     $plan = Plan::factory()->priced(1_500, 'USD')->create();
     Context::add(RequestJobContext::TRACE_ID, 'outer-trace');
@@ -167,7 +168,7 @@ it('collects an internal subscription payment only once and settles it before re
 it('does not create a payment for a free plan', function (): void {
     Queue::fake();
     fakeSubscriptionCharger();
-    $reseller = resellerWithOwner();
+    $reseller = resellerWithUser();
 
     $subscription = resolve(SubscribeAction::class)->execute($reseller, Plan::factory()->create());
 
@@ -179,7 +180,7 @@ it('does not create a payment for a free plan', function (): void {
 it('persists a paid trial payment but defers collection until the trial ends', function (): void {
     Queue::fake();
     fakeSubscriptionCharger();
-    $reseller = resellerWithOwner();
+    $reseller = resellerWithUser();
     $subscription = resolve(SubscribeAction::class)->execute(
         $reseller,
         Plan::factory()->priced(1_500, 'USD')->trialDays(14)->create(),
@@ -195,7 +196,7 @@ it('persists a paid trial payment but defers collection until the trial ends', f
 it('rejects a paid subscription when no payment provider is available', function (): void {
     Queue::fake();
     fakeSubscriptionCharger(available: false);
-    $reseller = resellerWithOwner();
+    $reseller = resellerWithUser();
 
     expect(fn () => resolve(SubscribeAction::class)->execute(
         $reseller,
@@ -220,7 +221,7 @@ it('rejects a paid subscription when the reseller has no payer', function (): vo
 it('keeps the existing subscription active when payment is declined', function (): void {
     Queue::fake();
     fakeSubscriptionCharger(SubscriptionChargeStatus::Failed);
-    $reseller = resellerWithOwner();
+    $reseller = resellerWithUser();
     $current = Subscription::factory()->forSubscriber($reseller)->create();
     $replacement = resolve(SubscribeAction::class)->execute(
         $reseller,
@@ -240,7 +241,7 @@ it('keeps the existing subscription active when payment is declined', function (
 it('marks an active trial past due when its deferred payment is declined', function (): void {
     Queue::fake();
     fakeSubscriptionCharger(SubscriptionChargeStatus::Failed);
-    $reseller = resellerWithOwner();
+    $reseller = resellerWithUser();
     $subscription = resolve(SubscribeAction::class)->execute(
         $reseller,
         Plan::factory()->priced(1_500, 'USD')->trialDays(14)->create(),
@@ -257,7 +258,7 @@ it('marks an active trial past due when its deferred payment is declined', funct
 it('rejects overlapping subscription changes while a payment is unresolved', function (): void {
     Queue::fake();
     fakeSubscriptionCharger();
-    $reseller = resellerWithOwner();
+    $reseller = resellerWithUser();
     resolve(SubscribeAction::class)->execute(
         $reseller,
         Plan::factory()->priced(1_500, 'USD')->create(),

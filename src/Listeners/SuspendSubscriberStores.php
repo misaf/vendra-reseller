@@ -11,7 +11,7 @@ use Misaf\VendraSubscription\Events\SubscriptionGraceExpired;
 
 /**
  * Suspends a subscriber's active stores after explicit cancellation or once
- * its grace period expires, and notifies the owner. Suspending concrete units
+ * its grace period expires, and notifies the contact. Suspending concrete units
  * remains a host-specific reaction.
  */
 final class SuspendSubscriberStores
@@ -26,8 +26,8 @@ final class SuspendSubscriberStores
 
         $count = $subscriber->suspendActiveUnits();
 
-        if ($count > 0 && $subscriber->hasOwnerContact()) {
-            $subscriber->notifyOwner(new StoresSuspendedNotification($count));
+        if ($count > 0 && $subscriber->hasContactEmail()) {
+            $subscriber->notifyContact(new StoresSuspendedNotification($count));
         }
     }
 }

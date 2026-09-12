@@ -16,7 +16,7 @@ use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
 
-it('notifies the owner when a subscription is activated', function (): void {
+it('notifies the contact when a subscription is activated', function (): void {
     Notification::fake();
 
     $reseller = Reseller::factory()->create();
@@ -26,17 +26,17 @@ it('notifies the owner when a subscription is activated', function (): void {
     Notification::assertSentTo($reseller, SubscriptionActivatedNotification::class);
 });
 
-it('does not notify a reseller without an owner contact', function (): void {
+it('does not notify a reseller without a contact email', function (): void {
     Notification::fake();
 
-    $reseller = Reseller::factory()->withoutOwner()->create();
+    $reseller = Reseller::factory()->withoutContactEmail()->create();
 
     resolve(SubscribeAction::class)->execute($reseller, Plan::factory()->create());
 
     Notification::assertNothingSent();
 });
 
-it('reminds the owner once about a soon-to-expire subscription', function (): void {
+it('reminds the contact once about a soon-to-expire subscription', function (): void {
     Notification::fake();
 
     $reseller = Reseller::factory()->create();
@@ -53,7 +53,7 @@ it('reminds the owner once about a soon-to-expire subscription', function (): vo
     expect($subscription->refresh()->expiry_reminder_sent_at)->not->toBeNull();
 });
 
-it('notifies the owner when properties are suspended', function (): void {
+it('notifies the contact when properties are suspended', function (): void {
     Notification::fake();
 
     $reseller = Reseller::factory()->create();
@@ -70,7 +70,7 @@ it('notifies the owner when properties are suspended', function (): void {
     Notification::assertSentToTimes($reseller, StoresSuspendedNotification::class, 1);
 });
 
-it('suspends stores immediately when an operator cancels the subscription', function (): void {
+it('suspends stores immediately when the console cancels the subscription', function (): void {
     Notification::fake();
 
     $reseller = Reseller::factory()->create();

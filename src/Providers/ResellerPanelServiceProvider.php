@@ -29,7 +29,7 @@ use Misaf\VendraSupport\Http\Middleware\AddPanelToRequestJobContext;
 /**
  * The reseller (self-service) panel.
  *
- * A reseller owner manages their own billing reseller here: they see their
+ * A reseller user manages their own billing reseller here: they see their
  * subscription and create/list stores within their plan's quota. It runs
  * outside the tenant middleware because a reseller spans multiple stores.
  */
@@ -53,7 +53,7 @@ final class ResellerPanelServiceProvider extends PanelProvider
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->homeUrl('/')
             ->authGuard('reseller')
-            ->authPasswordBroker('reseller_users')
+            ->authPasswordBroker('reseller')
             ->domain('reseller.'.Uri::of(config()->string('app.url'))->host())
             ->login(Login::class)
             ->registration(Register::class)
