@@ -37,7 +37,7 @@ final class OffboardResellerAction extends DeleteAction
                     return false;
                 }
 
-                $offboardReseller->execute($record, $reason);
+                $offboardReseller->execute($record, mb_trim($reason));
 
                 return true;
             });

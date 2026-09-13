@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Queue\Attributes\Timeout;
 use Illuminate\Queue\Attributes\Tries;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Misaf\VendraReseller\Models\Reseller;
@@ -106,11 +107,11 @@ it('uses a unique bounded job for each durable payment operation', function (): 
     $job = new ProcessSubscriptionPayment(123);
 
     $attribute = function (string $attributeClass): object {
-        $attributes = (new ReflectionClass(ProcessSubscriptionPayment::class))->getAttributes($attributeClass);
+        $attributes = new ReflectionClass(ProcessSubscriptionPayment::class)->getAttributes($attributeClass);
 
         expect($attributes)->toHaveCount(1);
 
-        return $attributes[0]->newInstance();
+        return Arr::get($attributes, 0)->newInstance();
     };
 
     expect($job)->toBeInstanceOf(ShouldBeUnique::class)

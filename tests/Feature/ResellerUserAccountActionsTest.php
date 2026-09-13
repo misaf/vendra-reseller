@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Hash;
 use Misaf\VendraReseller\Actions\ReplaceResellerUserAction;
 use Misaf\VendraReseller\Actions\SetResellerUserAccountEnabledAction;
 use Misaf\VendraReseller\Actions\UpdateResellerUserEmailAction;
-use Misaf\VendraReseller\Actions\UpdateResellerUserPasswordAction;
 use Misaf\VendraReseller\Models\Reseller;
+use Misaf\VendraUser\Actions\UpdateUserPasswordAction;
 use Misaf\VendraUser\Models\User;
 
 function resellerUserFor(Reseller $reseller, array $attributes = []): User
@@ -37,7 +37,7 @@ it('updates a reseller user password and invalidates remember tokens', function 
     $user = resellerUserFor($reseller);
     $rememberToken = $user->getRememberToken();
 
-    resolve(UpdateResellerUserPasswordAction::class)->execute($user, 'NewSecure123');
+    resolve(UpdateUserPasswordAction::class)->execute($user, 'NewSecure123');
 
     $user->refresh();
 

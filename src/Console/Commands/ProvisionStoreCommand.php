@@ -153,7 +153,7 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
             return false;
         }
 
-        $domain = (string) $this->argument('domain');
+        $domain = StoreDomain::normalizeDomain((string) $this->argument('domain'));
 
         if (! StoreDomain::query()->where('name', $domain)->exists()) {
             return false;
@@ -203,7 +203,7 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
     {
         $input = [
             'name' => $this->argument('name'),
-            'domain' => $this->argument('domain'),
+            'domain' => StoreDomain::normalizeDomain((string) $this->argument('domain')),
             'username' => $this->argument('username'),
             'email' => $this->argument('email'),
         ];
@@ -211,9 +211,7 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
         $validator = Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
             'domain' => [
-                'required',
-                'string',
-                'max:255',
+                ...StoreDomain::activeDomainRules(),
                 Rule::unique('store_domains', 'name')->withoutTrashed(),
             ],
             'username' => ['required', 'string', 'max:255'],

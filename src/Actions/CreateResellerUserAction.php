@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Actions;
 
-use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use LogicException;
 use Misaf\VendraReseller\Models\Reseller;
+use Misaf\VendraUser\Actions\CreateUserAction;
 use Misaf\VendraUser\Models\User;
 
-final class CreateResellerUserAction
+final readonly class CreateResellerUserAction
 {
+    public function __construct(private CreateUserAction $createUserAction) {}
+
     public function execute(
         Reseller $reseller,
         string $username,
@@ -36,23 +37,13 @@ final class CreateResellerUserAction
             | identity. Email and username uniqueness across platform-level
             | users is enforced by the users table's global guards.
             */
-            $user = User::query()->create([
-                'tenant_id' => null,
-                'username' => $username,
-                'email' => $email,
-                'email_verified_at' => $emailVerified ? Date::now() : null,
-                'password' => Hash::make($password),
-            ]);
-
-            if ($user->tenant_id !== null) {
-                /*
-                | The tenant hook stamps the current tenant when there is one
-                | (tests, future callers inside tenant middleware). A reseller
-                | user is a platform-level identity and must never belong to
-                | a tenant, so the stamp is reverted on the same transaction.
-                */
-                $user->forceFill(['tenant_id' => null])->save();
-            }
+            $user = $this->createUserAction->execute(
+                tenant: null,
+                username: $username,
+                email: $email,
+                password: $password,
+                isVerified: $emailVerified,
+            );
 
             $lockedReseller->users()->attach($user->getKey());
 

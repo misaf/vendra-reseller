@@ -39,6 +39,8 @@ final class OffboardResellerBulkAction extends DeleteBulkAction
                     return;
                 }
 
+                $reason = mb_trim($reason);
+
                 $records->each(function (Model $record) use ($offboardReseller, $reason): void {
                     if (! $record instanceof Reseller) {
                         return;

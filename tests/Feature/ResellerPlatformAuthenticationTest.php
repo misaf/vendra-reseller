@@ -197,7 +197,7 @@ it('routes the reseller password reset flow to the platform identity and store',
     | container hands the page rather than naming the host class here. The
     | plain token only survives on the signed reset URL.
     */
-    $notificationClass = app(ResetPasswordNotification::class)::class;
+    $notificationClass = resolve(ResetPasswordNotification::class)::class;
 
     $token = null;
 

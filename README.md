@@ -69,10 +69,11 @@ and the subscription to the given plan.
 
 ### User accounts
 
-Credential and lifecycle changes go through
-`UpdateResellerUserPasswordAction`, `UpdateResellerUserEmailAction`,
-`SetResellerUserAccountEnabledAction`, and `ReplaceResellerUserAction`, all
-operating on the canonical `User` and its membership. Replacement retires the
+Password changes go through `vendra-user`'s `UpdateUserPasswordAction`, which
+handles tenant-less users. Other credential and lifecycle changes go through
+`UpdateResellerUserEmailAction`, `SetResellerUserAccountEnabledAction`, and
+`ReplaceResellerUserAction`, all operating on the canonical `User` and its
+membership. Replacement retires the
 previous membership as history — the former identity is never deleted — and
 creates the new user through `CreateResellerUserAction`; disabling retires
 the membership so panel access stops while the identity survives; email changes
