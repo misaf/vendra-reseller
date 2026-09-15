@@ -49,23 +49,23 @@ final class ResellerOverview extends StatsOverviewWidget
         )->exists();
 
         return [
-            Stat::make(__('console.subscription_summary'), self::subscriptionLabel($subscription))
+            Stat::make(__('vendra-reseller::attributes.subscription_summary'), self::subscriptionLabel($subscription))
                 ->icon(Heroicon::OutlinedCheckBadge)
                 ->color(self::subscriptionColor($subscription)),
 
-            Stat::make(__('console.store_capacity'), "{$used} / ".($remaining + $used))
-                ->description(__('console.remaining_stores').': '.$remaining)
+            Stat::make(__('vendra-reseller::attributes.store_capacity'), "{$used} / ".($remaining + $used))
+                ->description(__('vendra-reseller::attributes.remaining_stores').': '.$remaining)
                 ->icon(Heroicon::OutlinedRectangleStack)
                 ->color($remaining <= 0 ? 'danger' : 'primary')
                 ->url(StoreResource::getUrl('index')),
 
-            Stat::make(__('console.active_stores'), $active)
+            Stat::make(__('vendra-reseller::attributes.active_stores'), $active)
                 ->icon(Heroicon::OutlinedCheckCircle)
                 ->color('success')
                 ->url(self::storeStatusUrl(StoreStatus::Active)),
 
-            Stat::make(__('console.stores_needing_attention'), $needsAttention)
-                ->description(__('console.stores_provisioning').': '.$provisioning.' · '.__('console.failed_stores').': '.$failed)
+            Stat::make(__('vendra-reseller::attributes.stores_needing_attention'), $needsAttention)
+                ->description(__('vendra-reseller::attributes.stores_provisioning').': '.$provisioning.' · '.__('vendra-reseller::attributes.failed_stores').': '.$failed)
                 ->icon(Heroicon::OutlinedExclamationTriangle)
                 ->color($needsAttention > 0 ? 'danger' : 'gray')
                 ->url(StoreResource::getUrl('index', [
@@ -74,7 +74,7 @@ final class ResellerOverview extends StatsOverviewWidget
                     ],
                 ])),
 
-            Stat::make(__('console.storefronts_ready'), $hasReadyStorefront ? __('console.yes') : __('console.no'))
+            Stat::make(__('vendra-reseller::attributes.storefronts_ready'), $hasReadyStorefront ? __('vendra-reseller::attributes.yes') : __('vendra-reseller::attributes.no'))
                 ->icon(Heroicon::OutlinedRocketLaunch)
                 ->color($hasReadyStorefront ? 'success' : 'gray')
                 ->url(StoreResource::getUrl('index', [
@@ -88,18 +88,18 @@ final class ResellerOverview extends StatsOverviewWidget
     private static function subscriptionLabel(?Subscription $subscription): string
     {
         if (! $subscription instanceof Subscription) {
-            return __('console.no_active_subscription');
+            return __('vendra-reseller::attributes.no_active_subscription');
         }
 
         if ($subscription->status === SubscriptionStatus::Active) {
             if ($subscription->isOnTrial()) {
-                return __('console.trial_until', ['date' => $subscription->trial_ends_at?->format('Y-m-d') ?? '']);
+                return __('vendra-reseller::attributes.trial_until', ['date' => $subscription->trial_ends_at?->format('Y-m-d') ?? '']);
             }
 
-            return $subscription->plan?->name ?? __('console.status_active');
+            return $subscription->plan?->name ?? __('vendra-reseller::attributes.status_active');
         }
 
-        return __("console.status_{$subscription->status->value}");
+        return __("vendra-reseller::attributes.status_{$subscription->status->value}");
     }
 
     private static function subscriptionColor(?Subscription $subscription): string

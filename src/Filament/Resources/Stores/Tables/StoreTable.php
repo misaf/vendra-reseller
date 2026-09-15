@@ -19,7 +19,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Config;
-use Misaf\VendraReseller\Filament\Resources\Stores\Actions\ReplaceDomainAction;
+use Misaf\VendraReseller\Filament\Resources\Stores\Actions\ReplaceDomainTableAction;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
 use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
 use Misaf\VendraStore\Enums\StoreStatus;
@@ -38,34 +38,34 @@ final class StoreTable
                     ->sortable(['id']),
 
                 TextColumn::make('name')
-                    ->label(__('console.name'))
+                    ->label(__('vendra-reseller::attributes.name'))
                     ->icon(Heroicon::Tag)
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('domain')
-                    ->label(__('console.domain'))
+                    ->label(__('vendra-reseller::attributes.domain'))
                     ->icon(Heroicon::GlobeAlt)
                     ->state(fn (Store $record): ?string => $record->domains->first()?->name)
                     ->placeholder('—'),
 
                 TextColumn::make('storefront_status')
-                    ->label(__('console.storefront_status'))
+                    ->label(__('vendra-reseller::attributes.storefront_status'))
                     ->badge()
                     ->state(fn (Store $record): ?string => self::deployment($record)?->status->value)
-                    ->placeholder(__('console.storefront_not_requested')),
+                    ->placeholder(__('vendra-reseller::attributes.storefront_not_requested')),
 
                 TextColumn::make('admin_url')
-                    ->label(__('console.admin_url'))
+                    ->label(__('vendra-reseller::attributes.admin_url'))
                     ->icon(Heroicon::OutlinedBuildingOffice2)
                     ->state(fn (Store $record): string => 'https://'.$record->slug.'.'.Config::string('vendra-tenant.central_host'))
                     ->url(fn (Store $record): string => 'https://'.$record->slug.'.'.Config::string('vendra-tenant.central_host'))
                     ->openUrlInNewTab()
                     ->copyable()
-                    ->copyMessage(__('console.url_copied')),
+                    ->copyMessage(__('vendra-reseller::messages.url_copied')),
 
                 TextColumn::make('storefront_url')
-                    ->label(__('console.storefront_url'))
+                    ->label(__('vendra-reseller::attributes.storefront_url'))
                     ->icon(Heroicon::OutlinedShoppingBag)
                     ->state(fn (Store $record): ?string => self::deployment($record)?->domain)
                     ->placeholder('—')
@@ -74,17 +74,17 @@ final class StoreTable
                         : 'https://'.self::deployment($record)?->domain)
                     ->openUrlInNewTab()
                     ->copyable()
-                    ->copyMessage(__('console.url_copied')),
+                    ->copyMessage(__('vendra-reseller::messages.url_copied')),
 
                 TextColumn::make('status')
-                    ->label(__('console.operational_status'))
+                    ->label(__('vendra-reseller::attributes.operational_status'))
                     ->badge()
                     ->state(fn (Store $record): string => $record->status()->value)
-                    ->formatStateUsing(fn (string $state): string => __("console.store_status_{$state}")),
+                    ->formatStateUsing(fn (string $state): string => __("vendra-reseller::attributes.store_status_{$state}")),
 
                 TextColumn::make('created_at')
                     ->extraCellAttributes(['dir' => 'ltr'])
-                    ->label(__('console.created_at'))
+                    ->label(__('vendra-reseller::attributes.created_at'))
                     ->sinceTooltip()
                     ->sortable()
                     ->when(
@@ -95,7 +95,7 @@ final class StoreTable
 
                 TextColumn::make('updated_at')
                     ->extraCellAttributes(['dir' => 'ltr'])
-                    ->label(__('console.updated_at'))
+                    ->label(__('vendra-reseller::attributes.updated_at'))
                     ->sinceTooltip()
                     ->when(
                         app()->isLocale('fa'),
@@ -103,16 +103,16 @@ final class StoreTable
                         fn (TextColumn $column) => $column->dateTime('Y-m-d H:i')
                     ),
             ])
-            ->description(__('console.tables.description.stores'))
-            ->emptyStateHeading(__('console.tables.empty_state.heading.stores'))
-            ->emptyStateDescription(__('console.tables.empty_state.description.stores'))
+            ->description(__('vendra-reseller::tables.description.stores'))
+            ->emptyStateHeading(__('vendra-reseller::tables.empty_state.heading.stores'))
+            ->emptyStateDescription(__('vendra-reseller::tables.empty_state.description.stores'))
             ->emptyStateIcon(Heroicon::OutlinedGlobeAlt)
             ->filters(
                 [
                     TernaryFilter::make('active')
-                        ->label(__('console.active'))
-                        ->trueLabel(__('console.active'))
-                        ->falseLabel(__('console.inactive'))
+                        ->label(__('vendra-reseller::attributes.active'))
+                        ->trueLabel(__('vendra-reseller::attributes.active'))
+                        ->falseLabel(__('vendra-reseller::attributes.inactive'))
                         ->queries(
                             true: fn (Builder $query): Builder => $query->where('active', true),
                             false: fn (Builder $query): Builder => $query->where('active', false),
@@ -120,7 +120,7 @@ final class StoreTable
                         ),
 
                     SelectFilter::make('status')
-                        ->label(__('console.operational_status'))
+                        ->label(__('vendra-reseller::attributes.operational_status'))
                         ->options(self::statusOptions())
                         ->query(function (Builder $query, array $data): Builder {
                             $value = Arr::get($data, 'value', null);
@@ -130,7 +130,7 @@ final class StoreTable
                         }),
 
                     SelectFilter::make('storefront_status')
-                        ->label(__('console.storefront_status'))
+                        ->label(__('vendra-reseller::attributes.storefront_status'))
                         ->options(self::deploymentStatusOptions())
                         ->query(function (Builder $query, array $data): Builder {
                             $value = Arr::get($data, 'value', null);
@@ -151,7 +151,7 @@ final class StoreTable
                     ViewAction::make(),
                     EditAction::make(),
                     ActionGroup::make([
-                        ReplaceDomainAction::make(),
+                        ReplaceDomainTableAction::make(),
                     ])->dropdown(false),
                     ActionGroup::make([
                         DeleteAction::make()
@@ -181,7 +181,7 @@ final class StoreTable
     {
         return collect(StoreStatus::cases())
             ->mapWithKeys(fn (StoreStatus $status): array => [
-                $status->value => __("console.store_status_{$status->value}"),
+                $status->value => __("vendra-reseller::attributes.store_status_{$status->value}"),
             ])
             ->all();
     }
@@ -191,7 +191,7 @@ final class StoreTable
     {
         return collect(StorefrontDeploymentStatus::cases())
             ->mapWithKeys(fn (StorefrontDeploymentStatus $status): array => [
-                $status->value => __("console.deployment_status_{$status->value}"),
+                $status->value => __("vendra-reseller::attributes.deployment_status_{$status->value}"),
             ])
             ->all();
     }

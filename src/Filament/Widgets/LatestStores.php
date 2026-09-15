@@ -26,7 +26,7 @@ final class LatestStores extends BaseWidget
 
     public static function getHeading(): ?string
     {
-        return __('console.stores');
+        return __('vendra-reseller::navigation.stores');
     }
 
     public static function canView(): bool
@@ -47,25 +47,25 @@ final class LatestStores extends BaseWidget
                 ]))
             ->columns([
                 TextColumn::make('name')
-                    ->label(__('console.name'))
+                    ->label(__('vendra-reseller::attributes.name'))
                     ->icon(Heroicon::Tag)
                     ->searchable(),
 
                 TextColumn::make('domain')
-                    ->label(__('console.domain'))
+                    ->label(__('vendra-reseller::attributes.domain'))
                     ->icon(Heroicon::GlobeAlt)
                     ->state(fn (Store $record): ?string => $record->domains->first()?->name)
                     ->placeholder('—'),
 
                 TextColumn::make('status')
-                    ->label(__('console.operational_status'))
+                    ->label(__('vendra-reseller::attributes.operational_status'))
                     ->badge()
                     ->state(fn (Store $record): string => $record->status()->value)
-                    ->formatStateUsing(fn (string $state): string => __("console.store_status_{$state}")),
+                    ->formatStateUsing(fn (string $state): string => __("vendra-reseller::attributes.store_status_{$state}")),
 
                 TextColumn::make('created_at')
                     ->extraCellAttributes(['dir' => 'ltr'])
-                    ->label(__('console.created_at'))
+                    ->label(__('vendra-reseller::attributes.created_at'))
                     ->sinceTooltip()
                     ->sortable()
                     ->when(

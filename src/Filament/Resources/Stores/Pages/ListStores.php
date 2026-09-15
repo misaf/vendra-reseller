@@ -20,7 +20,7 @@ final class ListStores extends ListRecords
 
         return $remaining === null
             ? null
-            : __('console.remaining_stores').': '.$remaining;
+            : __('vendra-reseller::attributes.remaining_stores').': '.$remaining;
     }
 
     protected function getHeaderActions(): array

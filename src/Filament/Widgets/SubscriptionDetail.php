@@ -34,32 +34,32 @@ final class SubscriptionDetail extends StatsOverviewWidget
 
             if ($latestSubscription instanceof Subscription) {
                 return [
-                    Stat::make(__('console.subscription_status'), __("console.status_{$latestSubscription->status->value}"))
+                    Stat::make(__('vendra-reseller::attributes.subscription_status'), __("vendra-reseller::attributes.status_{$latestSubscription->status->value}"))
                         ->icon(Heroicon::OutlinedCheckBadge)
                         ->color($this->statusColor($latestSubscription->status))
-                        ->description(__('console.ends_at').': '.($latestSubscription->ends_at?->format('Y-m-d') ?? __('console.never'))),
+                        ->description(__('vendra-reseller::attributes.ends_at').': '.($latestSubscription->ends_at?->format('Y-m-d') ?? __('vendra-reseller::attributes.never'))),
                 ];
             }
 
             return [
-                Stat::make(__('console.subscription_status'), __('console.no_active_subscription'))
+                Stat::make(__('vendra-reseller::attributes.subscription_status'), __('vendra-reseller::attributes.no_active_subscription'))
                     ->icon(Heroicon::OutlinedExclamationCircle)
                     ->color('gray'),
             ];
         }
 
         return [
-            Stat::make(__('console.subscription_status'), __("console.status_{$subscription->status->value}"))
+            Stat::make(__('vendra-reseller::attributes.subscription_status'), __("vendra-reseller::attributes.status_{$subscription->status->value}"))
                 ->icon(Heroicon::OutlinedCheckBadge)
                 ->color($this->statusColor($subscription->status)),
 
-            Stat::make(__('console.trial'), $subscription->isOnTrial() && $subscription->trial_ends_at !== null
-                ? __('console.trial_until', ['date' => $subscription->trial_ends_at->format('Y-m-d')])
-                : __('console.no_trial'))
+            Stat::make(__('vendra-reseller::attributes.trial'), $subscription->isOnTrial() && $subscription->trial_ends_at !== null
+                ? __('vendra-reseller::attributes.trial_until', ['date' => $subscription->trial_ends_at->format('Y-m-d')])
+                : __('vendra-reseller::attributes.no_trial'))
                 ->icon(Heroicon::OutlinedClock)
                 ->color($subscription->isOnTrial() ? 'info' : 'gray'),
 
-            Stat::make(__('console.renews_on'), $subscription->ends_at?->format('Y-m-d') ?? __('console.never'))
+            Stat::make(__('vendra-reseller::attributes.renews_on'), $subscription->ends_at?->format('Y-m-d') ?? __('vendra-reseller::attributes.never'))
                 ->icon(Heroicon::OutlinedCalendarDays),
         ];
     }

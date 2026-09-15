@@ -10,19 +10,19 @@ use Illuminate\Support\Arr;
 use Misaf\VendraReseller\Actions\OffboardResellerAction as DomainOffboardResellerAction;
 use Misaf\VendraReseller\Models\Reseller;
 
-final class OffboardResellerAction extends DeleteAction
+final class OffboardResellerTableAction extends DeleteAction
 {
     protected function setUp(): void
     {
         parent::setUp();
 
         $this
-            ->label(__('console.offboard_reseller'))
-            ->modalHeading(__('console.offboard_reseller'))
-            ->modalDescription(__('console.offboard_reseller_description'))
+            ->label(__('vendra-reseller::actions.offboard_reseller'))
+            ->modalHeading(__('vendra-reseller::actions.offboard_reseller'))
+            ->modalDescription(__('vendra-reseller::messages.offboard_reseller_description'))
             ->schema([
                 Textarea::make('offboarding_reason')
-                    ->label(__('console.offboarding_reason'))
+                    ->label(__('vendra-reseller::attributes.offboarding_reason'))
                     ->required()
                     ->maxLength(DomainOffboardResellerAction::MAX_REASON_LENGTH),
             ])

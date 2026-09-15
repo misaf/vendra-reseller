@@ -36,7 +36,7 @@ final class Register extends \Filament\Auth\Pages\Register
     protected function getUsernameFormComponent(): Component
     {
         return TextInput::make('username')
-            ->label(__('console.username'))
+            ->label(__('vendra-reseller::attributes.username'))
             ->autofocus()
             ->minLength(3)
             ->maxLength(12)
@@ -51,7 +51,7 @@ final class Register extends \Filament\Auth\Pages\Register
     protected function getEmailFormComponent(): Component
     {
         return TextInput::make('email')
-            ->label(__('console.email'))
+            ->label(__('vendra-reseller::attributes.email'))
             ->email()
             ->maxLength(255)
             ->required()
@@ -77,7 +77,7 @@ final class Register extends \Filament\Auth\Pages\Register
     protected function getPlanFormComponent(): Component
     {
         return Select::make('plan_id')
-            ->label(__('console.subscription_plan'))
+            ->label(__('vendra-reseller::attributes.subscription_plan'))
             ->options(fn (): array => Plan::query()->active()->pluck('name', 'id')->all())
             ->rule(Rule::exists(Plan::class, 'id')->where('active', true))
             ->required()

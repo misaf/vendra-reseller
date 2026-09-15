@@ -104,9 +104,9 @@ it('uses the package table presentation conventions for stores', function (): vo
         ->assertTableColumnExists('updated_at');
     $table = $component->instance()->getTable();
 
-    expect($table->getDescription())->toBe(__('console.tables.description.stores'))
-        ->and($table->getEmptyStateHeading())->toBe(__('console.tables.empty_state.heading.stores'))
-        ->and($table->getEmptyStateDescription())->toBe(__('console.tables.empty_state.description.stores'))
+    expect($table->getDescription())->toBe(__('vendra-reseller::tables.description.stores'))
+        ->and($table->getEmptyStateHeading())->toBe(__('vendra-reseller::tables.empty_state.heading.stores'))
+        ->and($table->getEmptyStateDescription())->toBe(__('vendra-reseller::tables.empty_state.description.stores'))
         ->and($table->getEmptyStateIcon())->toBe(Heroicon::OutlinedGlobeAlt)
         ->and($table->getFiltersLayout())->toBe(FiltersLayout::AboveContentCollapsible);
 });
@@ -135,9 +135,9 @@ it('globally searches only the authenticated reseller stores', function (): void
     expect($result->title)->toBe($store->name)
         ->and($result->url)->toBe(StoreResource::getUrl('view', ['record' => $store]))
         ->and($result->details)->toBe([
-            __('console.domain') => 'owned-global-search.test',
+            __('vendra-reseller::attributes.domain') => 'owned-global-search.test',
         ])
-        ->and($action->getLabel())->toBe(__('console.admin_url'))
+        ->and($action->getLabel())->toBe(__('vendra-reseller::attributes.admin_url'))
         ->and($action->getUrl())->toBe(
             'https://'.$store->slug.'.'.Config::string('vendra-tenant.central_host'),
         )
@@ -330,7 +330,7 @@ it('renders the reseller dashboard with its widgets for a user', function (): vo
 
     livewire(SubscriptionDetail::class)
         ->assertOk()
-        ->assertSee(__('console.status_active'));
+        ->assertSee(__('vendra-reseller::attributes.status_active'));
 
     livewire(LatestStores::class)
         ->call('loadTable')
@@ -374,9 +374,9 @@ it('shows reseller quota and operational counts without platform-wide data', fun
     livewire(ResellerOverview::class)
         ->assertOk()
         ->assertSee('2 / 3')
-        ->assertSee(__('console.remaining_stores').': 1')
-        ->assertSee(__('console.active_stores'))
-        ->assertSee(__('console.failed_stores'));
+        ->assertSee(__('vendra-reseller::attributes.remaining_stores').': 1')
+        ->assertSee(__('vendra-reseller::attributes.active_stores'))
+        ->assertSee(__('vendra-reseller::attributes.failed_stores'));
 });
 
 it('hides subscription and store widgets until the reseller has a store', function (): void {

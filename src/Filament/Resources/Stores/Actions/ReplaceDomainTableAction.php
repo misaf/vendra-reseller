@@ -6,9 +6,9 @@ namespace Misaf\VendraReseller\Filament\Resources\Stores\Actions;
 
 use Closure;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
-use Misaf\VendraStore\Filament\Actions\ReplaceDomainAction as BaseReplaceDomainAction;
+use Misaf\VendraStore\Filament\Actions\ReplaceDomainTableAction as BaseReplaceDomainTableAction;
 
-final class ReplaceDomainAction extends BaseReplaceDomainAction
+final class ReplaceDomainTableAction extends BaseReplaceDomainTableAction
 {
     /**
      * @return Closure(): bool

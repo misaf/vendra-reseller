@@ -18,36 +18,36 @@ final class StoreInfolist
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make(__('console.store_identity'))
+            Section::make(__('vendra-reseller::attributes.store_identity'))
                 ->schema([
                     Grid::make(3)->schema([
-                        TextEntry::make('name')->label(__('console.name')),
-                        TextEntry::make('slug')->label(__('console.slug'))->copyable(),
-                        TextEntry::make('active_domain')->label(__('console.domain'))
+                        TextEntry::make('name')->label(__('vendra-reseller::attributes.name')),
+                        TextEntry::make('slug')->label(__('vendra-reseller::attributes.slug'))->copyable(),
+                        TextEntry::make('active_domain')->label(__('vendra-reseller::attributes.domain'))
                             ->state(fn (Store $record): ?string => $record->domains->first()?->name)->placeholder('—'),
-                        TextEntry::make('admin_url')->label(__('console.admin_url'))
+                        TextEntry::make('admin_url')->label(__('vendra-reseller::attributes.admin_url'))
                             ->state(fn (Store $record): string => 'https://'.$record->slug.'.'.Config::string('vendra-tenant.central_host'))
                             ->url(fn (Store $record): string => 'https://'.$record->slug.'.'.Config::string('vendra-tenant.central_host'))
                             ->openUrlInNewTab()->copyable(),
-                        IconEntry::make('active')->label(__('console.active'))->boolean(),
+                        IconEntry::make('active')->label(__('vendra-reseller::attributes.active'))->boolean(),
                     ]),
-                    TextEntry::make('description')->label(__('console.description'))->placeholder('—')->columnSpanFull(),
+                    TextEntry::make('description')->label(__('vendra-reseller::attributes.description'))->placeholder('—')->columnSpanFull(),
                 ])->columnSpanFull(),
-            Section::make(__('console.storefront_configuration'))
+            Section::make(__('vendra-reseller::attributes.storefront_configuration'))
                 ->schema([
                     Grid::make(3)->schema([
-                        TextEntry::make('store_status')->label(__('console.operational_status'))
+                        TextEntry::make('store_status')->label(__('vendra-reseller::attributes.operational_status'))
                             ->badge()->state(fn (Store $record): string => $record->status()->value)
-                            ->formatStateUsing(fn (string $state): string => __("console.store_status_{$state}")),
-                        TextEntry::make('deployment_status')->label(__('console.storefront_status'))
+                            ->formatStateUsing(fn (string $state): string => __("vendra-reseller::attributes.store_status_{$state}")),
+                        TextEntry::make('deployment_status')->label(__('vendra-reseller::attributes.storefront_status'))
                             ->badge()->state(fn (Store $record): ?string => self::deployment($record)?->status->value)
-                            ->formatStateUsing(fn (string $state): string => __("console.deployment_status_{$state}"))
-                            ->placeholder(__('console.storefront_not_requested')),
-                        TextEntry::make('desired_state')->label(__('console.desired_state'))
+                            ->formatStateUsing(fn (string $state): string => __("vendra-reseller::attributes.deployment_status_{$state}"))
+                            ->placeholder(__('vendra-reseller::attributes.storefront_not_requested')),
+                        TextEntry::make('desired_state')->label(__('vendra-reseller::attributes.desired_state'))
                             ->state(fn (Store $record): ?string => self::deployment($record)?->desired_state->value)
                             ->placeholder('—'),
                     ]),
-                    TextEntry::make('provisioning_error')->label(__('console.provisioning_error'))
+                    TextEntry::make('provisioning_error')->label(__('vendra-reseller::attributes.provisioning_error'))
                         ->visible(fn (Store $record): bool => filled($record->provisioning_error))
                         ->color('danger')->columnSpanFull(),
                 ])->columnSpanFull(),

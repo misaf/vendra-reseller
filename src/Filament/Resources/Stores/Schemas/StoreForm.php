@@ -19,13 +19,13 @@ final class StoreForm
         return $schema
             ->components([
                 TextInput::make('name')
-                    ->label(__('console.name'))
+                    ->label(__('vendra-reseller::attributes.name'))
                     ->required()
                     ->maxLength(255)
                     ->visibleOn('edit'),
 
                 Textarea::make('description')
-                    ->label(__('console.description'))
+                    ->label(__('vendra-reseller::attributes.description'))
                     ->rows(4)
                     ->maxLength(2000)
                     ->visibleOn('edit')
@@ -33,8 +33,8 @@ final class StoreForm
 
                 TextInput::make('domain')
                     ->afterStateUpdated(fn (Livewire $livewire) => $livewire->validateOnly('data.domain'))
-                    ->helperText(__('console.domain_helper_text'))
-                    ->label(__('console.domain'))
+                    ->helperText(__('vendra-reseller::attributes.domain_helper_text'))
+                    ->label(__('vendra-reseller::attributes.domain'))
                     ->live(onBlur: true)
                     ->maxLength(255)
                     ->required()
@@ -46,7 +46,7 @@ final class StoreForm
 
                 TextInput::make('email')
                     ->afterStateUpdated(fn (Livewire $livewire) => $livewire->validateOnly('data.email'))
-                    ->label(__('console.email'))
+                    ->label(__('vendra-reseller::attributes.email'))
                     ->email()
                     ->extraAttributes(['dir' => 'ltr'])
                     ->live(onBlur: true)

@@ -52,7 +52,7 @@ describe('reseller overview subscription status', function (): void {
 
         livewire(ResellerOverview::class)
             ->assertOk()
-            ->assertSee(__('console.subscription_summary'))
+            ->assertSee(__('vendra-reseller::attributes.subscription_summary'))
             ->assertSee('Professional');
     });
 
@@ -70,7 +70,7 @@ describe('reseller overview subscription status', function (): void {
 
         livewire(ResellerOverview::class)
             ->assertOk()
-            ->assertSee(__('console.trial_until', ['date' => now()->addDays(10)->format('Y-m-d')]));
+            ->assertSee(__('vendra-reseller::attributes.trial_until', ['date' => now()->addDays(10)->format('Y-m-d')]));
     });
 
     it('shows no active subscription for expired subscriptions', function (): void {
@@ -85,7 +85,7 @@ describe('reseller overview subscription status', function (): void {
 
         livewire(ResellerOverview::class)
             ->assertOk()
-            ->assertSee(__('console.no_active_subscription'));
+            ->assertSee(__('vendra-reseller::attributes.no_active_subscription'));
     });
 
     it('shows no active subscription for past due subscriptions', function (): void {
@@ -100,7 +100,7 @@ describe('reseller overview subscription status', function (): void {
 
         livewire(ResellerOverview::class)
             ->assertOk()
-            ->assertSee(__('console.no_active_subscription'));
+            ->assertSee(__('vendra-reseller::attributes.no_active_subscription'));
     });
 
     it('shows no active subscription when reseller has none', function (): void {
@@ -110,7 +110,7 @@ describe('reseller overview subscription status', function (): void {
 
         livewire(ResellerOverview::class)
             ->assertOk()
-            ->assertSee(__('console.no_active_subscription'));
+            ->assertSee(__('vendra-reseller::attributes.no_active_subscription'));
     });
 });
 
@@ -127,7 +127,7 @@ describe('reseller overview store capacity', function (): void {
 
         livewire(ResellerOverview::class)
             ->assertOk()
-            ->assertSee(__('console.store_capacity'))
+            ->assertSee(__('vendra-reseller::attributes.store_capacity'))
             ->assertSee('2 / 5');
     });
 
@@ -163,8 +163,8 @@ describe('reseller overview store readiness', function (): void {
 
         livewire(ResellerOverview::class)
             ->assertOk()
-            ->assertSee(__('console.active_stores'))
-            ->assertSee(__('console.stores_needing_attention'));
+            ->assertSee(__('vendra-reseller::attributes.active_stores'))
+            ->assertSee(__('vendra-reseller::attributes.stores_needing_attention'));
     });
 
     it('shows zero attention required when all stores are active', function (): void {
@@ -179,7 +179,7 @@ describe('reseller overview store readiness', function (): void {
 
         livewire(ResellerOverview::class)
             ->assertOk()
-            ->assertSee(__('console.stores_needing_attention'))
+            ->assertSee(__('vendra-reseller::attributes.stores_needing_attention'))
             ->assertSee('0');
     });
 });
@@ -200,7 +200,7 @@ describe('reseller overview storefront status', function (): void {
 
         livewire(ResellerOverview::class)
             ->assertOk()
-            ->assertSee(__('console.storefronts_ready'));
+            ->assertSee(__('vendra-reseller::attributes.storefronts_ready'));
     });
 });
 
@@ -212,7 +212,7 @@ describe('reseller subscription detail widget', function (): void {
 
         livewire(SubscriptionDetail::class)
             ->assertOk()
-            ->assertSee(__('console.subscription_status'));
+            ->assertSee(__('vendra-reseller::attributes.subscription_status'));
     });
 
     it('shows cancelled status for cancelled subscriptions', function (): void {
@@ -226,7 +226,7 @@ describe('reseller subscription detail widget', function (): void {
 
         livewire(SubscriptionDetail::class)
             ->assertOk()
-            ->assertSee(__('console.status_cancelled'));
+            ->assertSee(__('vendra-reseller::attributes.status_cancelled'));
     });
 
     it('shows expired status for expired subscriptions via latest subscription', function (): void {
@@ -241,7 +241,7 @@ describe('reseller subscription detail widget', function (): void {
 
         livewire(SubscriptionDetail::class)
             ->assertOk()
-            ->assertSee(__('console.status_expired'));
+            ->assertSee(__('vendra-reseller::attributes.status_expired'));
     });
 
     it('shows past due status for past due subscriptions via latest subscription', function (): void {
@@ -256,7 +256,7 @@ describe('reseller subscription detail widget', function (): void {
 
         livewire(SubscriptionDetail::class)
             ->assertOk()
-            ->assertSee(__('console.status_past_due'));
+            ->assertSee(__('vendra-reseller::attributes.status_past_due'));
     });
 
     it('shows trial information when subscription is on trial', function (): void {
@@ -273,7 +273,7 @@ describe('reseller subscription detail widget', function (): void {
 
         livewire(SubscriptionDetail::class)
             ->assertOk()
-            ->assertSee(__('console.trial_until', ['date' => now()->addDays(7)->format('Y-m-d')]));
+            ->assertSee(__('vendra-reseller::attributes.trial_until', ['date' => now()->addDays(7)->format('Y-m-d')]));
     });
 
     it('shows no trial when subscription is active but not on trial', function (): void {
@@ -289,7 +289,7 @@ describe('reseller subscription detail widget', function (): void {
 
         livewire(SubscriptionDetail::class)
             ->assertOk()
-            ->assertSee(__('console.no_trial'));
+            ->assertSee(__('vendra-reseller::attributes.no_trial'));
     });
 });
 
@@ -328,7 +328,7 @@ describe('reseller latest stores widget', function (): void {
 
         livewire(LatestStores::class)
             ->assertOk()
-            ->assertSee(__('console.stores'));
+            ->assertSee(__('vendra-reseller::navigation.stores'));
     });
 });
 
@@ -358,7 +358,7 @@ describe('reseller dashboard subscription widget colors', function (): void {
 
         livewire(SubscriptionDetail::class)
             ->assertOk()
-            ->assertSee(__('console.status_past_due'));
+            ->assertSee(__('vendra-reseller::attributes.status_past_due'));
     });
 
     it('uses gray color when no subscription exists', function (): void {
@@ -368,6 +368,6 @@ describe('reseller dashboard subscription widget colors', function (): void {
 
         livewire(SubscriptionDetail::class)
             ->assertOk()
-            ->assertSee(__('console.no_active_subscription'));
+            ->assertSee(__('vendra-reseller::attributes.no_active_subscription'));
     });
 });

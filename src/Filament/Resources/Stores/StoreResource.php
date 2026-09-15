@@ -41,17 +41,17 @@ final class StoreResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return __('console.store');
+        return __('vendra-reseller::navigation.store');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return __('console.stores');
+        return __('vendra-reseller::navigation.stores');
     }
 
     public static function getNavigationLabel(): string
     {
-        return __('console.stores');
+        return __('vendra-reseller::navigation.stores');
     }
 
     /**
@@ -165,7 +165,7 @@ final class StoreResource extends Resource
         $domainName = $store->domains->pluck('name')->first();
 
         return [
-            __('console.domain') => is_string($domainName) ? $domainName : '—',
+            __('vendra-reseller::attributes.domain') => is_string($domainName) ? $domainName : '—',
         ];
     }
 
@@ -178,7 +178,7 @@ final class StoreResource extends Resource
 
         return [
             Action::make('openAdmin')
-                ->label(__('console.admin_url'))
+                ->label(__('vendra-reseller::attributes.admin_url'))
                 ->url(
                     'https://'.$store->slug.'.'.Config::string('vendra-tenant.central_host'),
                     shouldOpenInNewTab: true,
