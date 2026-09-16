@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Filament\Widgets;
 
-use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
+use Misaf\VendraStore\Filament\Tables\Columns\StoreDomainColumn;
+use Misaf\VendraStore\Filament\Tables\Columns\StoreStatusColumn;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSupport\Filament\Tables\Columns\CreatedAtColumn;
 use Misaf\VendraSupport\Filament\Tables\Columns\NameColumn;
@@ -51,17 +51,9 @@ final class LatestStores extends BaseWidget
                 NameColumn::make()
                     ->searchable(),
 
-                TextColumn::make('domain')
-                    ->label(__('vendra-reseller::attributes.domain'))
-                    ->icon(Heroicon::GlobeAlt)
-                    ->state(fn (Store $record): ?string => $record->domains->first()?->name)
-                    ->placeholder('—'),
+                StoreDomainColumn::make(),
 
-                TextColumn::make('status')
-                    ->label(__('vendra-reseller::attributes.operational_status'))
-                    ->badge()
-                    ->state(fn (Store $record): string => $record->status()->value)
-                    ->formatStateUsing(fn (string $state): string => __("vendra-reseller::attributes.store_status_{$state}")),
+                StoreStatusColumn::make(),
 
                 CreatedAtColumn::make()
                     ->sortable(),
