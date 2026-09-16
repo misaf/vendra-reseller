@@ -24,6 +24,7 @@ use Misaf\VendraStore\Enums\StoreStatus;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraStore\Models\StorefrontDeployment;
 use Misaf\VendraSupport\Filament\Tables\Columns\CreatedAtColumn;
+use Misaf\VendraSupport\Filament\Tables\Columns\NameColumn;
 use Misaf\VendraSupport\Filament\Tables\Columns\RowIndexColumn;
 use Misaf\VendraSupport\Filament\Tables\Columns\UpdatedAtColumn;
 use Misaf\VendraSupport\Filament\Tables\Filters\IsActiveFilter;
@@ -36,9 +37,7 @@ final class StoreTable
             ->columns([
                 RowIndexColumn::make(),
 
-                TextColumn::make('name')
-                    ->label(__('vendra-reseller::attributes.name'))
-                    ->icon(Heroicon::Tag)
+                NameColumn::make()
                     ->searchable()
                     ->sortable(),
 

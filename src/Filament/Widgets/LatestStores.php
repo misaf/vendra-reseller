@@ -14,6 +14,7 @@ use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSupport\Filament\Tables\Columns\CreatedAtColumn;
+use Misaf\VendraSupport\Filament\Tables\Columns\NameColumn;
 
 final class LatestStores extends BaseWidget
 {
@@ -47,9 +48,7 @@ final class LatestStores extends BaseWidget
                     'domains' => fn (Relation $relation): Relation => $relation->where('active', true),
                 ]))
             ->columns([
-                TextColumn::make('name')
-                    ->label(__('vendra-reseller::attributes.name'))
-                    ->icon(Heroicon::Tag)
+                NameColumn::make()
                     ->searchable(),
 
                 TextColumn::make('domain')
