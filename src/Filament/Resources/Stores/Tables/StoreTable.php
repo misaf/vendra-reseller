@@ -14,7 +14,6 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
@@ -27,6 +26,7 @@ use Misaf\VendraStore\Models\StorefrontDeployment;
 use Misaf\VendraSupport\Filament\Tables\Columns\CreatedAtColumn;
 use Misaf\VendraSupport\Filament\Tables\Columns\RowIndexColumn;
 use Misaf\VendraSupport\Filament\Tables\Columns\UpdatedAtColumn;
+use Misaf\VendraSupport\Filament\Tables\Filters\IsActiveFilter;
 
 final class StoreTable
 {
@@ -90,15 +90,7 @@ final class StoreTable
             ->emptyStateIcon(Heroicon::OutlinedGlobeAlt)
             ->filters(
                 [
-                    TernaryFilter::make('active')
-                        ->label(__('vendra-reseller::attributes.active'))
-                        ->trueLabel(__('vendra-reseller::attributes.active'))
-                        ->falseLabel(__('vendra-reseller::attributes.inactive'))
-                        ->queries(
-                            true: fn (Builder $query): Builder => $query->where('active', true),
-                            false: fn (Builder $query): Builder => $query->where('active', false),
-                            blank: fn (Builder $query): Builder => $query,
-                        ),
+                    IsActiveFilter::make(),
 
                     SelectFilter::make('status')
                         ->label(__('vendra-reseller::attributes.operational_status'))

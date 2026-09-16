@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Filament\Resources\Stores\Schemas;
 
-use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -12,6 +11,7 @@ use Filament\Schemas\Schema;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraStore\Models\StorefrontDeployment;
 use Misaf\VendraSupport\Filament\Infolists\Components\DescriptionEntry;
+use Misaf\VendraSupport\Filament\Infolists\Components\IsActiveEntry;
 use Misaf\VendraSupport\Filament\Infolists\Components\NameEntry;
 use Misaf\VendraSupport\Filament\Infolists\Components\SlugEntry;
 
@@ -31,7 +31,7 @@ final class StoreInfolist
                             ->state(fn (Store $record): string => $record->adminUrl())
                             ->url(fn (Store $record): string => $record->adminUrl())
                             ->openUrlInNewTab()->copyable(),
-                        IconEntry::make('active')->label(__('vendra-reseller::attributes.active'))->boolean(),
+                        IsActiveEntry::make(),
                     ]),
                     DescriptionEntry::make()->placeholder('—'),
                 ])->columnSpanFull(),
