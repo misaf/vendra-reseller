@@ -69,7 +69,7 @@ final class StoreResource extends Resource
             return null;
         }
 
-        return Reseller::forUser($user);
+        return self::resellerFor($user);
     }
 
     /**
@@ -98,7 +98,7 @@ final class StoreResource extends Resource
         return parent::getEloquentQuery()
             ->where('reseller_id', $resellerId)
             ->with([
-                'storefrontDeployments' => fn (Relation $relation): Relation => $relation->orderByDesc('id'),
+                'storefrontDeployments',
                 'domains' => fn (Relation $relation): Relation => $relation->where('active', true),
             ]);
     }
@@ -200,6 +200,15 @@ final class StoreResource extends Resource
             'view' => ViewStore::route('/{record}'),
             'edit' => EditStore::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Resolved once per request and user: the query scope, the create gate and
+     * the list page each ask for the reseller while rendering one page.
+     */
+    private static function resellerFor(User $user): ?Reseller
+    {
+        return once(fn (): ?Reseller => Reseller::forUser($user));
     }
 
     private static function store(Model $record): Store

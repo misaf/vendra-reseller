@@ -7,7 +7,6 @@ namespace Misaf\VendraReseller\Filament\Resources\Stores\Pages;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
-use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraStore\Support\StoreQuota;
 
 final class ListStores extends ListRecords
@@ -33,18 +32,10 @@ final class ListStores extends ListRecords
 
     private function remainingStores(): ?int
     {
-        $resellerId = StoreResource::currentResellerId();
+        return once(function (): ?int {
+            $reseller = StoreResource::currentReseller();
 
-        if ($resellerId === null) {
-            return null;
-        }
-
-        $reseller = Reseller::query()->find($resellerId);
-
-        if ($reseller === null) {
-            return null;
-        }
-
-        return resolve(StoreQuota::class)->remainingStores($reseller);
+            return $reseller === null ? null : resolve(StoreQuota::class)->remainingStores($reseller);
+        });
     }
 }
