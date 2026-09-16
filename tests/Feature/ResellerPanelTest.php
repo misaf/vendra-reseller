@@ -104,9 +104,9 @@ it('uses the package table presentation conventions for stores', function (): vo
         ->assertTableColumnExists('updated_at');
     $table = $component->instance()->getTable();
 
-    expect($table->getDescription())->toBe(__('vendra-store::tables.description.stores'))
-        ->and($table->getEmptyStateHeading())->toBe(__('vendra-store::tables.empty_state.heading.stores'))
-        ->and($table->getEmptyStateDescription())->toBe(__('vendra-store::tables.empty_state.description.stores'))
+    expect($table->getDescription())->toBe(__('vendra-reseller::tables.description.stores'))
+        ->and($table->getEmptyStateHeading())->toBe(__('vendra-reseller::tables.empty_state.heading.stores'))
+        ->and($table->getEmptyStateDescription())->toBe(__('vendra-reseller::tables.empty_state.description.stores'))
         ->and($table->getEmptyStateIcon())->toBe(Heroicon::OutlinedGlobeAlt)
         ->and($table->getFiltersLayout())->toBe(FiltersLayout::AboveContentCollapsible);
 });
@@ -538,8 +538,6 @@ it('requires storefront configuration when a reseller creates a store', function
         ->fillForm([
             'domain' => 'required-storefront.test',
             'email' => 'admin@required-storefront.test',
-            'storefront_slug' => null,
-            'storefront_name_en' => null,
         ])
         ->call('create')
         ->assertHasFormErrors([

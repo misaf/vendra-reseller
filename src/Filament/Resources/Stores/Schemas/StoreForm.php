@@ -4,21 +4,45 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Filament\Resources\Stores\Schemas;
 
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 use Livewire\Component as Livewire;
 use Misaf\LaravelEmailVerification\Rules\EmailValidation;
-use Misaf\VendraStore\Filament\Forms\Components\StoreDomainInput;
-use Misaf\VendraStore\Filament\Resources\Stores\Schemas\StoreForm as BaseStoreForm;
+use Misaf\VendraStore\Filament\Schemas\StorefrontConfigurationFields;
+use Misaf\VendraStore\Models\StoreDomain;
 
 final class StoreForm
 {
     public static function configure(Schema $schema): Schema
     {
-        return BaseStoreForm::configure(
-            $schema,
-            creationFields: [
-                StoreDomainInput::make(),
+        return $schema
+            ->components([
+                TextInput::make('name')
+                    ->label(__('vendra-reseller::attributes.name'))
+                    ->required()
+                    ->maxLength(255)
+                    ->visibleOn('edit'),
+
+                Textarea::make('description')
+                    ->label(__('vendra-reseller::attributes.description'))
+                    ->rows(4)
+                    ->maxLength(2000)
+                    ->visibleOn('edit')
+                    ->columnSpanFull(),
+
+                TextInput::make('domain')
+                    ->afterStateUpdated(fn (Livewire $livewire) => $livewire->validateOnly('data.domain'))
+                    ->helperText(__('vendra-reseller::attributes.domain_helper_text'))
+                    ->label(__('vendra-reseller::attributes.domain'))
+                    ->live(onBlur: true)
+                    ->maxLength(255)
+                    ->required()
+                    ->rules(StoreDomain::activeDomainRules())
+                    ->dehydrateStateUsing(fn (?string $state): ?string => $state === null
+                        ? null
+                        : StoreDomain::normalizeDomain($state))
+                    ->visibleOn('create'),
 
                 TextInput::make('email')
                     ->afterStateUpdated(fn (Livewire $livewire) => $livewire->validateOnly('data.email'))
@@ -34,8 +58,9 @@ final class StoreForm
                         new EmailValidation,
                     ])
                     ->visibleOn('create'),
-            ],
-            storefrontIsOptional: false,
-        );
+
+                ...StorefrontConfigurationFields::make(optional: false),
+            ])
+            ->columns(2);
     }
 }
