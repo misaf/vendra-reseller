@@ -12,7 +12,6 @@ use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
 use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
 use Misaf\VendraStore\Enums\StoreStatus;
-use Misaf\VendraStore\Filament\Concerns\BuildsDailyTrend;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraStore\Support\StoreQuota;
 use Misaf\VendraSubscription\Enums\SubscriptionStatus;
@@ -20,7 +19,6 @@ use Misaf\VendraSubscription\Models\Subscription;
 
 final class ResellerOverview extends StatsOverviewWidget
 {
-    use BuildsDailyTrend;
     use InteractsWithCurrentReseller;
 
     protected static ?int $sort = 1;

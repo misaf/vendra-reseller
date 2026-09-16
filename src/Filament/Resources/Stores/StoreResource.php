@@ -15,7 +15,6 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Support\Facades\Config;
 use InvalidArgumentException;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\CreateStore;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\EditStore;
@@ -180,7 +179,7 @@ final class StoreResource extends Resource
             Action::make('openAdmin')
                 ->label(__('vendra-reseller::attributes.admin_url'))
                 ->url(
-                    'https://'.$store->slug.'.'.Config::string('vendra-tenant.central_host'),
+                    $store->adminUrl(),
                     shouldOpenInNewTab: true,
                 ),
         ];

@@ -139,7 +139,7 @@ it('globally searches only the authenticated reseller stores', function (): void
         ])
         ->and($action->getLabel())->toBe(__('vendra-reseller::attributes.admin_url'))
         ->and($action->getUrl())->toBe(
-            'https://'.$store->slug.'.'.Config::string('vendra-tenant.central_host'),
+            'https://'.$store->slug.'.admin.'.Config::string('vendra-tenant.central_host'),
         )
         ->and($action->shouldOpenUrlInNewTab())->toBeTrue()
         ->and(StoreResource::getGlobalSearchResults($otherStore->name))->toBeEmpty()

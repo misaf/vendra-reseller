@@ -9,7 +9,6 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Config;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraStore\Models\StorefrontDeployment;
 
@@ -26,8 +25,8 @@ final class StoreInfolist
                         TextEntry::make('active_domain')->label(__('vendra-reseller::attributes.domain'))
                             ->state(fn (Store $record): ?string => $record->domains->first()?->name)->placeholder('—'),
                         TextEntry::make('admin_url')->label(__('vendra-reseller::attributes.admin_url'))
-                            ->state(fn (Store $record): string => 'https://'.$record->slug.'.'.Config::string('vendra-tenant.central_host'))
-                            ->url(fn (Store $record): string => 'https://'.$record->slug.'.'.Config::string('vendra-tenant.central_host'))
+                            ->state(fn (Store $record): string => $record->adminUrl())
+                            ->url(fn (Store $record): string => $record->adminUrl())
                             ->openUrlInNewTab()->copyable(),
                         IconEntry::make('active')->label(__('vendra-reseller::attributes.active'))->boolean(),
                     ]),
