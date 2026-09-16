@@ -91,6 +91,17 @@ app(OffboardResellerAction::class)->execute($reseller, reason: 'Contract ended')
 `deleting` hook throws for a reseller that was never offboarded, and
 `Events\ResellerOffboarded` is the extension point for downstream work.
 
+### Activation
+
+```php
+use Misaf\VendraReseller\Actions\SetResellerActiveAction;
+
+app(SetResellerActiveAction::class)->execute($reseller, active: false);
+```
+
+`SetResellerActiveAction` is the supported way to flip `active`. An inactive
+reseller cannot create stores; an offboarded reseller cannot be reactivated.
+
 ### The subscriber
 
 `Models\Reseller` implements `SubscriptionSubscriber`, so plan limits are
