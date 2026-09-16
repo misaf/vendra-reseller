@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
 use Misaf\VendraStore\Models\Store;
+use Misaf\VendraSupport\Filament\Tables\Columns\CreatedAtColumn;
 
 final class LatestStores extends BaseWidget
 {
@@ -63,16 +64,8 @@ final class LatestStores extends BaseWidget
                     ->state(fn (Store $record): string => $record->status()->value)
                     ->formatStateUsing(fn (string $state): string => __("vendra-reseller::attributes.store_status_{$state}")),
 
-                TextColumn::make('created_at')
-                    ->extraCellAttributes(['dir' => 'ltr'])
-                    ->label(__('vendra-reseller::attributes.created_at'))
-                    ->sinceTooltip()
-                    ->sortable()
-                    ->when(
-                        app()->isLocale('fa'),
-                        fn (TextColumn $column) => $column->jalaliDateTime('Y-m-d H:i', latinNumbers: true),
-                        fn (TextColumn $column) => $column->dateTime('Y-m-d H:i')
-                    ),
+                CreatedAtColumn::make()
+                    ->sortable(),
             ])
             ->recordUrl(fn (Store $record): string => StoreResource::getUrl('view', ['record' => $record]))
             ->defaultSort('id', 'desc')
