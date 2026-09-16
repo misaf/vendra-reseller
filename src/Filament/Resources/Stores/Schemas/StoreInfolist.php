@@ -11,6 +11,9 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraStore\Models\StorefrontDeployment;
+use Misaf\VendraSupport\Filament\Infolists\Components\DescriptionEntry;
+use Misaf\VendraSupport\Filament\Infolists\Components\NameEntry;
+use Misaf\VendraSupport\Filament\Infolists\Components\SlugEntry;
 
 final class StoreInfolist
 {
@@ -20,8 +23,8 @@ final class StoreInfolist
             Section::make(__('vendra-reseller::attributes.store_identity'))
                 ->schema([
                     Grid::make(3)->schema([
-                        TextEntry::make('name')->label(__('vendra-reseller::attributes.name')),
-                        TextEntry::make('slug')->label(__('vendra-reseller::attributes.slug'))->copyable(),
+                        NameEntry::make(),
+                        SlugEntry::make()->label(__('vendra-reseller::attributes.slug'))->copyable(),
                         TextEntry::make('active_domain')->label(__('vendra-reseller::attributes.domain'))
                             ->state(fn (Store $record): ?string => $record->domains->first()?->name)->placeholder('—'),
                         TextEntry::make('admin_url')->label(__('vendra-reseller::attributes.admin_url'))
@@ -30,7 +33,7 @@ final class StoreInfolist
                             ->openUrlInNewTab()->copyable(),
                         IconEntry::make('active')->label(__('vendra-reseller::attributes.active'))->boolean(),
                     ]),
-                    TextEntry::make('description')->label(__('vendra-reseller::attributes.description'))->placeholder('—')->columnSpanFull(),
+                    DescriptionEntry::make()->placeholder('—'),
                 ])->columnSpanFull(),
             Section::make(__('vendra-reseller::attributes.storefront_configuration'))
                 ->schema([
