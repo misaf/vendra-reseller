@@ -10,10 +10,12 @@ use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraStore\Models\StoreDomain;
 use Misaf\VendraSubscription\Actions\SubscribeAction;
+use Misaf\VendraSubscription\Enums\SubscriptionPaymentStatus;
 use Misaf\VendraSubscription\Enums\SubscriptionStatus;
 use Misaf\VendraSubscription\Exceptions\SubscriptionLimitException;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
+use Misaf\VendraSubscription\Models\SubscriptionPayment;
 
 it('blocks changing to a plan that cannot hold the current properties', function (): void {
     $reseller = Reseller::factory()->create();
@@ -42,6 +44,12 @@ it('offboards a reseller transactionally with an audit reason and one domain eve
     $expiredSubscription = Subscription::factory()->forSubscriber($reseller)->for(Plan::factory())->create([
         'status' => SubscriptionStatus::Expired,
     ]);
+    $pendingPayment = SubscriptionPayment::factory()->for($pendingSubscription)->create([
+        'status' => SubscriptionPaymentStatus::Pending,
+    ]);
+    $paidPayment = SubscriptionPayment::factory()->for($activeSubscription)->create([
+        'status' => SubscriptionPaymentStatus::Paid,
+    ]);
     $store = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
     $domain = StoreDomain::factory()->for($store)->create(['active' => true]);
 
@@ -54,6 +62,8 @@ it('offboards a reseller transactionally with an audit reason and one domain eve
         ->and($activeSubscription->refresh()->status)->toBe(SubscriptionStatus::Cancelled)
         ->and($pendingSubscription->refresh()->status)->toBe(SubscriptionStatus::Cancelled)
         ->and($expiredSubscription->refresh()->status)->toBe(SubscriptionStatus::Expired)
+        ->and($pendingPayment->refresh()->status)->toBe(SubscriptionPaymentStatus::Cancelled)
+        ->and($paidPayment->refresh()->status)->toBe(SubscriptionPaymentStatus::Paid)
         ->and($offboardedReseller->trashed())->toBeTrue()
         ->and($offboardedReseller->active)->toBeFalse()
         ->and($offboardedReseller->offboarding_reason)->toBe('Customer requested account closure.')

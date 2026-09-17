@@ -73,6 +73,26 @@ it('suspends stores immediately when the console cancels the subscription', func
     Notification::assertSentToTimes($reseller->user, StoresSuspendedNotification::class, 1);
 });
 
+it('keeps stores serving when a cancelled subscription leaves another one active', function (): void {
+    Notification::fake();
+
+    $reseller = Reseller::factory()->create();
+    Subscription::factory()->forSubscriber($reseller)->for(Plan::factory())->create([
+        'status' => SubscriptionStatus::Active,
+        'starts_at' => now()->subDay(),
+        'ends_at' => now()->addMonth(),
+    ]);
+    $pendingChange = Subscription::factory()->forSubscriber($reseller)->for(Plan::factory())->create([
+        'status' => SubscriptionStatus::PendingPayment,
+    ]);
+    $store = createTestTenant(['reseller_id' => $reseller->getKey(), 'active' => true]);
+
+    resolve(CancelSubscriptionAction::class)->execute($pendingChange);
+
+    expect($store->refresh()->billing_suspended_at)->toBeNull();
+    Notification::assertNotSentTo($reseller->user, StoresSuspendedNotification::class);
+});
+
 it('queues subscription notifications off the request lifecycle', function (string $notification): void {
     expect(new ReflectionClass($notification))
         ->implementsInterface(ShouldQueueAfterCommit::class)->toBeTrue()

@@ -10,6 +10,7 @@ use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -17,6 +18,8 @@ use Misaf\VendraReseller\Actions\CreateResellerAction;
 use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraStore\Actions\ProvisionStoreAction;
 use Misaf\VendraStore\Models\StoreDomain;
+use Misaf\VendraSubscription\Exceptions\SubscriptionLimitException;
+use Misaf\VendraSubscription\Exceptions\SubscriptionPaymentException;
 use Misaf\VendraSubscription\Models\Plan;
 
 #[Description('Provision a store (tenant) with a domain, administrator user, and role assignment')]
@@ -74,13 +77,33 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
         $passwordWasProvided = $validatedPassword !== null;
         $password = $validatedPassword
             ?? Str::password(length: 8, letters: true, numbers: true, symbols: false);
-        $reseller = $this->resolveReseller($data, $password);
 
-        if ($reseller === false) {
+        /*
+         | One transaction: a reseller created for --plan and then refused a store
+         | (a paid plan leaves no active subscription yet) must not survive the
+         | failed run, or rerunning the command collides on its email.
+         */
+        try {
+            $provisioned = DB::transaction(function () use ($data, $password, $shouldSeed): ?array {
+                $reseller = $this->resolveReseller($data, $password);
+
+                if ($reseller === false) {
+                    return null;
+                }
+
+                return [$reseller, $this->provisionTenantAction->execute($data, $shouldSeed, $password, $reseller)];
+            });
+        } catch (SubscriptionLimitException|SubscriptionPaymentException $exception) {
+            $this->error($exception->getMessage());
+
             return self::FAILURE;
         }
 
-        $result = $this->provisionTenantAction->execute($data, $shouldSeed, $password, $reseller);
+        if ($provisioned === null) {
+            return self::FAILURE;
+        }
+
+        [$reseller, $result] = $provisioned;
 
         $this->info('Store provisioned.');
         $this->table(['Field', 'Value'], [
@@ -133,8 +156,12 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
 
         if ($planOption !== null) {
             $plan = Plan::query()
-                ->where('id', $planOption)
-                ->orWhere('slug', $planOption)
+                ->active()
+                ->when(
+                    ctype_digit((string) $planOption),
+                    fn (Builder $query): Builder => $query->whereKey((int) $planOption),
+                    fn (Builder $query): Builder => $query->where('slug', $planOption),
+                )
                 ->first();
 
             if ($plan === null) {

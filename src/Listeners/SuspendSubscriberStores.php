@@ -20,7 +20,8 @@ final class SuspendSubscriberStores
     {
         $subscriber = $event->subscription->subscriber;
 
-        if (! $subscriber instanceof SubscriptionSubscriber) {
+        // Cancelling a pending plan change must not suspend stores the current plan still pays for.
+        if (! $subscriber instanceof SubscriptionSubscriber || $subscriber->activeSubscription() !== null) {
             return;
         }
 

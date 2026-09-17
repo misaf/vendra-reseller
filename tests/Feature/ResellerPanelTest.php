@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Misaf\VendraReseller\Actions\OffboardResellerAction;
+use Misaf\VendraReseller\Filament\Pages\Auth\EditProfile;
 use Misaf\VendraReseller\Filament\Pages\Auth\Login;
 use Misaf\VendraReseller\Filament\Pages\Auth\Register;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\CreateStore;
@@ -611,4 +612,24 @@ it('blocks a user from exceeding the plan limit', function (): void {
         ->call('create');
 
     assertDatabaseMissing('store_domains', ['name' => 'second.test']);
+});
+
+it('changes the reseller password through the user password action', function (): void {
+    $reseller = Reseller::factory()->create();
+    $user = actAsResellerUser($reseller);
+    $user->forceFill(['password' => Hash::make('old-password'), 'remember_token' => 'old-token'])->save();
+
+    livewire(EditProfile::class)
+        ->fillForm([
+            'password' => 'new-password-123',
+            'passwordConfirmation' => 'new-password-123',
+            'currentPassword' => 'old-password',
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    $user->refresh();
+
+    expect(Hash::check('new-password-123', $user->password))->toBeTrue()
+        ->and($user->remember_token)->not->toBe('old-token');
 });
