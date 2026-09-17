@@ -35,9 +35,11 @@ final class ResellerOverview extends StatsOverviewWidget
         $stores = Store::query()->where('reseller_id', $reseller->getKey());
         $used = $reseller->subscribedUnitCount();
         $remaining = resolve(StoreQuota::class)->remainingStores($reseller);
+        $capacity = $reseller->isSubscriptionActive() ? ($subscription?->plan->max_units ?? 0) : 0;
         $active = (clone $stores)->withStatus(StoreStatus::Active)->count();
-        $provisioning = (clone $stores)->withStatus(StoreStatus::Provisioning)->count()
-            + (clone $stores)->withStatus(StoreStatus::Pending)->count();
+        $processing = (clone $stores)->withStatus(StoreStatus::Provisioning)->count();
+        $pending = (clone $stores)->withStatus(StoreStatus::Pending)->count();
+        $provisioning = $processing + $pending;
         $failed = (clone $stores)->withStatus(StoreStatus::Failed)->count();
         $needsAttention = $provisioning + $failed;
 
@@ -51,7 +53,7 @@ final class ResellerOverview extends StatsOverviewWidget
                 ->icon(Heroicon::OutlinedCheckBadge)
                 ->color(self::subscriptionColor($subscription)),
 
-            Stat::make(__('vendra-reseller::attributes.store_capacity'), "{$used} / ".($remaining + $used))
+            Stat::make(__('vendra-reseller::attributes.store_capacity'), "{$used} / {$capacity}")
                 ->description(__('vendra-reseller::attributes.remaining_stores').': '.$remaining)
                 ->icon(Heroicon::OutlinedRectangleStack)
                 ->color($remaining <= 0 ? 'danger' : 'primary')
@@ -66,11 +68,11 @@ final class ResellerOverview extends StatsOverviewWidget
                 ->description(__('vendra-reseller::attributes.stores_provisioning').': '.$provisioning.' · '.__('vendra-reseller::attributes.failed_stores').': '.$failed)
                 ->icon(Heroicon::OutlinedExclamationTriangle)
                 ->color($needsAttention > 0 ? 'danger' : 'gray')
-                ->url(StoreResource::getUrl('index', [
-                    'tableFilters' => [
-                        'status' => ['value' => StoreStatus::Failed->value],
-                    ],
-                ])),
+                ->url(self::storeStatusUrl(match (true) {
+                    $failed === 0 && $processing > 0 => StoreStatus::Provisioning,
+                    $failed === 0 && $pending > 0 => StoreStatus::Pending,
+                    default => StoreStatus::Failed,
+                })),
 
             Stat::make(__('vendra-reseller::attributes.storefronts_ready'), $hasReadyStorefront ? __('vendra-reseller::attributes.yes') : __('vendra-reseller::attributes.no'))
                 ->icon(Heroicon::OutlinedRocketLaunch)

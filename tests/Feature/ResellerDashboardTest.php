@@ -147,6 +147,33 @@ describe('reseller overview store capacity', function (): void {
     });
 });
 
+describe('reseller overview store capacity limits', function (): void {
+    it('shows the plan limit when the reseller is over it', function (): void {
+        $reseller = Reseller::factory()->active()->create();
+        Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->maxUnits(1))->create([
+            'status' => SubscriptionStatus::Active,
+        ]);
+        Store::factory()->count(2)->create(['reseller_id' => $reseller->getKey()]);
+
+        actAsReseller($reseller);
+
+        livewire(ResellerOverview::class)
+            ->assertOk()
+            ->assertSee('2 / 1');
+    });
+
+    it('shows no capacity without an active subscription', function (): void {
+        $reseller = Reseller::factory()->active()->create();
+        Store::factory()->create(['reseller_id' => $reseller->getKey()]);
+
+        actAsReseller($reseller);
+
+        livewire(ResellerOverview::class)
+            ->assertOk()
+            ->assertSee('1 / 0');
+    });
+});
+
 describe('reseller overview store readiness', function (): void {
     it('counts active, provisioning, and failed stores separately', function (): void {
         $reseller = Reseller::factory()->active()->create();
