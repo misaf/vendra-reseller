@@ -24,8 +24,8 @@ use Misaf\VendraReseller\Filament\Resources\Stores\Pages\ListStores;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\ViewStore;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
 use Misaf\VendraReseller\Filament\Widgets\LatestStores;
-use Misaf\VendraReseller\Filament\Widgets\ResellerOverview;
-use Misaf\VendraReseller\Filament\Widgets\SubscriptionDetail;
+use Misaf\VendraReseller\Filament\Widgets\PlanSummary;
+use Misaf\VendraReseller\Filament\Widgets\StoresNeedingAttention;
 use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
 use Misaf\VendraStore\Enums\StorefrontDesiredState;
@@ -35,7 +35,6 @@ use Misaf\VendraStore\Models\StoreDomain;
 use Misaf\VendraStore\Models\StorefrontDeployment;
 use Misaf\VendraStore\Models\StorefrontImage;
 use Misaf\VendraStore\Settings\StoreCreationSettings;
-use Misaf\VendraSubscription\Enums\SubscriptionStatus;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
 use Misaf\VendraSupport\Tenancy\Events\TenantProvisioned;
@@ -330,13 +329,9 @@ it('renders the reseller dashboard with its widgets for a user', function (): vo
 
     actAsResellerUser($reseller);
 
-    livewire(ResellerOverview::class)
+    livewire(PlanSummary::class)
         ->assertOk()
         ->assertSee('1 / 3');
-
-    livewire(SubscriptionDetail::class)
-        ->assertOk()
-        ->assertSee(SubscriptionStatus::Active->getLabel());
 
     livewire(LatestStores::class)
         ->call('loadTable')
@@ -378,20 +373,23 @@ it('shows reseller quota and operational counts without platform-wide data', fun
 
     actAsResellerUser($reseller);
 
-    livewire(ResellerOverview::class)
+    livewire(PlanSummary::class)
         ->assertOk()
         ->assertSee('2 / 3')
         ->assertSee(__('vendra-reseller::attributes.remaining_stores').': 1')
-        ->assertSee(__('vendra-reseller::attributes.active_stores'))
-        ->assertSee(__('vendra-reseller::attributes.failed_stores'));
+        ->assertSee(__('vendra-reseller::attributes.active_stores'));
+
+    livewire(StoresNeedingAttention::class)
+        ->call('loadTable')
+        ->assertCanSeeTableRecords(Store::query()->where('reseller_id', $reseller->getKey())->withStatus(StoreStatus::Failed)->get());
 });
 
-it('hides subscription and store widgets until the reseller has a store', function (): void {
+it('hides store widgets until the reseller has a store', function (): void {
     $reseller = Reseller::factory()->create();
 
     actAsResellerUser($reseller);
 
-    expect(SubscriptionDetail::canView())->toBeFalse()
+    expect(StoresNeedingAttention::canView())->toBeFalse()
         ->and(LatestStores::canView())->toBeFalse();
 });
 

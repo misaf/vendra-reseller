@@ -164,9 +164,14 @@ and `ReplaceDomainAction`, supplying the authenticated user's reseller.
 Resolve the acting reseller with `Filament\Concerns\InteractsWithCurrentReseller`;
 `Http\Middleware\AddResellerToRequestJobContext` carries it into queued work.
 
-The reseller dashboard shows subscribed store usage against the plan allowance,
-remaining capacity, subscription state, and counts for active, provisioning,
-and failed stores. Store listings expose derived store and storefront-deployment
+The reseller dashboard (`Filament\Pages\Dashboard`) lists its widgets in a
+fixed order: `GettingStarted` walks a new reseller from subscribing to a live
+storefront and disappears once one is live; `PlanSummary` shows the plan, its
+renewal or trial end (warning a week ahead), store usage against the allowance,
+and stores suspended for billing; `StoresNeedingAttention` lists stores still
+provisioning, failed, or with a failed storefront, with the recorded reason;
+`LatestStores` lists the newest stores. Store counts come from
+`Misaf\VendraStore\Support\StoreStatusCounts` in one grouped query. Store listings expose derived store and storefront-deployment
 statuses and filters, with all queries still rooted in
 `StoreResource::getEloquentQuery()`. Runtime administration and container details
 remain console concerns and are not exposed here.

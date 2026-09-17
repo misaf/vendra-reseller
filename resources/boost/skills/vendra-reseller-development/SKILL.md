@@ -1,6 +1,6 @@
 ---
 name: vendra-reseller-development
-description: "Create, modify, review, or test the Vendra Reseller module in packages/vendra-reseller, changing the reseller domain and the reseller self-service panel. Use for Reseller, its main account (resellers.user_id), CreateResellerAction, ReplaceResellerUserAction, UpdateResellerUserEmailAction, OffboardResellerAction, ResellerOffboarded, InteractsWithCurrentReseller, ResellerPanelServiceProvider, ResellerServiceProvider, ProvisionStoreCommand, AddResellerToRequestJobContext, TransactionSubscriptionCharger, NotifyActivatedSubscriber, RemindExpiringSubscriber, SuspendSubscriberStores, SubscriptionActivatedNotification, SubscriptionExpiringNotification, StoresSuspendedNotification, ResellerOverview, LatestStores, SubscriptionDetail, and the panel's store resource."
+description: "Create, modify, review, or test the Vendra Reseller module in packages/vendra-reseller, changing the reseller domain and the reseller self-service panel. Use for Reseller, its main account (resellers.user_id), CreateResellerAction, ReplaceResellerUserAction, UpdateResellerUserEmailAction, OffboardResellerAction, ResellerOffboarded, InteractsWithCurrentReseller, ResellerPanelServiceProvider, ResellerServiceProvider, ProvisionStoreCommand, AddResellerToRequestJobContext, TransactionSubscriptionCharger, NotifyActivatedSubscriber, RemindExpiringSubscriber, SuspendSubscriberStores, SubscriptionActivatedNotification, SubscriptionExpiringNotification, StoresSuspendedNotification, the reseller Dashboard page (GettingStarted, PlanSummary, StoresNeedingAttention, LatestStores), and the panel's store resource."
 ---
 
 # Vendra Reseller
@@ -48,7 +48,7 @@ description: "Create, modify, review, or test the Vendra Reseller module in pack
 
 - `Providers\ResellerPanelServiceProvider` registers the panel; `Providers\ResellerServiceProvider` registers the command and listeners. Keep the split.
 - Resolve the acting reseller with `Filament\Concerns\InteractsWithCurrentReseller`; `Http\Middleware\AddResellerToRequestJobContext` carries it into queued work.
-- Dashboard usage and operational counts reuse `StoreQuota`, subscriber methods, and `Store::status()`. Store and deployment-status filters must remain rooted in `StoreResource::getEloquentQuery()` so they cannot cross reseller boundaries.
+- Dashboard usage and operational counts reuse `StoreQuota`, subscriber methods, `Store::status()`, and `StoreStatusCounts` for per-status counts. Store and deployment-status filters must remain rooted in `StoreResource::getEloquentQuery()` so they cannot cross reseller boundaries.
 - Do not expose container-runtime administration, logs, or platform recovery actions in the reseller panel.
 
 ## Testing

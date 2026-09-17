@@ -6,9 +6,11 @@ use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
+use Misaf\VendraReseller\Filament\Pages\Dashboard;
+use Misaf\VendraReseller\Filament\Widgets\GettingStarted;
 use Misaf\VendraReseller\Filament\Widgets\LatestStores;
-use Misaf\VendraReseller\Filament\Widgets\ResellerOverview;
-use Misaf\VendraReseller\Filament\Widgets\SubscriptionDetail;
+use Misaf\VendraReseller\Filament\Widgets\PlanSummary;
+use Misaf\VendraReseller\Filament\Widgets\StoresNeedingAttention;
 use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
 use Misaf\VendraStore\Models\Store;
@@ -40,329 +42,9 @@ function actAsReseller(Reseller $reseller): User
     return $user;
 }
 
-describe('reseller overview subscription status', function (): void {
-    it('shows active subscription status with plan name', function (): void {
+describe('reseller dashboard page', function (): void {
+    it('requires reseller authentication', function (): void {
         $reseller = Reseller::factory()->active()->create();
-        $plan = Plan::factory()->create(['name' => 'Professional']);
-        Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status' => SubscriptionStatus::Active,
-        ]);
-
-        actAsReseller($reseller);
-
-        livewire(ResellerOverview::class)
-            ->assertOk()
-            ->assertSee(__('vendra-reseller::attributes.subscription_summary'))
-            ->assertSee('Professional');
-    });
-
-    it('shows trial status when subscription is on trial', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        $plan = Plan::factory()->create();
-        Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status' => SubscriptionStatus::Active,
-            'trial_ends_at' => now()->addDays(10),
-            'starts_at' => now(),
-            'ends_at' => now()->addMonth(),
-        ]);
-
-        actAsReseller($reseller);
-
-        livewire(ResellerOverview::class)
-            ->assertOk()
-            ->assertSee(__('vendra-reseller::attributes.trial_until', ['date' => now()->addDays(10)->format('Y-m-d')]));
-    });
-
-    it('shows no active subscription for expired subscriptions', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        $plan = Plan::factory()->create();
-        Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status' => SubscriptionStatus::Expired,
-            'ends_at' => now()->subDay(),
-        ]);
-
-        actAsReseller($reseller);
-
-        livewire(ResellerOverview::class)
-            ->assertOk()
-            ->assertSee(__('vendra-reseller::attributes.no_active_subscription'));
-    });
-
-    it('shows no active subscription for past due subscriptions', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        $plan = Plan::factory()->create();
-        Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status' => SubscriptionStatus::PastDue,
-            'ends_at' => now()->subDay(),
-        ]);
-
-        actAsReseller($reseller);
-
-        livewire(ResellerOverview::class)
-            ->assertOk()
-            ->assertSee(__('vendra-reseller::attributes.no_active_subscription'));
-    });
-
-    it('shows no active subscription when reseller has none', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-
-        actAsReseller($reseller);
-
-        livewire(ResellerOverview::class)
-            ->assertOk()
-            ->assertSee(__('vendra-reseller::attributes.no_active_subscription'));
-    });
-});
-
-describe('reseller overview store capacity', function (): void {
-    it('shows used and max store counts', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        $plan = Plan::factory()->maxUnits(5)->create();
-        Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status' => SubscriptionStatus::Active,
-        ]);
-        Store::factory()->count(2)->create(['reseller_id' => $reseller->getKey()]);
-
-        actAsReseller($reseller);
-
-        livewire(ResellerOverview::class)
-            ->assertOk()
-            ->assertSee(__('vendra-reseller::attributes.store_capacity'))
-            ->assertSee('2 / 5');
-    });
-
-    it('shows remaining as zero when plan is full', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        $plan = Plan::factory()->maxUnits(1)->create();
-        Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status' => SubscriptionStatus::Active,
-        ]);
-        Store::factory()->create(['reseller_id' => $reseller->getKey()]);
-
-        actAsReseller($reseller);
-
-        livewire(ResellerOverview::class)
-            ->assertOk()
-            ->assertSee('0');
-    });
-});
-
-describe('reseller overview store capacity limits', function (): void {
-    it('shows the plan limit when the reseller is over it', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->maxUnits(1))->create([
-            'status' => SubscriptionStatus::Active,
-        ]);
-        Store::factory()->count(2)->create(['reseller_id' => $reseller->getKey()]);
-
-        actAsReseller($reseller);
-
-        livewire(ResellerOverview::class)
-            ->assertOk()
-            ->assertSee('2 / 1');
-    });
-
-    it('shows no capacity without an active subscription', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        Store::factory()->create(['reseller_id' => $reseller->getKey()]);
-
-        actAsReseller($reseller);
-
-        livewire(ResellerOverview::class)
-            ->assertOk()
-            ->assertSee('1 / 0');
-    });
-});
-
-describe('reseller overview store readiness', function (): void {
-    it('counts active, provisioning, and failed stores separately', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        $plan = Plan::factory()->maxUnits(10)->create();
-        Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status' => SubscriptionStatus::Active,
-        ]);
-
-        Store::factory()->count(2)->active()->create(['reseller_id' => $reseller->getKey()]);
-        Store::factory()->provisioning()->active()->create(['reseller_id' => $reseller->getKey()]);
-        Store::factory()->provisioningFailed()->active()->create(['reseller_id' => $reseller->getKey()]);
-
-        actAsReseller($reseller);
-
-        livewire(ResellerOverview::class)
-            ->assertOk()
-            ->assertSee(__('vendra-reseller::attributes.active_stores'))
-            ->assertSee(__('vendra-reseller::attributes.stores_needing_attention'));
-    });
-
-    it('shows zero attention required when all stores are active', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        $plan = Plan::factory()->maxUnits(5)->create();
-        Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status' => SubscriptionStatus::Active,
-        ]);
-        Store::factory()->count(3)->active()->create(['reseller_id' => $reseller->getKey()]);
-
-        actAsReseller($reseller);
-
-        livewire(ResellerOverview::class)
-            ->assertOk()
-            ->assertSee(__('vendra-reseller::attributes.stores_needing_attention'))
-            ->assertSee('0');
-    });
-});
-
-describe('reseller overview storefront status', function (): void {
-    it('shows storefront readiness based on deployment status', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        $plan = Plan::factory()->maxUnits(5)->create();
-        Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status' => SubscriptionStatus::Active,
-        ]);
-        $store = Store::factory()->active()->create(['reseller_id' => $reseller->getKey()]);
-        StorefrontDeployment::factory()->for($store)->create([
-            'status' => StorefrontDeploymentStatus::Ready,
-        ]);
-
-        actAsReseller($reseller);
-
-        livewire(ResellerOverview::class)
-            ->assertOk()
-            ->assertSee(__('vendra-reseller::attributes.storefronts_ready'));
-    });
-});
-
-describe('reseller subscription detail widget', function (): void {
-    it('always renders regardless of subscription state', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-
-        actAsReseller($reseller);
-
-        livewire(SubscriptionDetail::class)
-            ->assertOk()
-            ->assertSee(__('vendra-reseller::attributes.subscription_status'));
-    });
-
-    it('shows cancelled status for cancelled subscriptions', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        $plan = Plan::factory()->create();
-        Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status' => SubscriptionStatus::Cancelled,
-        ]);
-
-        actAsReseller($reseller);
-
-        livewire(SubscriptionDetail::class)
-            ->assertOk()
-            ->assertSee(SubscriptionStatus::Cancelled->getLabel());
-    });
-
-    it('shows expired status for expired subscriptions via latest subscription', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        $plan = Plan::factory()->create();
-        Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status' => SubscriptionStatus::Expired,
-            'ends_at' => now()->subDay(),
-        ]);
-
-        actAsReseller($reseller);
-
-        livewire(SubscriptionDetail::class)
-            ->assertOk()
-            ->assertSee(SubscriptionStatus::Expired->getLabel());
-    });
-
-    it('shows past due status for past due subscriptions via latest subscription', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        $plan = Plan::factory()->create();
-        Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status' => SubscriptionStatus::PastDue,
-            'ends_at' => now()->subDay(),
-        ]);
-
-        actAsReseller($reseller);
-
-        livewire(SubscriptionDetail::class)
-            ->assertOk()
-            ->assertSee(SubscriptionStatus::PastDue->getLabel());
-    });
-
-    it('shows trial information when subscription is on trial', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        $plan = Plan::factory()->create();
-        Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status' => SubscriptionStatus::Active,
-            'trial_ends_at' => now()->addDays(7),
-            'starts_at' => now(),
-            'ends_at' => now()->addMonth(),
-        ]);
-
-        actAsReseller($reseller);
-
-        livewire(SubscriptionDetail::class)
-            ->assertOk()
-            ->assertSee(__('vendra-reseller::attributes.trial_until', ['date' => now()->addDays(7)->format('Y-m-d')]));
-    });
-
-    it('shows no trial when subscription is active but not on trial', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        $plan = Plan::factory()->create();
-        Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status' => SubscriptionStatus::Active,
-            'starts_at' => now()->subMonth(),
-            'ends_at' => now()->addMonth(),
-        ]);
-
-        actAsReseller($reseller);
-
-        livewire(SubscriptionDetail::class)
-            ->assertOk()
-            ->assertSee(__('vendra-reseller::attributes.no_trial'));
-    });
-});
-
-describe('reseller latest stores widget', function (): void {
-    it('is hidden when the reseller has no stores', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-
-        actAsReseller($reseller);
-
-        expect(LatestStores::canView())->toBeFalse();
-    });
-
-    it('is visible when the reseller has stores', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        Store::factory()->active()->create(['reseller_id' => $reseller->getKey()]);
-
-        actAsReseller($reseller);
-
-        expect(LatestStores::canView())->toBeTrue();
-    });
-
-    it('is not visible when another reseller has stores but current reseller has none', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        Store::factory()->active()->create();
-
-        actAsReseller($reseller);
-
-        expect(LatestStores::canView())->toBeFalse();
-    });
-
-    it('renders the table component with correct heading', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        Store::factory()->active()->create(['reseller_id' => $reseller->getKey()]);
-
-        actAsReseller($reseller);
-
-        livewire(LatestStores::class)
-            ->assertOk()
-            ->assertSee(__('vendra-reseller::navigation.stores'));
-    });
-});
-
-describe('reseller dashboard access control', function (): void {
-    it('requires reseller authentication to view dashboard widgets', function (): void {
-        $reseller = Reseller::factory()->active()->create();
-        Store::factory()->active()->create(['reseller_id' => $reseller->getKey()]);
 
         $this->get(route('filament.reseller.pages.dashboard'))->assertRedirect();
 
@@ -370,31 +52,201 @@ describe('reseller dashboard access control', function (): void {
 
         $this->get(route('filament.reseller.pages.dashboard'))->assertOk();
     });
+
+    it('lays out its widgets in a fixed order', function (): void {
+        expect(new Dashboard()->getWidgets())->toBe([
+            GettingStarted::class,
+            PlanSummary::class,
+            StoresNeedingAttention::class,
+            LatestStores::class,
+        ]);
+    });
 });
 
-describe('reseller dashboard subscription widget colors', function (): void {
-    it('uses danger color for past due subscriptions', function (): void {
+describe('getting started', function (): void {
+    it('walks a new reseller through the steps to a live storefront', function (): void {
         $reseller = Reseller::factory()->active()->create();
-        $plan = Plan::factory()->create();
-        Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
-            'status' => SubscriptionStatus::PastDue,
-            'ends_at' => now()->subDay(),
+        Subscription::factory()->forSubscriber($reseller)->for(Plan::factory())->create();
+
+        actAsReseller($reseller);
+
+        expect(GettingStarted::canView())->toBeTrue();
+
+        livewire(GettingStarted::class)
+            ->assertOk()
+            ->assertSeeInOrder([
+                __('vendra-reseller::attributes.step_subscribe'),
+                __('vendra-reseller::attributes.step_done'),
+                __('vendra-reseller::attributes.step_create_store'),
+                __('vendra-reseller::attributes.step_to_do'),
+            ]);
+    });
+
+    it('disappears once a storefront is live', function (): void {
+        $reseller = Reseller::factory()->active()->create();
+        $store = Store::factory()->active()->create(['reseller_id' => $reseller->getKey()]);
+        StorefrontDeployment::factory()->for($store)->create(['status' => StorefrontDeploymentStatus::Ready]);
+
+        actAsReseller($reseller);
+
+        expect(GettingStarted::canView())->toBeFalse();
+    });
+
+    it("is not satisfied by another reseller's live storefront", function (): void {
+        $reseller = Reseller::factory()->active()->create();
+        $otherStore = Store::factory()->active()->create();
+        StorefrontDeployment::factory()->for($otherStore)->create(['status' => StorefrontDeploymentStatus::Ready]);
+
+        actAsReseller($reseller);
+
+        expect(GettingStarted::canView())->toBeTrue();
+    });
+});
+
+describe('plan summary', function (): void {
+    it('shows the active plan with its renewal date and store capacity', function (): void {
+        $reseller = Reseller::factory()->active()->create();
+        Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->maxUnits(5)->state(['name' => 'Professional']))->create([
+            'starts_at' => now()->subDay(),
+            'ends_at' => now()->addMonth(),
+        ]);
+        Store::factory()->count(2)->active()->create(['reseller_id' => $reseller->getKey()]);
+        Store::factory()->count(2)->active()->create();
+
+        actAsReseller($reseller);
+
+        livewire(PlanSummary::class)
+            ->assertOk()
+            ->assertSee('Professional')
+            ->assertSee(__('vendra-reseller::attributes.renews_on').': '.now()->addMonth()->format('Y-m-d'))
+            ->assertSee('2 / 5')
+            ->assertSee(__('vendra-reseller::attributes.remaining_stores').': 3');
+    });
+
+    it('shows the trial end while the plan is on trial', function (): void {
+        $reseller = Reseller::factory()->active()->create();
+        Subscription::factory()->forSubscriber($reseller)->for(Plan::factory())->create([
+            'trial_ends_at' => now()->addDays(10),
+            'starts_at' => now(),
+            'ends_at' => now()->addMonth(),
         ]);
 
         actAsReseller($reseller);
 
-        livewire(SubscriptionDetail::class)
+        livewire(PlanSummary::class)
             ->assertOk()
-            ->assertSee(SubscriptionStatus::PastDue->getLabel());
+            ->assertSee(__('vendra-reseller::attributes.trial_until', ['date' => now()->addDays(10)->format('Y-m-d')]));
     });
 
-    it('uses gray color when no subscription exists', function (): void {
+    it('warns when the plan ends within a week', function (): void {
+        $reseller = Reseller::factory()->active()->create();
+        Subscription::factory()->forSubscriber($reseller)->for(Plan::factory())->create([
+            'starts_at' => now()->subMonth(),
+            'ends_at' => now()->addDays(3)->addHour(),
+        ]);
+
+        actAsReseller($reseller);
+
+        livewire(PlanSummary::class)
+            ->assertOk()
+            ->assertSee(trans_choice('vendra-reseller::attributes.plan_ends_in_days', 3, ['days' => 3]));
+    });
+
+    it('shows the lapsed status and no capacity without an active plan', function (SubscriptionStatus $status): void {
+        $reseller = Reseller::factory()->active()->create();
+        Subscription::factory()->forSubscriber($reseller)->for(Plan::factory())->create([
+            'status' => $status,
+            'ends_at' => now()->subDay(),
+        ]);
+        Store::factory()->active()->create(['reseller_id' => $reseller->getKey()]);
+
+        actAsReseller($reseller);
+
+        livewire(PlanSummary::class)
+            ->assertOk()
+            ->assertSee($status->getLabel())
+            ->assertSee(__('vendra-reseller::attributes.subscribe_to_create_stores'))
+            ->assertSee(__('vendra-reseller::attributes.capacity_requires_plan'))
+            ->assertDontSee('1 / 0');
+    })->with([
+        'expired' => SubscriptionStatus::Expired,
+        'past due' => SubscriptionStatus::PastDue,
+        'cancelled' => SubscriptionStatus::Cancelled,
+    ]);
+
+    it('says so when the reseller never subscribed', function (): void {
         $reseller = Reseller::factory()->active()->create();
 
         actAsReseller($reseller);
 
-        livewire(SubscriptionDetail::class)
+        livewire(PlanSummary::class)
             ->assertOk()
-            ->assertSee(__('vendra-reseller::attributes.no_active_subscription'));
+            ->assertSee(__('vendra-reseller::attributes.no_plan'));
+    });
+
+    it('flags stores suspended for billing', function (): void {
+        $reseller = Reseller::factory()->active()->create();
+        Store::factory()->count(2)->active()->suspended()->create(['reseller_id' => $reseller->getKey()]);
+        Store::factory()->active()->create(['reseller_id' => $reseller->getKey()]);
+
+        actAsReseller($reseller);
+
+        livewire(PlanSummary::class)
+            ->assertOk()
+            ->assertSee(trans_choice('vendra-reseller::attributes.stores_suspended_for_billing', 2, ['count' => 2]));
+    });
+});
+
+describe('stores needing attention', function (): void {
+    it("lists the reseller's unfinished and failed stores with the reason", function (): void {
+        $reseller = Reseller::factory()->active()->create();
+        $failed = Store::factory()->provisioningFailed()->active()->create([
+            'reseller_id' => $reseller->getKey(),
+            'provisioning_error' => 'Database creation failed.',
+        ]);
+        $provisioning = Store::factory()->provisioning()->active()->create(['reseller_id' => $reseller->getKey()]);
+        $failedStorefront = Store::factory()->active()->create(['reseller_id' => $reseller->getKey()]);
+        StorefrontDeployment::factory()->for($failedStorefront)->create([
+            'status' => StorefrontDeploymentStatus::Failed,
+            'error' => 'Image pull failed.',
+        ]);
+        $healthy = Store::factory()->active()->create(['reseller_id' => $reseller->getKey()]);
+        $otherFailed = Store::factory()->provisioningFailed()->active()->create();
+
+        actAsReseller($reseller);
+
+        expect(StoresNeedingAttention::canView())->toBeTrue();
+
+        livewire(StoresNeedingAttention::class)
+            ->call('loadTable')
+            ->assertOk()
+            ->assertCanSeeTableRecords([$failed, $provisioning, $failedStorefront])
+            ->assertCanNotSeeTableRecords([$healthy, $otherFailed])
+            ->assertSee('Database creation failed.')
+            ->assertSee('Image pull failed.');
+    });
+
+    it('is hidden when every store is healthy', function (): void {
+        $reseller = Reseller::factory()->active()->create();
+        Store::factory()->active()->create(['reseller_id' => $reseller->getKey()]);
+
+        actAsReseller($reseller);
+
+        expect(StoresNeedingAttention::canView())->toBeFalse();
+    });
+});
+
+describe('latest stores', function (): void {
+    it('is shown only once the reseller has stores of its own', function (): void {
+        $reseller = Reseller::factory()->active()->create();
+        Store::factory()->active()->create();
+
+        actAsReseller($reseller);
+
+        expect(LatestStores::canView())->toBeFalse();
+
+        Store::factory()->active()->create(['reseller_id' => $reseller->getKey()]);
+
+        expect(LatestStores::canView())->toBeTrue();
     });
 });

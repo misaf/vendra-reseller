@@ -21,13 +21,11 @@ final class LatestStores extends BaseWidget
 {
     use InteractsWithCurrentReseller;
 
-    protected static ?int $sort = 4;
-
     protected int|string|array $columnSpan = 'full';
 
     protected static ?string $heading = null;
 
-    public static function getHeading(): ?string
+    public static function getHeading(): string
     {
         return __('vendra-reseller::navigation.stores');
     }
