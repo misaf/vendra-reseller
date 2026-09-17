@@ -21,7 +21,7 @@ final class ResellerFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => User::factory()->state(['tenant_id' => null]),
+            'user_id' => User::factory()->state(fn (): array => ['tenant_id' => null]),
             'active' => fake()->boolean(80),
         ];
     }
