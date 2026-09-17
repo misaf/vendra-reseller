@@ -16,11 +16,7 @@ final class SetResellerActiveAction
     public function execute(Reseller $reseller, bool $active): Reseller
     {
         return DB::transaction(function () use ($reseller, $active): Reseller {
-            $lockedReseller = Reseller::query()
-                ->withTrashed()
-                ->whereKey($reseller->getKey())
-                ->lockForUpdate()
-                ->firstOrFail();
+            $lockedReseller = $reseller->refreshForUpdate();
 
             /*
             | Offboarding is final: it cancels subscriptions and retires the

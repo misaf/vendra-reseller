@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
+use Misaf\VendraStore\Enums\StoreStatus;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSupport\Filament\Tables\Columns\CreatedAtColumn;
 use Misaf\VendraSupport\Filament\Tables\Columns\NameColumn;
@@ -60,8 +61,7 @@ final class LatestStores extends BaseWidget
                 TextColumn::make('status')
                     ->label(__('vendra-reseller::attributes.operational_status'))
                     ->badge()
-                    ->state(fn (Store $record): string => $record->status()->value)
-                    ->formatStateUsing(fn (string $state): string => __("vendra-reseller::attributes.store_status_{$state}")),
+                    ->state(fn (Store $record): StoreStatus => $record->status()),
 
                 CreatedAtColumn::make()
                     ->sortable(),

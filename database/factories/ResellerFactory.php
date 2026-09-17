@@ -6,9 +6,8 @@ namespace Misaf\VendraReseller\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Attributes\UseModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 use Misaf\VendraReseller\Models\Reseller;
+use Misaf\VendraUser\Models\User;
 
 /**
  * @extends Factory<Reseller>
@@ -22,19 +21,9 @@ final class ResellerFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->unique()->company(),
-            'description' => fake()->text(),
-            'slug' => fn (array $attributes) => Str::slug(Arr::get($attributes, 'name')),
+            'user_id' => User::factory()->state(['tenant_id' => null]),
             'active' => true,
-            'email' => fake()->unique()->safeEmail(),
         ];
-    }
-
-    public function withoutContactEmail(): static
-    {
-        return $this->state(fn (): array => [
-            'email' => null,
-        ]);
     }
 
     public function active(): static

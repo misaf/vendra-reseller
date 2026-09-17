@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use Misaf\VendraReseller\Actions\CreateResellerUserAction;
+use Illuminate\Support\Arr;
+use Misaf\VendraReseller\Actions\CreateResellerAction;
 use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraSubscription\Actions\SubscribeAction;
 use Misaf\VendraSubscription\Models\Plan;
@@ -28,7 +29,7 @@ it('snapshots the plan price onto the subscription when subscribing', function (
     makeCurrentTestTenant();
     TransactionGatewayFactory::new()->internal()->create();
     $user = User::factory()->create(['tenant_id' => null]);
-    $reseller->users()->attach($user->getKey());
+    $reseller->user()->associate($user)->save();
     $plan = Plan::factory()->priced(2999, 'EUR')->trialDays(1)->create();
 
     $subscription = resolve(SubscribeAction::class)->execute($reseller, $plan);
@@ -39,15 +40,15 @@ it('snapshots the plan price onto the subscription when subscribing', function (
 
 it('keeps the reseller user free of any tenant, even inside a tenant context', function (): void {
     makeCurrentTestTenant();
-    $reseller = Reseller::factory()->create();
 
-    $user = resolve(CreateResellerUserAction::class)->execute(
-        $reseller,
-        'tenant_free',
-        'tenant-free@reseller.test',
-        'Secure123',
+    $result = resolve(CreateResellerAction::class)->execute(
+        plan: Plan::factory()->create(),
+        username: 'tenant_free',
+        email: 'tenant-free@reseller.test',
+        password: 'Secure123',
     );
+    $user = Arr::get($result, 'user');
 
     expect($user->tenant_id)->toBeNull()
-        ->and(Reseller::forUser($user)?->is($reseller))->toBeTrue();
+        ->and(Reseller::forUser($user)?->is(Arr::get($result, 'reseller')))->toBeTrue();
 });

@@ -16,27 +16,17 @@ use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
 
-it('notifies the contact when a subscription is activated', function (): void {
+it('notifies the reseller user when a subscription is activated', function (): void {
     Notification::fake();
 
     $reseller = Reseller::factory()->create();
 
     resolve(SubscribeAction::class)->execute($reseller, Plan::factory()->create());
 
-    Notification::assertSentTo($reseller, SubscriptionActivatedNotification::class);
+    Notification::assertSentTo($reseller->user, SubscriptionActivatedNotification::class);
 });
 
-it('does not notify a reseller without a contact email', function (): void {
-    Notification::fake();
-
-    $reseller = Reseller::factory()->withoutContactEmail()->create();
-
-    resolve(SubscribeAction::class)->execute($reseller, Plan::factory()->create());
-
-    Notification::assertNothingSent();
-});
-
-it('reminds the contact once about a soon-to-expire subscription', function (): void {
+it('reminds the reseller user once about a soon-to-expire subscription', function (): void {
     Notification::fake();
 
     $reseller = Reseller::factory()->create();
@@ -49,11 +39,11 @@ it('reminds the contact once about a soon-to-expire subscription', function (): 
     resolve(EnforceSubscriptionsAction::class)->execute();
     resolve(EnforceSubscriptionsAction::class)->execute();
 
-    Notification::assertSentToTimes($reseller, SubscriptionExpiringNotification::class, 1);
+    Notification::assertSentToTimes($reseller->user, SubscriptionExpiringNotification::class, 1);
     expect($subscription->refresh()->expiry_reminder_sent_at)->not->toBeNull();
 });
 
-it('notifies the contact when properties are suspended', function (): void {
+it('notifies the reseller user when properties are suspended', function (): void {
     Notification::fake();
 
     $reseller = Reseller::factory()->create();
@@ -67,7 +57,7 @@ it('notifies the contact when properties are suspended', function (): void {
     resolve(EnforceSubscriptionsAction::class)->execute();
     resolve(EnforceSubscriptionsAction::class)->execute();
 
-    Notification::assertSentToTimes($reseller, StoresSuspendedNotification::class, 1);
+    Notification::assertSentToTimes($reseller->user, StoresSuspendedNotification::class, 1);
 });
 
 it('suspends stores immediately when the console cancels the subscription', function (): void {
@@ -80,7 +70,7 @@ it('suspends stores immediately when the console cancels the subscription', func
     resolve(CancelSubscriptionAction::class)->execute($subscription);
 
     expect($store->refresh()->billing_suspended_at)->not->toBeNull();
-    Notification::assertSentToTimes($reseller, StoresSuspendedNotification::class, 1);
+    Notification::assertSentToTimes($reseller->user, StoresSuspendedNotification::class, 1);
 });
 
 it('queues subscription notifications off the request lifecycle', function (string $notification): void {
@@ -100,8 +90,7 @@ it('sends subscription notifications on the transactional-email queue', function
 
     resolve(SubscribeAction::class)->execute($reseller, Plan::factory()->create());
 
-    Notification::assertSentTo(
-        $reseller,
+    Notification::assertSentTo($reseller->user,
         SubscriptionActivatedNotification::class,
         fn (SubscriptionActivatedNotification $notification): bool => $notification->queue === 'transactional-email',
     );

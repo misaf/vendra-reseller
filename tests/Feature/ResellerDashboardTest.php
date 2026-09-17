@@ -33,7 +33,7 @@ beforeEach(function (): void {
 function actAsReseller(Reseller $reseller): User
 {
     $user = User::factory()->create(['tenant_id' => null]);
-    $reseller->users()->attach($user->getKey());
+    $reseller->user()->associate($user)->save();
     actingAs($user, 'reseller');
     Filament::setCurrentPanel(Filament::getPanel('reseller'));
 

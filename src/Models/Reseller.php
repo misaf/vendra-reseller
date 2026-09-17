@@ -11,38 +11,34 @@ use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Misaf\VendraReseller\Database\Factories\ResellerFactory;
 use Misaf\VendraReseller\Observers\ResellerObserver;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSubscription\Contracts\SubscriptionSubscriber;
 use Misaf\VendraSubscription\Models\Subscription;
 use Misaf\VendraSupport\Contracts\ShouldLogActivity;
+use Misaf\VendraSupport\Tenancy\Scopes\TeamScope;
+use Misaf\VendraSupport\Tenancy\Scopes\TenantScope;
 use Misaf\VendraUser\Models\User;
-use Spatie\Sluggable\HasSlug;
-use Spatie\Sluggable\SlugOptions;
 
 /**
  * @property int $id
- * @property string $name
- * @property string|null $description
- * @property string $slug
+ * @property int $user_id
  * @property bool $active
- * @property string|null $email
  * @property string|null $offboarding_reason
  * @property Carbon|null $offboarded_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
+ * @property-read User $user
  */
-#[Fillable(['name', 'description', 'slug', 'active', 'email'])]
+#[Fillable(['user_id', 'active'])]
 #[ObservedBy([ResellerObserver::class])]
 #[UseFactory(ResellerFactory::class)]
 final class Reseller extends Model implements ShouldLogActivity, SubscriptionSubscriber
@@ -50,8 +46,6 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     /** @use HasFactory<ResellerFactory> */
     use HasFactory;
 
-    use HasSlug;
-    use Notifiable;
     use SoftDeletes;
 
     /**
@@ -61,30 +55,18 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     {
         return [
             'id' => 'integer',
-            'name' => 'string',
-            'description' => 'string',
-            'slug' => 'string',
             'active' => 'boolean',
-            'email' => 'string',
             'offboarding_reason' => 'string',
             'offboarded_at' => 'datetime',
         ];
     }
 
     /**
-     * Route mail notifications to the reseller's contact email.
-     */
-    public function routeNotificationForMail(): ?string
-    {
-        return $this->email;
-    }
-
-    /**
-     * Whether the reseller has a contact email to notify.
+     * The reseller has no contact details of its own: its main account is always the contact.
      */
     public function hasContactEmail(): bool
     {
-        return $this->email !== null;
+        return true;
     }
 
     /**
@@ -136,69 +118,52 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     }
 
     /**
-     * Canonical users holding an active membership in this reseller.
+     * The reseller's main account: a canonical platform user (`tenant_id` null).
      *
-     * Identity lives on `users`; this pivot only records who may act for
-     * the reseller. Disabled and replaced users stay in the table as
-     * soft-deleted rows, so this relation resolves the active user only.
+     * The tenant scopes are lifted because the account belongs to no tenant, so
+     * resolving it inside a tenant context (a notification raised while a store
+     * is current) must not hide it.
      *
-     * @return BelongsToMany<User, $this>
+     * @return BelongsTo<User, $this>
      */
-    public function users(): BelongsToMany
+    public function user(): BelongsTo
     {
-        return $this->belongsToMany(User::class, 'reseller_users')
-            ->wherePivotNull('deleted_at')
-            ->withTimestamps();
+        return $this->belongsTo(User::class)
+            ->withoutGlobalScopes([TenantScope::class, TeamScope::class]);
     }
 
     /**
-     * The reseller's current user, if the single active membership exists.
-     *
-     * Not a relation — reach for {@see users()} when you need the pivot.
+     * A reseller has no name of its own: it is shown by its main account's username.
      */
-    public function user(): ?User
+    public function displayName(): string
     {
-        return $this->users()->first();
+        return $this->user->username;
     }
 
     /**
-     * The user of the latest membership, including disabled history.
+     * Display names keyed by reseller id for every reseller the query matches.
      *
-     * Used by the console to re-enable a disabled user account.
+     * @param  Builder<self>  $query
+     * @return array<int, string>
      */
-    public function latestUser(): ?User
+    public static function displayNames(Builder $query): array
     {
-        $membership = DB::table('reseller_users')
-            ->where('reseller_id', $this->getKey())
-            ->orderByDesc('id')
-            ->first();
-
-        if ($membership === null) {
-            return null;
-        }
-
-        return User::query()->find($membership->user_id);
+        return $query
+            ->with('user')
+            ->get()
+            ->mapWithKeys(fn (self $reseller): array => [$reseller->id => $reseller->displayName()])
+            ->all();
     }
 
     /**
-     * Resolve the reseller the given user currently acts for, if any.
+     * The reseller the given user is the main account of, if any.
      *
-     * A user with no active membership — or whose reseller was offboarded —
-     * resolves to null and therefore sees nothing in the reseller panel.
+     * An offboarded reseller is soft-deleted, so its former account resolves
+     * to null and sees nothing in the reseller panel.
      */
     public static function forUser(User $user): ?self
     {
-        $membership = DB::table('reseller_users')
-            ->where('user_id', $user->getKey())
-            ->whereNull('deleted_at')
-            ->orderBy('id')
-            ->first();
-
-        if ($membership === null) {
-            return null;
-        }
-
-        return self::query()->find($membership->reseller_id);
+        return self::query()->where('user_id', $user->getKey())->first();
     }
 
     /**
@@ -219,12 +184,12 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
 
     public function notifyContact(Notification $notification): void
     {
-        $this->notify($notification);
+        $this->user->notify($notification);
     }
 
-    public function subscriptionPayer(): ?User
+    public function subscriptionPayer(): User
     {
-        return $this->user();
+        return $this->user;
     }
 
     public function subscribedUnitCount(): int
@@ -257,13 +222,5 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     public function allows(string $feature): bool
     {
         return $this->activeSubscription()?->plan?->allows($feature) ?? false;
-    }
-
-    public function getSlugOptions(): SlugOptions
-    {
-        return SlugOptions::create()
-            ->generateSlugsFrom('name')
-            ->saveSlugsTo('slug')
-            ->preventOverwrite();
     }
 }

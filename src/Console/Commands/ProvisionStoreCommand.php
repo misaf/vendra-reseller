@@ -8,6 +8,7 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -26,7 +27,7 @@ use Misaf\VendraSubscription\Models\Plan;
         {email : Email address for the tenant administrator}
         {--if-missing : Skip provisioning when the tenant domain already exists}
         {--password= : Password for the tenant administrator (random when omitted)}
-        {--reseller= : Attach the store to an existing reseller (id or slug)}
+        {--reseller= : Attach the store to an existing reseller (id or username of its user)}
         {--plan= : Create a reseller for this store subscribed to the given plan (id or slug)}
         {--seed : Run default tenant seeders after provisioning}')]
 final class ProvisionStoreCommand extends Command implements PromptsForMissingInput
@@ -84,7 +85,7 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
         $this->info('Store provisioned.');
         $this->table(['Field', 'Value'], [
             ['Domain', Arr::get($data, 'domain')],
-            ['Reseller', $reseller === null ? '[none]' : $reseller->name],
+            ['Reseller', $reseller === null ? '[none]' : $reseller->displayName()],
             ['Username', Arr::get($result, 'user')->username],
             ['Email', Arr::get($result, 'user')->email],
             ['Password', $passwordWasProvided ? '[provided]' : Arr::get($result, 'password')],
@@ -109,8 +110,14 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
 
         if ($resellerOption !== null) {
             $reseller = Reseller::query()
-                ->where('id', $resellerOption)
-                ->orWhere('slug', $resellerOption)
+                ->when(
+                    ctype_digit((string) $resellerOption),
+                    fn (Builder $query): Builder => $query->whereKey((int) $resellerOption),
+                    fn (Builder $query): Builder => $query->whereHas(
+                        'user',
+                        fn (Builder $query): Builder => $query->where('username', $resellerOption),
+                    ),
+                )
                 ->first();
 
             if ($reseller === null) {

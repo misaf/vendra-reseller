@@ -8,6 +8,9 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
+use Misaf\VendraStore\Enums\StorefrontDesiredState;
+use Misaf\VendraStore\Enums\StoreStatus;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraStore\Models\StorefrontDeployment;
 use Misaf\VendraSupport\Filament\Infolists\Components\DescriptionEntry;
@@ -31,6 +34,10 @@ final class StoreInfolist
                             ->state(fn (Store $record): string => $record->adminUrl())
                             ->url(fn (Store $record): string => $record->adminUrl())
                             ->openUrlInNewTab()->copyable(),
+                        TextEntry::make('storefront_url')->label(__('vendra-reseller::attributes.storefront_url'))
+                            ->state(fn (Store $record): ?string => self::deployment($record)?->domain)
+                            ->url(fn (Store $record): ?string => self::deployment($record)?->url())
+                            ->openUrlInNewTab()->copyable()->placeholder('—'),
                         IsActiveEntry::make(),
                     ]),
                     DescriptionEntry::make()->placeholder('—'),
@@ -39,14 +46,13 @@ final class StoreInfolist
                 ->schema([
                     Grid::make(3)->schema([
                         TextEntry::make('store_status')->label(__('vendra-reseller::attributes.operational_status'))
-                            ->badge()->state(fn (Store $record): string => $record->status()->value)
-                            ->formatStateUsing(fn (string $state): string => __("vendra-reseller::attributes.store_status_{$state}")),
+                            ->badge()->state(fn (Store $record): StoreStatus => $record->status()),
                         TextEntry::make('deployment_status')->label(__('vendra-reseller::attributes.storefront_status'))
-                            ->badge()->state(fn (Store $record): ?string => self::deployment($record)?->status->value)
-                            ->formatStateUsing(fn (string $state): string => __("vendra-reseller::attributes.deployment_status_{$state}"))
+                            ->badge()->state(fn (Store $record): ?StorefrontDeploymentStatus => self::deployment($record)?->status)
                             ->placeholder(__('vendra-reseller::attributes.storefront_not_requested')),
                         TextEntry::make('desired_state')->label(__('vendra-reseller::attributes.desired_state'))
-                            ->state(fn (Store $record): ?string => self::deployment($record)?->desired_state->value)
+                            ->badge()
+                            ->state(fn (Store $record): ?StorefrontDesiredState => self::deployment($record)?->desired_state)
                             ->placeholder('—'),
                     ]),
                     TextEntry::make('provisioning_error')->label(__('vendra-reseller::attributes.provisioning_error'))

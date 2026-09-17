@@ -25,7 +25,7 @@ function resellerPlatformUser(Reseller $reseller, array $attributes = []): User
         ...$attributes,
     ]);
 
-    $reseller->users()->attach($user->getKey());
+    $reseller->user()->associate($user)->save();
 
     return $user;
 }
@@ -150,17 +150,14 @@ it('restores reseller sessions only for the platform user via remember token', f
         ->and($provider->retrieveByToken($tenantUser->getKey(), 'tenant-remember-token'))->toBeNull();
 });
 
-it('removes reseller access when the membership is revoked', function (): void {
+it('removes reseller access when the reseller is deactivated', function (): void {
     $reseller = Reseller::factory()->create();
     $user = resellerPlatformUser($reseller);
     $panel = Filament::getPanel('reseller');
 
     expect($user->canAccessPanel($panel))->toBeTrue();
 
-    DB::table('reseller_users')
-        ->where('reseller_id', $reseller->getKey())
-        ->where('user_id', $user->getKey())
-        ->update(['deleted_at' => now()]);
+    $reseller->forceFill(['active' => false])->save();
 
     expect($user->canAccessPanel($panel))->toBeFalse()
         ->and(User::query()->find($user->getKey()))->not->toBeNull();

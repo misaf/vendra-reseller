@@ -24,6 +24,7 @@ use Misaf\VendraStore\Enums\StoreStatus;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraStore\Models\StorefrontDeployment;
 use Misaf\VendraSupport\Filament\Tables\Columns\CreatedAtColumn;
+use Misaf\VendraSupport\Filament\Tables\Columns\IsActiveIconColumn;
 use Misaf\VendraSupport\Filament\Tables\Columns\NameColumn;
 use Misaf\VendraSupport\Filament\Tables\Columns\RowIndexColumn;
 use Misaf\VendraSupport\Filament\Tables\Columns\UpdatedAtColumn;
@@ -38,24 +39,23 @@ final class StoreTable
                 RowIndexColumn::make(),
 
                 NameColumn::make()
+                    ->icon(null)
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('domain')
                     ->label(__('vendra-reseller::attributes.domain'))
-                    ->icon(Heroicon::GlobeAlt)
                     ->state(fn (Store $record): ?string => $record->domains->first()?->name)
                     ->placeholder('—'),
 
                 TextColumn::make('storefront_status')
                     ->label(__('vendra-reseller::attributes.storefront_status'))
                     ->badge()
-                    ->state(fn (Store $record): ?string => self::deployment($record)?->status->value)
+                    ->state(fn (Store $record): ?StorefrontDeploymentStatus => self::deployment($record)?->status)
                     ->placeholder(__('vendra-reseller::attributes.storefront_not_requested')),
 
                 TextColumn::make('admin_url')
                     ->label(__('vendra-reseller::attributes.admin_url'))
-                    ->icon(Heroicon::OutlinedBuildingOffice2)
                     ->state(fn (Store $record): string => $record->adminUrl())
                     ->url(fn (Store $record): string => $record->adminUrl())
                     ->openUrlInNewTab()
@@ -64,7 +64,6 @@ final class StoreTable
 
                 TextColumn::make('storefront_url')
                     ->label(__('vendra-reseller::attributes.storefront_url'))
-                    ->icon(Heroicon::OutlinedShoppingBag)
                     ->state(fn (Store $record): ?string => self::deployment($record)?->domain)
                     ->placeholder('—')
                     ->url(fn (Store $record): ?string => self::deployment($record)?->url())
@@ -72,11 +71,12 @@ final class StoreTable
                     ->copyable()
                     ->copyMessage(__('vendra-reseller::messages.url_copied')),
 
+                IsActiveIconColumn::make(),
+
                 TextColumn::make('status')
                     ->label(__('vendra-reseller::attributes.operational_status'))
                     ->badge()
-                    ->state(fn (Store $record): string => $record->status()->value)
-                    ->formatStateUsing(fn (string $state): string => __("vendra-reseller::attributes.store_status_{$state}")),
+                    ->state(fn (Store $record): StoreStatus => $record->status()),
 
                 CreatedAtColumn::make()
                     ->sortable(),
@@ -93,7 +93,7 @@ final class StoreTable
 
                     SelectFilter::make('status')
                         ->label(__('vendra-reseller::attributes.operational_status'))
-                        ->options(self::statusOptions())
+                        ->options(StoreStatus::class)
                         ->query(function (Builder $query, array $data): Builder {
                             $value = Arr::get($data, 'value', null);
                             $status = is_string($value) ? StoreStatus::tryFrom($value) : null;
@@ -103,7 +103,7 @@ final class StoreTable
 
                     SelectFilter::make('storefront_status')
                         ->label(__('vendra-reseller::attributes.storefront_status'))
-                        ->options(self::deploymentStatusOptions())
+                        ->options(StorefrontDeploymentStatus::class)
                         ->query(function (Builder $query, array $data): Builder {
                             $value = Arr::get($data, 'value', null);
                             $status = is_string($value) ? StorefrontDeploymentStatus::tryFrom($value) : null;
@@ -146,25 +146,5 @@ final class StoreTable
         $deployment = $store->storefrontDeployments->first();
 
         return $deployment instanceof StorefrontDeployment ? $deployment : null;
-    }
-
-    /** @return array<string, string> */
-    private static function statusOptions(): array
-    {
-        return collect(StoreStatus::cases())
-            ->mapWithKeys(fn (StoreStatus $status): array => [
-                $status->value => __("vendra-reseller::attributes.store_status_{$status->value}"),
-            ])
-            ->all();
-    }
-
-    /** @return array<string, string> */
-    private static function deploymentStatusOptions(): array
-    {
-        return collect(StorefrontDeploymentStatus::cases())
-            ->mapWithKeys(fn (StorefrontDeploymentStatus $status): array => [
-                $status->value => __("vendra-reseller::attributes.deployment_status_{$status->value}"),
-            ])
-            ->all();
     }
 }

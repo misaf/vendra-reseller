@@ -10,17 +10,18 @@ use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraSubscription\Actions\SubscribeAction;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
+use Misaf\VendraUser\Actions\CreateUserAction;
 use Misaf\VendraUser\Models\User;
 
 final readonly class CreateResellerAction
 {
     public function __construct(
-        private CreateResellerUserAction $createResellerUserAction,
+        private CreateUserAction $createUserAction,
         private SubscribeAction $subscribeAction,
     ) {}
 
     /**
-     * Create a billing reseller and subscribe it to the given plan.
+     * Create a billing reseller with its main account and subscribe it to the given plan.
      *
      * @return array{reseller: Reseller, user: User, subscription: Subscription}
      */
@@ -34,20 +35,18 @@ final readonly class CreateResellerAction
         bool $emailVerified = true,
     ): array {
         return DB::transaction(function () use ($plan, $username, $email, $password, $startsAt, $active, $emailVerified): array {
-            $reseller = Reseller::query()->create([
-                'name' => $username,
-                'slug' => $username,
-                'active' => $active,
-                'email' => $email,
-            ]);
-
-            $user = $this->createResellerUserAction->execute(
-                $reseller,
-                $username,
-                $email,
-                $password,
-                $emailVerified,
+            $user = $this->createUserAction->execute(
+                tenant: null,
+                username: $username,
+                email: $email,
+                password: $password,
+                isVerified: $emailVerified,
             );
+
+            $reseller = Reseller::query()->create([
+                'user_id' => $user->getKey(),
+                'active' => $active,
+            ]);
 
             $subscription = $this->subscribeAction->execute($reseller, $plan, $startsAt);
 

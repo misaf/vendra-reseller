@@ -79,11 +79,10 @@ final class StoreResource extends Resource
      * through, and global search all build on this, so scoping the table alone
      * would leave the others open.
      *
-     * A user with no resolvable reseller sees nothing. That is not a
-     * hypothetical: offboarding soft-deletes the `Reseller` while the user's
-     * membership — and canonical identity — stay intact, and
-     * `where('reseller_id', null)` is `whereNull` to Eloquent — which is
-     * every store the platform owns directly.
+     * A user with no resolvable reseller sees nothing. Panel access already
+     * requires an active, non-offboarded reseller, but the guard stays
+     * explicit: `where('reseller_id', null)` is `whereNull` to Eloquent —
+     * which is every store the platform owns directly.
      *
      * @return Builder<Store>
      */

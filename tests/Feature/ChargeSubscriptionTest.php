@@ -89,7 +89,7 @@ function resellerWithUser(): Reseller
 {
     $reseller = Reseller::factory()->create();
     $user = User::factory()->create(['tenant_id' => null]);
-    $reseller->users()->attach($user->getKey());
+    $reseller->user()->associate($user)->save();
 
     return $reseller;
 }
@@ -204,18 +204,6 @@ it('rejects a paid subscription when no payment provider is available', function
     ))->toThrow(SubscriptionPaymentException::class, 'No subscription payment provider')
         ->and($reseller->subscriptions()->count())->toBe(0);
     Queue::assertNothingPushed();
-});
-
-it('rejects a paid subscription when the reseller has no payer', function (): void {
-    Queue::fake();
-    fakeSubscriptionCharger();
-    $reseller = Reseller::factory()->create();
-
-    expect(fn () => resolve(SubscribeAction::class)->execute(
-        $reseller,
-        Plan::factory()->priced(1_000, 'USD')->create(),
-    ))->toThrow(SubscriptionPaymentException::class, 'no payer')
-        ->and($reseller->subscriptions()->count())->toBe(0);
 });
 
 it('keeps the existing subscription active when payment is declined', function (): void {

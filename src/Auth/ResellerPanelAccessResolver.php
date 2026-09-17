@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Auth;
 
-use Illuminate\Support\Facades\DB;
+use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraUser\Contracts\PanelAccessResolver;
 use Misaf\VendraUser\Models\User;
 
 /**
  * Reseller panel authorization, owned by the reseller domain.
  *
- * Membership rows live in the `reseller_users` pivot and are written only
- * from here; an active (non-deleted) membership grants panel access. An
- * offboarded reseller keeps its users' memberships, so they can still
- * sign in but resolve no reseller and see nothing. Revoking the
- * membership removes panel access without deleting the identity.
+ * A user may enter the panel only while it is the main account of an active
+ * reseller. Deactivating the reseller is how its account is locked out, and an
+ * offboarded (soft-deleted) reseller grants nothing; either way the canonical
+ * identity is never deleted.
  */
 final class ResellerPanelAccessResolver implements PanelAccessResolver
 {
@@ -26,9 +25,9 @@ final class ResellerPanelAccessResolver implements PanelAccessResolver
 
     public function canAccess(User $user): bool
     {
-        return DB::table('reseller_users')
+        return Reseller::query()
+            ->active()
             ->where('user_id', $user->getKey())
-            ->whereNull('deleted_at')
             ->exists();
     }
 }

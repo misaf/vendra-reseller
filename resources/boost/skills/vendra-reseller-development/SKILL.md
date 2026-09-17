@@ -1,6 +1,6 @@
 ---
 name: vendra-reseller-development
-description: "Create, modify, review, or test the Vendra Reseller module in packages/vendra-reseller, changing the reseller domain and the reseller self-service panel. Use for Reseller, reseller_users memberships, CreateResellerAction, CreateResellerUserAction, OffboardResellerAction, OffboardResellerBulkAction, ResellerOffboarded, InteractsWithCurrentReseller, ResellerPanelServiceProvider, ResellerServiceProvider, ProvisionStoreCommand, AddResellerToRequestJobContext, TransactionSubscriptionCharger, NotifyActivatedSubscriber, RemindExpiringSubscriber, SuspendSubscriberStores, SubscriptionActivatedNotification, SubscriptionExpiringNotification, StoresSuspendedNotification, ResellerOverview, LatestStores, SubscriptionDetail, and the panel's store resource."
+description: "Create, modify, review, or test the Vendra Reseller module in packages/vendra-reseller, changing the reseller domain and the reseller self-service panel. Use for Reseller, its main account (resellers.user_id), CreateResellerAction, ReplaceResellerUserAction, UpdateResellerUserEmailAction, OffboardResellerAction, OffboardResellerBulkAction, ResellerOffboarded, InteractsWithCurrentReseller, ResellerPanelServiceProvider, ResellerServiceProvider, ProvisionStoreCommand, AddResellerToRequestJobContext, TransactionSubscriptionCharger, NotifyActivatedSubscriber, RemindExpiringSubscriber, SuspendSubscriberStores, SubscriptionActivatedNotification, SubscriptionExpiringNotification, StoresSuspendedNotification, ResellerOverview, LatestStores, SubscriptionDetail, and the panel's store resource."
 ---
 
 # Vendra Reseller
@@ -33,10 +33,10 @@ description: "Create, modify, review, or test the Vendra Reseller module in pack
 
 ## Reseller Lifecycle
 
-- `Actions\CreateResellerAction` and `Actions\CreateResellerUserAction` create the reseller and its first panel user (a canonical `User` with a `reseller_users` membership, `tenant_id` null).
-- Password changes use `vendra-user`'s `UpdateUserPasswordAction`. Other user-account changes use `UpdateResellerUserEmailAction`, `SetResellerUserAccountEnabledAction`, and `ReplaceResellerUserAction`; disable and replacement retire memberships as soft-deleted history while the canonical identity survives.
+- Each reseller has exactly one main account, `resellers.user_id` (required, unique, a canonical `User` with `tenant_id` null). `Actions\CreateResellerAction` creates the account through `vendra-user`'s `CreateUserAction`, then the reseller and its subscription.
+- Password changes use `vendra-user`'s `UpdateUserPasswordAction`; email changes use `UpdateResellerUserEmailAction`; `ReplaceResellerUserAction` creates a new account and repoints `user_id`, leaving the former identity intact. There is no account disable — deactivating the reseller locks its account out of the panel.
 - `Actions\OffboardResellerAction` is the only supported removal path. `Reseller::deleting` throws for a reseller that was not offboarded first, and `Events\ResellerOffboarded` is the extension point.
-- `Actions\SetResellerActiveAction` is the only supported way to change `active` after creation. It locks the row and throws for an offboarded reseller; an inactive reseller keeps its stores but cannot create new ones.
+- `Actions\SetResellerActiveAction` is the only supported way to change `active` after creation. It locks the row and throws for an offboarded reseller; an inactive reseller keeps its stores but its account cannot enter the panel.
 - `Models\Reseller` implements `SubscriptionSubscriber` and `ShouldLogActivity`. Read quota state through `Misaf\VendraStore\Support\StoreQuota`; do not recompute plan limits inline.
 
 ## Subscription Reactions
@@ -53,7 +53,7 @@ description: "Create, modify, review, or test the Vendra Reseller module in pack
 
 ## Testing
 
-- Build resellers and subscriptions from the package factories and users as canonical users with a membership (`$reseller->users()->attach($user)`); assert quota and suspension behaviour through the actions rather than the panel where possible.
+- Build resellers and subscriptions from the package factories; the reseller factory creates the main account (use `->for($user)` to supply one); assert quota and suspension behaviour through the actions rather than the panel where possible.
 - Panel tests must not assume a current tenant.
 
 ## Filament

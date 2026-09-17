@@ -64,7 +64,7 @@ final class ResellerServiceProvider extends PackageServiceProvider
 
         /*
         | Reseller authorization lives here: the resolver gates panel entry
-        | on the active reseller_users membership, and the reseller guard
+        | on being the main account of an active reseller, and the reseller guard
         | resolves only platform identities (tenant_id IS NULL) through the
         | shared platform provider, so a tenant row can never win a lookup.
         */

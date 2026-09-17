@@ -27,11 +27,7 @@ final readonly class OffboardResellerAction
         throw_if(Str::length($reason) > self::MAX_REASON_LENGTH, InvalidArgumentException::class, 'The offboarding reason may not exceed '.self::MAX_REASON_LENGTH.' characters.');
 
         return DB::transaction(function () use ($reseller, $reason): Reseller {
-            $lockedReseller = Reseller::query()
-                ->withTrashed()
-                ->whereKey($reseller->getKey())
-                ->lockForUpdate()
-                ->firstOrFail();
+            $lockedReseller = $reseller->refreshForUpdate();
 
             if ($lockedReseller->offboarded_at !== null) {
                 return $lockedReseller;

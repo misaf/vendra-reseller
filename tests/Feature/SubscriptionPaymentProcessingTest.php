@@ -20,7 +20,7 @@ use Misaf\VendraUser\Models\User;
 function paymentPayerFor(Reseller $reseller): User
 {
     $payer = User::factory()->create(['tenant_id' => null]);
-    $reseller->users()->attach($payer->getKey());
+    $reseller->user()->associate($payer)->save();
 
     return $payer;
 }

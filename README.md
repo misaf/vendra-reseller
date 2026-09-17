@@ -11,15 +11,16 @@ reseller.
 
 That scoping lives in one place — `StoreResource::getEloquentQuery()` — because
 the table, the record actions, and global search all build on it. A user whose
-reseller cannot be resolved sees nothing at all: offboarding soft-deletes the
-`Reseller` while the user's canonical identity and membership can still sign
-in, and `where('reseller_id', null)` means `whereNull` to Eloquent, which is
-every store the platform owns directly.
+reseller cannot be resolved sees nothing at all. Panel access already requires
+an active, non-offboarded reseller, but the guard stays explicit because
+`where('reseller_id', null)` means `whereNull` to Eloquent, which is every store
+the platform owns directly.
 
-Reseller users are canonical users (`misaf/vendra-user`): `reseller_users` is a
-membership pivot linking a user to its reseller, not a user table. Identity
-columns live on `users`; disabling or replacing a user retires memberships
-while the identity — and any tenant access it holds — stays intact.
+Each reseller has exactly one main account: `resellers.user_id` (required,
+unique) points at a canonical platform user (`misaf/vendra-user`,
+`tenant_id` null). Identity columns live on `users`; replacing the account
+repoints `user_id` while the former identity — and any tenant access it holds —
+stays intact.
 
 ## Requirements
 
@@ -37,14 +38,14 @@ composer require misaf/vendra-reseller
 php artisan migrate
 ```
 
-The `resellers` table and the `reseller_users` membership pivot are created by
-migrations; the host application's `config/auth.php` points the `reseller`
+The `resellers` table is created by migrations; the host application's `config/auth.php` points the `reseller`
 guard at the platform-scoped `reseller` provider and the `reseller`
 password broker, which stores its reset tokens in
 `reseller_password_reset_tokens` so neither a tenant user sharing the email nor
 the console panel can consume them. A user may
-enter the panel while holding an active membership — one active membership per
-reseller is enforced, and disabled history is kept as soft-deleted rows.
+enter the panel only while it is the main account of an active reseller:
+deactivating the reseller (`SetResellerActiveAction`) is how its account is
+locked out, and an offboarded reseller grants nothing.
 
 The panel is served on `reseller.<app host>`, derived from `app.url` — nothing
 here hard-codes a host.
@@ -64,20 +65,21 @@ $reseller = app(CreateResellerAction::class)->execute(
 );
 ```
 
-This creates the reseller, its first panel user (`CreateResellerUserAction`),
-and the subscription to the given plan.
+This creates the main account (through `vendra-user`'s `CreateUserAction`),
+the reseller pointing at it, and the subscription to the given plan.
 
 ### User accounts
 
 Password changes go through `vendra-user`'s `UpdateUserPasswordAction`, which
-handles tenant-less users. Other credential and lifecycle changes go through
-`UpdateResellerUserEmailAction`, `SetResellerUserAccountEnabledAction`, and
-`ReplaceResellerUserAction`, all operating on the canonical `User` and its
-membership. Replacement retires the
-previous membership as history — the former identity is never deleted — and
-creates the new user through `CreateResellerUserAction`; disabling retires
-the membership so panel access stops while the identity survives; email changes
-also keep the reseller contact email synchronized.
+handles tenant-less users. Email changes go through
+`UpdateResellerUserEmailAction`, and `ReplaceResellerUserAction` creates a new
+main account and repoints the reseller to it — the former identity is never
+deleted. There is no separate account disable: deactivate the reseller.
+
+A reseller stores no name, description, slug, or contact email of its own: it
+is identified by its main account's username (`Reseller::displayName()`, or
+`Reseller::displayNames()` for option lists), and subscription notifications
+go to that account.
 
 ### Offboarding
 
@@ -147,8 +149,8 @@ php artisan vendra-subscription:provision {name} {domain} {username} {email} \
 
 Provisions a store with its domain, administrator user, and role assignment. It calls
 `Misaf\VendraStore\Actions\ProvisionStoreAction` — the reseller-specific
-part is only which reseller is attached (`--reseller`), or created and
-subscribed (`--plan`).
+part is only which reseller is attached (`--reseller`, by id or by its user's
+username), or created and subscribed (`--plan`).
 
 ## Panel
 
@@ -171,8 +173,9 @@ remain console concerns and are not exposed here.
 
 ## Testing
 
-Build resellers from the package factory and users as canonical users with a
-`reseller_users` membership (`$reseller->users()->attach($user)`), then assert
+Build resellers from the package factory, which creates the main account; pass
+your own with `Reseller::factory()->for($user)` or repoint one with
+`$reseller->user()->associate($user)->save()`, then assert
 quota and suspension behaviour through the actions. Panel tests must not assume
 a current tenant.
 
