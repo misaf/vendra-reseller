@@ -15,6 +15,6 @@ final class ReplaceDomainTableAction extends BaseReplaceDomainTableAction
      */
     protected function authorizationCallback(): Closure
     {
-        return StoreResource::canCreate(...);
+        return StoreResource::canManageStores(...);
     }
 }

@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraReseller\Notifications\StoresSuspendedNotification;
 use Misaf\VendraReseller\Notifications\SubscriptionActivatedNotification;
 use Misaf\VendraReseller\Notifications\SubscriptionExpiringNotification;
+use Misaf\VendraStore\Enums\StorefrontDesiredState;
+use Misaf\VendraStore\Jobs\ReconcileStorefrontJob;
+use Misaf\VendraStore\Models\Store;
+use Misaf\VendraStore\Models\StorefrontDeployment;
 use Misaf\VendraSubscription\Actions\CancelSubscriptionAction;
 use Misaf\VendraSubscription\Actions\EnforceSubscriptionsAction;
 use Misaf\VendraSubscription\Actions\SubscribeAction;
@@ -114,4 +119,20 @@ it('sends subscription notifications on the transactional-email queue', function
         SubscriptionActivatedNotification::class,
         fn (SubscriptionActivatedNotification $notification): bool => $notification->queue === 'transactional-email',
     );
+});
+
+it('stops and restarts storefronts with billing suspension and reactivation', function (): void {
+    Queue::fake();
+
+    $reseller = Reseller::factory()->create();
+    $store = Store::factory()->active()->create(['reseller_id' => $reseller->getKey()]);
+    $deployment = StorefrontDeployment::factory()->for($store)->create(['desired_state' => StorefrontDesiredState::Running]);
+
+    expect($reseller->suspendActiveUnits())->toBe(1)
+        ->and($deployment->refresh()->desired_state)->toBe(StorefrontDesiredState::Stopped)
+        ->and($reseller->reactivateSuspendedUnits())->toBe(1)
+        ->and($store->refresh()->billing_suspended_at)->toBeNull()
+        ->and($deployment->refresh()->desired_state)->toBe(StorefrontDesiredState::Running);
+
+    Queue::assertPushed(ReconcileStorefrontJob::class, fn (ReconcileStorefrontJob $job): bool => $job->deploymentId === $deployment->id);
 });

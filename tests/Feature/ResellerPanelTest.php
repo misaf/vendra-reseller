@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Select;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Enums\FiltersLayout;
 use Illuminate\Support\Arr;
@@ -632,4 +633,61 @@ it('changes the reseller password through the user password action', function ()
 
     expect(Hash::check('new-password-123', $user->password))->toBeTrue()
         ->and($user->remember_token)->not->toBe('old-token');
+});
+
+it('offers only free plans at registration', function (): void {
+    $free = Plan::factory()->create(['active' => true]);
+    $paid = Plan::factory()->priced(5_000)->create(['active' => true]);
+    Filament::setCurrentPanel(Filament::getPanel('reseller'));
+
+    livewire(Register::class)
+        ->assertFormFieldExists('plan_id', fn (Select $field): bool => array_keys($field->getOptions()) === [$free->getKey()])
+        ->fillForm([
+            'username' => 'paid_reseller',
+            'email' => 'paid@reseller.test',
+            'password' => 'Secure123',
+            'passwordConfirmation' => 'Secure123',
+            'plan_id' => $paid->getKey(),
+        ])
+        ->call('register')
+        ->assertHasFormErrors(['plan_id']);
+});
+
+it('lets a store administrator register as a reseller with the same email and username', function (): void {
+    $plan = Plan::factory()->create(['active' => true]);
+    User::factory()->create([
+        'tenant_id' => createTestTenant()->getKey(),
+        'username' => 'shared_name',
+        'email' => 'shared@reseller.test',
+    ]);
+    forgetCurrentTestTenant();
+    Filament::setCurrentPanel(Filament::getPanel('reseller'));
+
+    livewire(Register::class)
+        ->fillForm([
+            'username' => 'shared_name',
+            'email' => 'shared@reseller.test',
+            'password' => 'Secure123',
+            'passwordConfirmation' => 'Secure123',
+            'plan_id' => $plan->getKey(),
+        ])
+        ->call('register')
+        ->assertHasNoFormErrors();
+});
+
+it('offboards a deleted store and still allows it while store creation is frozen', function (): void {
+    $reseller = Reseller::factory()->create();
+    $store = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
+    resolve(StoreCreationSettings::class)->fill(['open' => false])->save();
+
+    actAsResellerUser($reseller);
+
+    livewire(ListStores::class)
+        ->callAction(TestAction::make('delete')->table($store))
+        ->assertHasNoErrors();
+
+    $trashed = Store::query()->withTrashed()->findOrFail($store->getKey());
+
+    expect($trashed->trashed())->toBeTrue()
+        ->and($trashed->metadata('offboarding.previous_active'))->toBeTrue();
 });

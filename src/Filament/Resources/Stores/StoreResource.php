@@ -118,6 +118,15 @@ final class StoreResource extends Resource
         return $reseller !== null && $reseller->active;
     }
 
+    /**
+     * Managing existing stores — deleting one, replacing its domain — needs only
+     * an active reseller. The creation freeze stops new stores, not these.
+     */
+    public static function canManageStores(): bool
+    {
+        return self::currentReseller()?->active === true;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return StoreForm::configure($schema);

@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Hash;
 use Misaf\VendraReseller\Actions\ReplaceResellerUserAction;
 use Misaf\VendraReseller\Actions\UpdateResellerUserEmailAction;
 use Misaf\VendraReseller\Models\Reseller;
+use Misaf\VendraSubscription\Enums\SubscriptionPaymentStatus;
+use Misaf\VendraSubscription\Models\Plan;
+use Misaf\VendraSubscription\Models\Subscription;
+use Misaf\VendraSubscription\Models\SubscriptionPayment;
 use Misaf\VendraUser\Actions\UpdateUserPasswordAction;
 use Misaf\VendraUser\Models\User;
 
@@ -64,4 +68,17 @@ it('replaces the main account while preserving the former identity', function ()
         ->and($formerUser->canAccessPanel(Filament::getPanel('reseller')))->toBeFalse()
         ->and($replacement->tenant_id)->toBeNull()
         ->and(Hash::check('SecurePassword123', $replacement->password))->toBeTrue();
+});
+
+it('moves open subscription payments to the replacement main account', function (): void {
+    $reseller = Reseller::factory()->create();
+    $formerUser = resellerUserFor($reseller);
+    $subscription = Subscription::factory()->forSubscriber($reseller)->for(Plan::factory())->create();
+    $pending = SubscriptionPayment::factory()->for($subscription)->forPayer($formerUser)->create(['status' => SubscriptionPaymentStatus::Pending]);
+    $paid = SubscriptionPayment::factory()->for($subscription)->forPayer($formerUser)->create(['status' => SubscriptionPaymentStatus::Paid]);
+
+    $newUser = resolve(ReplaceResellerUserAction::class)->execute($reseller, 'new_main', 'new-main@reseller.test', 'Secure123');
+
+    expect($pending->refresh()->payer_id)->toBe($newUser->getKey())
+        ->and($paid->refresh()->payer_id)->toBe($formerUser->getKey());
 });

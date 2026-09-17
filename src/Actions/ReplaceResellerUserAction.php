@@ -7,16 +7,21 @@ namespace Misaf\VendraReseller\Actions;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Misaf\VendraReseller\Models\Reseller;
+use Misaf\VendraSubscription\Support\SubscriptionRegistry;
 use Misaf\VendraUser\Actions\CreateUserAction;
 use Misaf\VendraUser\Models\User;
 
 final readonly class ReplaceResellerUserAction
 {
-    public function __construct(private CreateUserAction $createUserAction) {}
+    public function __construct(
+        private CreateUserAction $createUserAction,
+        private SubscriptionRegistry $subscriptionRegistry,
+    ) {}
 
     /**
-     * Only the reseller's pointer moves: the former main account's canonical
-     * identity stays intact, since it may hold access beyond this reseller.
+     * The reseller's pointer and its open payments move: the former main
+     * account's canonical identity stays intact, since it may hold access beyond
+     * this reseller, but it no longer pays this reseller's renewals.
      */
     public function execute(
         Reseller $reseller,
@@ -39,6 +44,7 @@ final readonly class ReplaceResellerUserAction
             );
 
             $lockedReseller->forceFill(['user_id' => $user->getKey()])->save();
+            $this->subscriptionRegistry->reassignOpenPayments($lockedReseller, $user);
 
             return $user;
         });

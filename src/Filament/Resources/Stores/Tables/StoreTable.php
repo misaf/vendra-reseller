@@ -17,8 +17,10 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Misaf\VendraReseller\Filament\Resources\Stores\Actions\ReplaceDomainTableAction;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
+use Misaf\VendraStore\Actions\OffboardStoreAction;
 use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
 use Misaf\VendraStore\Enums\StoreStatus;
 use Misaf\VendraStore\Models\Store;
@@ -32,6 +34,8 @@ use Misaf\VendraSupport\Filament\Tables\Filters\IsActiveFilter;
 
 final class StoreTable
 {
+    private const string OFFBOARDING_REASON = 'Deleted by the reseller.';
+
     public static function configure(Table $table): Table
     {
         return $table
@@ -127,7 +131,9 @@ final class StoreTable
                     ])->dropdown(false),
                     ActionGroup::make([
                         DeleteAction::make()
-                            ->authorize(fn (): bool => StoreResource::canCreate()),
+                            ->authorize(fn (): bool => StoreResource::canManageStores())
+                            // Offboarding records what the store was, so restoring it can bring it back active.
+                            ->using(fn (Store $record, OffboardStoreAction $offboardStore): Store => $offboardStore->execute($record, self::OFFBOARDING_REASON)),
                     ])->dropdown(false),
                 ]),
             ])
@@ -135,7 +141,9 @@ final class StoreTable
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
-                        ->authorize(fn (): bool => StoreResource::canCreate()),
+                        ->authorize(fn (): bool => StoreResource::canManageStores())
+                        ->using(fn (Collection $records, OffboardStoreAction $offboardStore): Collection => $records
+                            ->each(fn (Store $record): Store => $offboardStore->execute($record, self::OFFBOARDING_REASON))),
                 ]),
             ])
             ->defaultSort(column: 'id', direction: 'desc');

@@ -16,6 +16,7 @@ use Illuminate\Validation\Rules\Unique;
 use InvalidArgumentException;
 use Misaf\VendraReseller\Actions\CreateResellerAction;
 use Misaf\VendraSubscription\Models\Plan;
+use Misaf\VendraSupport\Tenancy\TenantSchema;
 use Misaf\VendraUser\Models\User;
 use SensitiveParameter;
 
@@ -44,7 +45,7 @@ final class Register extends \Filament\Auth\Pages\Register
             ->required()
             ->unique(
                 table: User::class,
-                modifyRuleUsing: fn (Unique $rule): Unique => $rule->withoutTrashed(),
+                modifyRuleUsing: fn (Unique $rule): Unique => self::amongPlatformUsers($rule),
             );
     }
 
@@ -57,8 +58,19 @@ final class Register extends \Filament\Auth\Pages\Register
             ->required()
             ->unique(
                 table: User::class,
-                modifyRuleUsing: fn (Unique $rule): Unique => $rule->withoutTrashed(),
+                modifyRuleUsing: fn (Unique $rule): Unique => self::amongPlatformUsers($rule),
             );
+    }
+
+    /**
+     * Store administrators are tenant users with their own uniqueness; a
+     * reseller only collides with other platform identities.
+     */
+    private static function amongPlatformUsers(Unique $rule): Unique
+    {
+        return TenantSchema::enabled()
+            ? $rule->whereNull(TenantSchema::column())->withoutTrashed()
+            : $rule->withoutTrashed();
     }
 
     protected function getPasswordFormComponent(): Component
@@ -78,8 +90,12 @@ final class Register extends \Filament\Auth\Pages\Register
     {
         return Select::make('plan_id')
             ->label(__('vendra-reseller::attributes.subscription_plan'))
-            ->options(fn (): array => Plan::query()->active()->pluck('name', 'id')->all())
-            ->rule(Rule::exists(Plan::class, 'id')->where('active', true))
+            /*
+             | Free plans only: a new reseller's wallet is empty, so a paid plan
+             | could only decline its first charge and leave the account planless.
+             */
+            ->options(fn (): array => Plan::query()->active()->where('price', 0)->pluck('name', 'id')->all())
+            ->rule(Rule::exists(Plan::class, 'id')->where('active', true)->where('price', 0))
             ->required()
             ->native(false);
     }
@@ -99,7 +115,7 @@ final class Register extends \Filament\Auth\Pages\Register
             || ! is_string($email)
             || ! is_string($password), InvalidArgumentException::class, 'Invalid reseller registration details.');
 
-        $plan = Plan::query()->active()->findOrFail((int) $planId);
+        $plan = Plan::query()->active()->where('price', 0)->findOrFail((int) $planId);
 
         return Arr::get(resolve(CreateResellerAction::class)->execute(
             plan: $plan,
