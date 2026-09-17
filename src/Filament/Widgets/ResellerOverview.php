@@ -25,7 +25,7 @@ final class ResellerOverview extends StatsOverviewWidget
 
     protected function getStats(): array
     {
-        $reseller = $this->currentReseller();
+        $reseller = self::currentReseller();
 
         if ($reseller === null) {
             return [];
@@ -35,7 +35,7 @@ final class ResellerOverview extends StatsOverviewWidget
         $stores = Store::query()->where('reseller_id', $reseller->getKey());
         $used = $reseller->subscribedUnitCount();
         $remaining = resolve(StoreQuota::class)->remainingStores($reseller);
-        $capacity = $reseller->isSubscriptionActive() ? ($subscription?->plan->max_units ?? 0) : 0;
+        $capacity = $reseller->canHoldUnits() ? ($subscription?->plan->max_units ?? 0) : 0;
         $active = (clone $stores)->withStatus(StoreStatus::Active)->count();
         $processing = (clone $stores)->withStatus(StoreStatus::Provisioning)->count();
         $pending = (clone $stores)->withStatus(StoreStatus::Pending)->count();
@@ -44,7 +44,7 @@ final class ResellerOverview extends StatsOverviewWidget
         $needsAttention = $provisioning + $failed;
 
         $hasReadyStorefront = (clone $stores)->whereHas(
-            'storefrontDeployments',
+            'storefrontDeployment',
             fn (Builder $query) => $query->where('status', StorefrontDeploymentStatus::Ready),
         )->exists();
 

@@ -18,14 +18,14 @@ final class SubscriptionDetail extends StatsOverviewWidget
 
     public static function canView(): bool
     {
-        $reseller = (new self)->currentReseller();
+        $reseller = self::currentReseller();
 
         return $reseller !== null && $reseller->stores()->exists();
     }
 
     protected function getStats(): array
     {
-        $reseller = $this->currentReseller();
+        $reseller = self::currentReseller();
         $subscription = $reseller?->activeSubscription();
 
         if (! $subscription instanceof Subscription) {

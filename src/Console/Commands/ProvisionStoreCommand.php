@@ -23,7 +23,7 @@ use Misaf\VendraSubscription\Exceptions\SubscriptionPaymentException;
 use Misaf\VendraSubscription\Models\Plan;
 
 #[Description('Provision a store (tenant) with a domain, administrator user, and role assignment')]
-#[Signature('vendra-subscription:provision
+#[Signature('vendra-reseller:provision-store
         {name : Tenant name}
         {domain : Tenant domain}
         {username : Username for the tenant administrator}

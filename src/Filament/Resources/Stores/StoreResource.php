@@ -6,7 +6,6 @@ namespace Misaf\VendraReseller\Filament\Resources\Stores;
 
 use BackedEnum;
 use Filament\Actions\Action;
-use Filament\Facades\Filament;
 use Filament\Resources\Pages\Page;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -16,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use InvalidArgumentException;
+use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\CreateStore;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\EditStore;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\ListStores;
@@ -23,13 +23,15 @@ use Misaf\VendraReseller\Filament\Resources\Stores\Pages\ViewStore;
 use Misaf\VendraReseller\Filament\Resources\Stores\Schemas\StoreForm;
 use Misaf\VendraReseller\Filament\Resources\Stores\Schemas\StoreInfolist;
 use Misaf\VendraReseller\Filament\Resources\Stores\Tables\StoreTable;
-use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraStore\Support\StoreCreationPolicy;
-use Misaf\VendraUser\Models\User;
 
 final class StoreResource extends Resource
 {
+    use InteractsWithCurrentReseller {
+        currentReseller as public;
+    }
+
     protected static ?string $model = Store::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedGlobeAlt;
@@ -61,17 +63,6 @@ final class StoreResource extends Resource
         return self::currentReseller()?->id;
     }
 
-    public static function currentReseller(): ?Reseller
-    {
-        $user = Filament::auth()->user();
-
-        if (! $user instanceof User) {
-            return null;
-        }
-
-        return self::resellerFor($user);
-    }
-
     /**
      * Every read of a store in this panel, scoped to the user's own reseller.
      *
@@ -97,7 +88,7 @@ final class StoreResource extends Resource
         return parent::getEloquentQuery()
             ->where('reseller_id', $resellerId)
             ->with([
-                'storefrontDeployments',
+                'storefrontDeployment',
                 'domains' => fn (Relation $relation): Relation => $relation->where('active', true),
             ]);
     }
@@ -208,15 +199,6 @@ final class StoreResource extends Resource
             'view' => ViewStore::route('/{record}'),
             'edit' => EditStore::route('/{record}/edit'),
         ];
-    }
-
-    /**
-     * Resolved once per request and user: the query scope, the create gate and
-     * the list page each ask for the reseller while rendering one page.
-     */
-    private static function resellerFor(User $user): ?Reseller
-    {
-        return once(fn (): ?Reseller => Reseller::forUser($user));
     }
 
     private static function store(Model $record): Store

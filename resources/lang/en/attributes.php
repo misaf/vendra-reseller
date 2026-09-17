@@ -31,7 +31,6 @@ return [
     'domain_helper_text' => 'Enter a valid domain name (e.g. example.com).',
     'username' => 'Username',
     'email' => 'Email',
-    'offboarding_reason' => 'Offboarding reason',
     'storefront_configuration' => 'Florist storefront',
     'storefront_status' => 'Storefront status',
     'storefront_not_requested' => 'Not requested',

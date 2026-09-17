@@ -34,7 +34,7 @@ final class LatestStores extends BaseWidget
 
     public static function canView(): bool
     {
-        $reseller = (new self)->currentReseller();
+        $reseller = self::currentReseller();
 
         return $reseller !== null && $reseller->stores()->exists();
     }
@@ -44,7 +44,7 @@ final class LatestStores extends BaseWidget
         return $table
             ->heading(self::getHeading())
             ->query(fn (): Builder => Store::query()
-                ->where('reseller_id', $this->currentReseller()?->getKey() ?? 0)
+                ->where('reseller_id', self::currentReseller()?->getKey() ?? 0)
                 ->with([
                     'domains' => fn (Relation $relation): Relation => $relation->where('active', true),
                 ]))

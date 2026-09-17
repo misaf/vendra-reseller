@@ -17,6 +17,6 @@ final readonly class ResellerOffboarded implements ShouldDispatchAfterCommit
         public string $reason,
         public CarbonImmutable $offboardedAt,
         public int $cancelledSubscriptionCount,
-        public int $offboardedTenantCount,
+        public int $offboardedStoreCount,
     ) {}
 }

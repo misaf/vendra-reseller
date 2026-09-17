@@ -24,7 +24,6 @@ use Misaf\VendraStore\Actions\OffboardStoreAction;
 use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
 use Misaf\VendraStore\Enums\StoreStatus;
 use Misaf\VendraStore\Models\Store;
-use Misaf\VendraStore\Models\StorefrontDeployment;
 use Misaf\VendraSupport\Filament\Tables\Columns\CreatedAtColumn;
 use Misaf\VendraSupport\Filament\Tables\Columns\IsActiveIconColumn;
 use Misaf\VendraSupport\Filament\Tables\Columns\NameColumn;
@@ -55,7 +54,7 @@ final class StoreTable
                 TextColumn::make('storefront_status')
                     ->label(__('vendra-reseller::attributes.storefront_status'))
                     ->badge()
-                    ->state(fn (Store $record): ?StorefrontDeploymentStatus => self::deployment($record)?->status)
+                    ->state(fn (Store $record): ?StorefrontDeploymentStatus => $record->storefrontDeployment?->status)
                     ->placeholder(__('vendra-reseller::attributes.storefront_not_requested')),
 
                 TextColumn::make('admin_url')
@@ -68,9 +67,9 @@ final class StoreTable
 
                 TextColumn::make('storefront_url')
                     ->label(__('vendra-reseller::attributes.storefront_url'))
-                    ->state(fn (Store $record): ?string => self::deployment($record)?->domain)
+                    ->state(fn (Store $record): ?string => $record->storefrontDeployment?->domain)
                     ->placeholder('—')
-                    ->url(fn (Store $record): ?string => self::deployment($record)?->url())
+                    ->url(fn (Store $record): ?string => $record->storefrontDeployment?->url())
                     ->openUrlInNewTab()
                     ->copyable()
                     ->copyMessage(__('vendra-reseller::messages.url_copied')),
@@ -115,7 +114,7 @@ final class StoreTable
                             return $status === null
                                 ? $query
                                 : $query->whereHas(
-                                    'storefrontDeployments',
+                                    'storefrontDeployment',
                                     fn (Builder $query): Builder => $query->where('status', $status),
                                 );
                         }),
@@ -147,12 +146,5 @@ final class StoreTable
                 ]),
             ])
             ->defaultSort(column: 'id', direction: 'desc');
-    }
-
-    private static function deployment(Store $store): ?StorefrontDeployment
-    {
-        $deployment = $store->storefrontDeployments->first();
-
-        return $deployment instanceof StorefrontDeployment ? $deployment : null;
     }
 }

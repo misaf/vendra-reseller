@@ -63,14 +63,6 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     }
 
     /**
-     * The reseller has no contact details of its own: its main account is always the contact.
-     */
-    public function hasContactEmail(): bool
-    {
-        return true;
-    }
-
-    /**
      * @param  Builder<self>  $query
      * @return Builder<self>
      */
@@ -178,11 +170,14 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
             ->first();
     }
 
-    public function isSubscriptionActive(): bool
+    public function canHoldUnits(): bool
     {
         return $this->active;
     }
 
+    /**
+     * The reseller has no contact details of its own: its main account is always the contact.
+     */
     public function notifyContact(Notification $notification): void
     {
         $this->user->notify($notification);

@@ -33,7 +33,7 @@ final readonly class OffboardResellerAction
                 return $lockedReseller;
             }
 
-            $tenants = $lockedReseller->stores()
+            $stores = $lockedReseller->stores()
                 ->lockForUpdate()
                 ->get();
             $cancelledSubscriptionCount = $this->subscriptionRegistry->cancelOpen($lockedReseller);
@@ -45,10 +45,10 @@ final readonly class OffboardResellerAction
                 'offboarding_reason' => $reason,
             ])->save();
 
-            $tenants->each->delete();
+            $stores->each->delete();
             $lockedReseller->delete();
 
-            event(new ResellerOffboarded(resellerId: $lockedReseller->id, reason: $reason, offboardedAt: $offboardedAt->toImmutable(), cancelledSubscriptionCount: $cancelledSubscriptionCount, offboardedTenantCount: $tenants->count()));
+            event(new ResellerOffboarded(resellerId: $lockedReseller->id, reason: $reason, offboardedAt: $offboardedAt->toImmutable(), cancelledSubscriptionCount: $cancelledSubscriptionCount, offboardedStoreCount: $stores->count()));
 
             return $lockedReseller;
         }, attempts: 5);

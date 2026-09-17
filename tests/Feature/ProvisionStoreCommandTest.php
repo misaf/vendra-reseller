@@ -10,7 +10,7 @@ use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSupport\Contracts\SubscriptionCharger;
 
 it('refuses to provision a store whose domain is not a valid domain', function (): void {
-    $this->artisan('vendra-subscription:provision', [
+    $this->artisan('vendra-reseller:provision-store', [
         'name' => 'Acme',
         'domain' => 'not a domain',
         'username' => 'admin_acme',
@@ -24,7 +24,7 @@ it('refuses to provision a store whose domain is not a valid domain', function (
 it('refuses to provision a store on a domain another store already uses', function (): void {
     StoreDomain::factory()->for(Store::factory()->create())->create(['name' => 'acme.test', 'active' => true]);
 
-    $this->artisan('vendra-subscription:provision', [
+    $this->artisan('vendra-reseller:provision-store', [
         'name' => 'Acme',
         'domain' => ' ACME.test ',
         'username' => 'admin_acme',
@@ -42,7 +42,7 @@ it('leaves no reseller behind when a paid plan cannot hold the store yet', funct
     app()->instance(SubscriptionCharger::class, $charger);
     $plan = Plan::factory()->priced(5_000)->create(['active' => true]);
 
-    $this->artisan('vendra-subscription:provision', [
+    $this->artisan('vendra-reseller:provision-store', [
         'name' => 'Acme',
         'domain' => 'acme.test',
         'username' => 'admin_acme',

@@ -12,7 +12,6 @@ use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
 use Misaf\VendraStore\Enums\StorefrontDesiredState;
 use Misaf\VendraStore\Enums\StoreStatus;
 use Misaf\VendraStore\Models\Store;
-use Misaf\VendraStore\Models\StorefrontDeployment;
 use Misaf\VendraSupport\Filament\Infolists\Components\DescriptionEntry;
 use Misaf\VendraSupport\Filament\Infolists\Components\IsActiveEntry;
 use Misaf\VendraSupport\Filament\Infolists\Components\NameEntry;
@@ -35,8 +34,8 @@ final class StoreInfolist
                             ->url(fn (Store $record): string => $record->adminUrl())
                             ->openUrlInNewTab()->copyable(),
                         TextEntry::make('storefront_url')->label(__('vendra-reseller::attributes.storefront_url'))
-                            ->state(fn (Store $record): ?string => self::deployment($record)?->domain)
-                            ->url(fn (Store $record): ?string => self::deployment($record)?->url())
+                            ->state(fn (Store $record): ?string => $record->storefrontDeployment?->domain)
+                            ->url(fn (Store $record): ?string => $record->storefrontDeployment?->url())
                             ->openUrlInNewTab()->copyable()->placeholder('—'),
                         IsActiveEntry::make(),
                     ]),
@@ -48,11 +47,11 @@ final class StoreInfolist
                         TextEntry::make('store_status')->label(__('vendra-reseller::attributes.operational_status'))
                             ->badge()->state(fn (Store $record): StoreStatus => $record->status()),
                         TextEntry::make('deployment_status')->label(__('vendra-reseller::attributes.storefront_status'))
-                            ->badge()->state(fn (Store $record): ?StorefrontDeploymentStatus => self::deployment($record)?->status)
+                            ->badge()->state(fn (Store $record): ?StorefrontDeploymentStatus => $record->storefrontDeployment?->status)
                             ->placeholder(__('vendra-reseller::attributes.storefront_not_requested')),
                         TextEntry::make('desired_state')->label(__('vendra-reseller::attributes.desired_state'))
                             ->badge()
-                            ->state(fn (Store $record): ?StorefrontDesiredState => self::deployment($record)?->desired_state)
+                            ->state(fn (Store $record): ?StorefrontDesiredState => $record->storefrontDeployment?->desired_state)
                             ->placeholder('—'),
                     ]),
                     TextEntry::make('provisioning_error')->label(__('vendra-reseller::attributes.provisioning_error'))
@@ -60,12 +59,5 @@ final class StoreInfolist
                         ->color('danger')->columnSpanFull(),
                 ])->columnSpanFull(),
         ]);
-    }
-
-    private static function deployment(Store $store): ?StorefrontDeployment
-    {
-        $deployment = $store->storefrontDeployments->first();
-
-        return $deployment instanceof StorefrontDeployment ? $deployment : null;
     }
 }

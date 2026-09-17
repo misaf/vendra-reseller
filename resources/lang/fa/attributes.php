@@ -31,7 +31,6 @@ return [
     'domain_helper_text' => 'یک نام دامنه معتبر وارد کنید (مثلاً example.com).',
     'username' => 'نام کاربری',
     'email' => 'ایمیل',
-    'offboarding_reason' => 'دلیل خارج‌کردن',
     'storefront_configuration' => 'فروشگاه گل‌فروشی',
     'storefront_status' => 'وضعیت فروشگاه',
     'storefront_not_requested' => 'درخواست نشده',

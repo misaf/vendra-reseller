@@ -31,7 +31,6 @@ return [
     'domain_helper_text' => 'Geben Sie einen gültigen Domainnamen ein (z. B. example.com).',
     'username' => 'Benutzername',
     'email' => 'E-Mail',
-    'offboarding_reason' => 'Grund der Stilllegung',
     'storefront_configuration' => 'Floristen-Shop',
     'storefront_status' => 'Shop-Status',
     'storefront_not_requested' => 'Nicht angefordert',

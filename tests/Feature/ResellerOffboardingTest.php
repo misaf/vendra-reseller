@@ -72,7 +72,7 @@ it('offboards a reseller transactionally with an audit reason and one domain eve
     Event::assertDispatched(fn (ResellerOffboarded $event): bool => $event->resellerId === $reseller->getKey()
         && $event->reason === 'Customer requested account closure.'
         && $event->cancelledSubscriptionCount === 2
-        && $event->offboardedTenantCount === 1);
+        && $event->offboardedStoreCount === 1);
     Event::assertDispatchedTimes(ResellerOffboarded::class, 1);
 });
 

@@ -27,7 +27,7 @@ final class SuspendSubscriberStores
 
         $count = $subscriber->suspendActiveUnits();
 
-        if ($count > 0 && $subscriber->hasContactEmail()) {
+        if ($count > 0) {
             $subscriber->notifyContact(new StoresSuspendedNotification($count));
         }
     }

@@ -112,7 +112,7 @@ answered by `misaf/vendra-subscription` and store quotas by
 here.
 
 ```php
-$reseller->isSubscriptionActive();
+$reseller->canHoldUnits();
 $reseller->activeSubscription();
 $reseller->subscribedUnitCount();
 $reseller->suspendActiveUnits();
@@ -143,7 +143,7 @@ host application.
 ## Commands
 
 ```bash
-php artisan vendra-subscription:provision {name} {domain} {username} {email} \
+php artisan vendra-reseller:provision-store {name} {domain} {username} {email} \
     [--reseller=] [--plan=] [--password=] [--if-missing] [--seed]
 ```
 
