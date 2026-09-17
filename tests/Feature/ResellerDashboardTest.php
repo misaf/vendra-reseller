@@ -226,7 +226,7 @@ describe('reseller subscription detail widget', function (): void {
 
         livewire(SubscriptionDetail::class)
             ->assertOk()
-            ->assertSee(__('vendra-reseller::attributes.status_cancelled'));
+            ->assertSee(SubscriptionStatus::Cancelled->getLabel());
     });
 
     it('shows expired status for expired subscriptions via latest subscription', function (): void {
@@ -241,7 +241,7 @@ describe('reseller subscription detail widget', function (): void {
 
         livewire(SubscriptionDetail::class)
             ->assertOk()
-            ->assertSee(__('vendra-reseller::attributes.status_expired'));
+            ->assertSee(SubscriptionStatus::Expired->getLabel());
     });
 
     it('shows past due status for past due subscriptions via latest subscription', function (): void {
@@ -256,7 +256,7 @@ describe('reseller subscription detail widget', function (): void {
 
         livewire(SubscriptionDetail::class)
             ->assertOk()
-            ->assertSee(__('vendra-reseller::attributes.status_past_due'));
+            ->assertSee(SubscriptionStatus::PastDue->getLabel());
     });
 
     it('shows trial information when subscription is on trial', function (): void {
@@ -358,7 +358,7 @@ describe('reseller dashboard subscription widget colors', function (): void {
 
         livewire(SubscriptionDetail::class)
             ->assertOk()
-            ->assertSee(__('vendra-reseller::attributes.status_past_due'));
+            ->assertSee(SubscriptionStatus::PastDue->getLabel());
     });
 
     it('uses gray color when no subscription exists', function (): void {

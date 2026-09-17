@@ -8,7 +8,6 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
-use Misaf\VendraSubscription\Enums\SubscriptionStatus;
 use Misaf\VendraSubscription\Models\Subscription;
 
 final class SubscriptionDetail extends StatsOverviewWidget
@@ -34,9 +33,9 @@ final class SubscriptionDetail extends StatsOverviewWidget
 
             if ($latestSubscription instanceof Subscription) {
                 return [
-                    Stat::make(__('vendra-reseller::attributes.subscription_status'), __("vendra-reseller::attributes.status_{$latestSubscription->status->value}"))
+                    Stat::make(__('vendra-reseller::attributes.subscription_status'), $latestSubscription->status->getLabel())
                         ->icon(Heroicon::OutlinedCheckBadge)
-                        ->color($this->statusColor($latestSubscription->status))
+                        ->color($latestSubscription->status->getColor())
                         ->description(__('vendra-reseller::attributes.ends_at').': '.($latestSubscription->ends_at?->format('Y-m-d') ?? __('vendra-reseller::attributes.never'))),
                 ];
             }
@@ -49,9 +48,9 @@ final class SubscriptionDetail extends StatsOverviewWidget
         }
 
         return [
-            Stat::make(__('vendra-reseller::attributes.subscription_status'), __("vendra-reseller::attributes.status_{$subscription->status->value}"))
+            Stat::make(__('vendra-reseller::attributes.subscription_status'), $subscription->status->getLabel())
                 ->icon(Heroicon::OutlinedCheckBadge)
-                ->color($this->statusColor($subscription->status)),
+                ->color($subscription->status->getColor()),
 
             Stat::make(__('vendra-reseller::attributes.trial'), $subscription->isOnTrial() && $subscription->trial_ends_at !== null
                 ? __('vendra-reseller::attributes.trial_until', ['date' => $subscription->trial_ends_at->format('Y-m-d')])
@@ -62,16 +61,5 @@ final class SubscriptionDetail extends StatsOverviewWidget
             Stat::make(__('vendra-reseller::attributes.renews_on'), $subscription->ends_at?->format('Y-m-d') ?? __('vendra-reseller::attributes.never'))
                 ->icon(Heroicon::OutlinedCalendarDays),
         ];
-    }
-
-    private function statusColor(SubscriptionStatus $status): string
-    {
-        return match ($status) {
-            SubscriptionStatus::Active => 'success',
-            SubscriptionStatus::PendingPayment => 'warning',
-            SubscriptionStatus::PastDue,
-            SubscriptionStatus::Expired => 'danger',
-            SubscriptionStatus::Cancelled => 'gray',
-        };
     }
 }

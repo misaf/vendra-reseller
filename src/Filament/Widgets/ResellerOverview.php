@@ -94,10 +94,10 @@ final class ResellerOverview extends StatsOverviewWidget
                 return __('vendra-reseller::attributes.trial_until', ['date' => $subscription->trial_ends_at?->format('Y-m-d') ?? '']);
             }
 
-            return $subscription->plan?->name ?? __('vendra-reseller::attributes.status_active');
+            return $subscription->plan?->name ?? SubscriptionStatus::Active->getLabel();
         }
 
-        return __("vendra-reseller::attributes.status_{$subscription->status->value}");
+        return $subscription->status->getLabel();
     }
 
     private static function subscriptionColor(?Subscription $subscription): string

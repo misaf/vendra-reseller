@@ -33,6 +33,7 @@ use Misaf\VendraStore\Models\StoreDomain;
 use Misaf\VendraStore\Models\StorefrontDeployment;
 use Misaf\VendraStore\Models\StorefrontImage;
 use Misaf\VendraStore\Settings\StoreCreationSettings;
+use Misaf\VendraSubscription\Enums\SubscriptionStatus;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
 use Misaf\VendraSupport\Tenancy\Events\TenantProvisioned;
@@ -333,7 +334,7 @@ it('renders the reseller dashboard with its widgets for a user', function (): vo
 
     livewire(SubscriptionDetail::class)
         ->assertOk()
-        ->assertSee(__('vendra-reseller::attributes.status_active'));
+        ->assertSee(SubscriptionStatus::Active->getLabel());
 
     livewire(LatestStores::class)
         ->call('loadTable')
