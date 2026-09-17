@@ -16,7 +16,7 @@ it('expires subscriptions and suspends properties via the command', function ():
     ]);
     $store = createTestTenant(['reseller_id' => $reseller->getKey(), 'active' => true]);
 
-    $this->artisan('vendra-subscription:enforce-subscriptions')->assertSuccessful();
+    $this->artisan('vendra-subscription:enforce')->assertSuccessful();
 
     expect($store->refresh()->active)->toBeTrue()
         ->and($store->billing_suspended_at)->not->toBeNull()
