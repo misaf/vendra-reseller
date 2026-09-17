@@ -87,7 +87,7 @@ function fakeSubscriptionCharger(
 
 function resellerWithUser(): Reseller
 {
-    $reseller = Reseller::factory()->create();
+    $reseller = Reseller::factory()->active()->create();
     $user = User::factory()->create(['tenant_id' => null]);
     $reseller->user()->associate($user)->save();
 
@@ -106,7 +106,7 @@ it('persists and processes a paid subscription without holding a database transa
     $charger = fakeSubscriptionCharger();
     $reseller = resellerWithUser();
     $oldSubscription = Subscription::factory()->forSubscriber($reseller)->create();
-    $plan = Plan::factory()->priced(1_500, 'USD')->create();
+    $plan = Plan::factory()->active()->priced(1_500, 'USD')->create();
     Context::add(RequestJobContext::TRACE_ID, 'outer-trace');
 
     $subscription = resolve(SubscribeAction::class)->execute($reseller, $plan);
@@ -144,7 +144,7 @@ it('persists and processes a paid subscription without holding a database transa
 
 it('collects an internal subscription payment only once and settles it before reporting paid', function (): void {
     makeCurrentTestTenant();
-    TransactionGatewayFactory::new()->internal()->create();
+    TransactionGatewayFactory::new()->active()->internal()->create();
     $payer = createTestUser();
     $wallet = WalletResolver::walletFor($payer, 'USD');
     resolve(CreateTransactionAction::class)->execute(
@@ -170,7 +170,7 @@ it('does not create a payment for a free plan', function (): void {
     fakeSubscriptionCharger();
     $reseller = resellerWithUser();
 
-    $subscription = resolve(SubscribeAction::class)->execute($reseller, Plan::factory()->create());
+    $subscription = resolve(SubscribeAction::class)->execute($reseller, Plan::factory()->active()->create());
 
     expect($subscription->status)->toBe(SubscriptionStatus::Active)
         ->and($subscription->payments()->count())->toBe(0);
@@ -183,7 +183,7 @@ it('persists a paid trial payment but defers collection until the trial ends', f
     $reseller = resellerWithUser();
     $subscription = resolve(SubscribeAction::class)->execute(
         $reseller,
-        Plan::factory()->priced(1_500, 'USD')->trialDays(14)->create(),
+        Plan::factory()->active()->priced(1_500, 'USD')->trialDays(14)->create(),
     );
     $payment = $subscription->payments()->sole();
 
@@ -200,7 +200,7 @@ it('rejects a paid subscription when no payment provider is available', function
 
     expect(fn () => resolve(SubscribeAction::class)->execute(
         $reseller,
-        Plan::factory()->priced(1_000, 'USD')->create(),
+        Plan::factory()->active()->priced(1_000, 'USD')->create(),
     ))->toThrow(SubscriptionPaymentException::class, 'No subscription payment provider')
         ->and($reseller->subscriptions()->count())->toBe(0);
     Queue::assertNothingPushed();
@@ -213,7 +213,7 @@ it('keeps the existing subscription active when payment is declined', function (
     $current = Subscription::factory()->forSubscriber($reseller)->create();
     $replacement = resolve(SubscribeAction::class)->execute(
         $reseller,
-        Plan::factory()->priced(1_500, 'USD')->create(),
+        Plan::factory()->active()->priced(1_500, 'USD')->create(),
     );
     $payment = $replacement->payments()->sole();
 
@@ -232,7 +232,7 @@ it('marks an active trial past due when its deferred payment is declined', funct
     $reseller = resellerWithUser();
     $subscription = resolve(SubscribeAction::class)->execute(
         $reseller,
-        Plan::factory()->priced(1_500, 'USD')->trialDays(14)->create(),
+        Plan::factory()->active()->priced(1_500, 'USD')->trialDays(14)->create(),
     );
     $subscription->update(['trial_ends_at' => now()->subMinute()]);
     $subscription->payments()->update(['next_retry_at' => now()->subMinute()]);
@@ -249,7 +249,7 @@ it('rejects overlapping subscription changes while a payment is unresolved', fun
     $reseller = resellerWithUser();
     resolve(SubscribeAction::class)->execute(
         $reseller,
-        Plan::factory()->priced(1_500, 'USD')->create(),
+        Plan::factory()->active()->priced(1_500, 'USD')->create(),
     );
     $reseller->subscriptions()->sole()->payments()->sole()->update([
         'status' => SubscriptionPaymentStatus::Processing,
@@ -257,7 +257,7 @@ it('rejects overlapping subscription changes while a payment is unresolved', fun
 
     expect(fn () => resolve(SubscribeAction::class)->execute(
         $reseller,
-        Plan::factory()->create(),
+        Plan::factory()->active()->create(),
     ))->toThrow(SubscriptionPaymentException::class, 'already in progress')
         ->and($reseller->subscriptions()->count())->toBe(1);
 });

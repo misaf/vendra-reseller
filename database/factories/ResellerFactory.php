@@ -22,7 +22,7 @@ final class ResellerFactory extends Factory
     {
         return [
             'user_id' => User::factory()->state(['tenant_id' => null]),
-            'active' => true,
+            'active' => fake()->boolean(80),
         ];
     }
 

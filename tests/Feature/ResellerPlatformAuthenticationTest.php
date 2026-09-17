@@ -40,7 +40,7 @@ it('authenticates the platform user when a tenant row shares the email', functio
         'password' => Hash::make('tenant-password'),
     ]);
 
-    $reseller = Reseller::factory()->create();
+    $reseller = Reseller::factory()->active()->create();
     $user = resellerPlatformUser($reseller, [
         'username' => 'reseller_owner',
         'email' => $email,
@@ -71,7 +71,7 @@ it('rejects the tenant password and wrong passwords on the reseller panel', func
         'password' => Hash::make('tenant-password'),
     ]);
 
-    resellerPlatformUser(Reseller::factory()->create(), [
+    resellerPlatformUser(Reseller::factory()->active()->create(), [
         'username' => 'reseller_owner2',
         'email' => $email,
     ]);
@@ -138,7 +138,7 @@ it('restores reseller sessions only for the platform user via remember token', f
         'remember_token' => 'tenant-remember-token',
     ]);
 
-    $user = resellerPlatformUser(Reseller::factory()->create(), [
+    $user = resellerPlatformUser(Reseller::factory()->active()->create(), [
         'username' => 'reseller_rem_owner',
         'email' => $email,
         'remember_token' => 'platform-remember-token',
@@ -151,7 +151,7 @@ it('restores reseller sessions only for the platform user via remember token', f
 });
 
 it('removes reseller access when the reseller is deactivated', function (): void {
-    $reseller = Reseller::factory()->create();
+    $reseller = Reseller::factory()->active()->create();
     $user = resellerPlatformUser($reseller);
     $panel = Filament::getPanel('reseller');
 
@@ -175,7 +175,7 @@ it('routes the reseller password reset flow to the platform identity and store',
         'password' => Hash::make('tenant-password'),
     ]);
 
-    $user = resellerPlatformUser(Reseller::factory()->create(), [
+    $user = resellerPlatformUser(Reseller::factory()->active()->create(), [
         'username' => 'reseller_reset_owner',
         'email' => $email,
     ]);

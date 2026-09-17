@@ -11,7 +11,7 @@ use Misaf\VendraTransaction\Database\Factories\TransactionGatewayFactory;
 use Misaf\VendraUser\Models\User;
 
 it('stores a plan price and currency', function (): void {
-    $plan = Plan::factory()->priced(1500, 'USD')->create();
+    $plan = Plan::factory()->active()->priced(1500, 'USD')->create();
 
     expect($plan->price)->toBe(1500)
         ->and($plan->currency_code)->toBe('USD')
@@ -19,18 +19,18 @@ it('stores a plan price and currency', function (): void {
 });
 
 it('treats a zero-price plan as free', function (): void {
-    $plan = Plan::factory()->create();
+    $plan = Plan::factory()->active()->create();
 
     expect($plan->isFree())->toBeTrue();
 });
 
 it('snapshots the plan price onto the subscription when subscribing', function (): void {
-    $reseller = Reseller::factory()->create();
+    $reseller = Reseller::factory()->active()->create();
     makeCurrentTestTenant();
-    TransactionGatewayFactory::new()->internal()->create();
+    TransactionGatewayFactory::new()->active()->internal()->create();
     $user = User::factory()->create(['tenant_id' => null]);
     $reseller->user()->associate($user)->save();
-    $plan = Plan::factory()->priced(2999, 'EUR')->trialDays(1)->create();
+    $plan = Plan::factory()->active()->priced(2999, 'EUR')->trialDays(1)->create();
 
     $subscription = resolve(SubscribeAction::class)->execute($reseller, $plan);
 
@@ -42,7 +42,7 @@ it('keeps the reseller user free of any tenant, even inside a tenant context', f
     makeCurrentTestTenant();
 
     $result = resolve(CreateResellerAction::class)->execute(
-        plan: Plan::factory()->create(),
+        plan: Plan::factory()->active()->create(),
         username: 'tenant_free',
         email: 'tenant-free@reseller.test',
         password: 'Secure123',
