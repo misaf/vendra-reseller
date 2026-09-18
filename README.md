@@ -35,10 +35,11 @@ stays intact.
 
 ```bash
 composer require misaf/vendra-reseller
+php artisan vendor:publish --tag=vendra-reseller-migrations
 php artisan migrate
 ```
 
-The `resellers` table is created by migrations; the host application's `config/auth.php` points the `reseller`
+The published migration creates the `resellers` table; the host application's `config/auth.php` points the `reseller`
 guard at the platform-scoped `reseller` provider and the `reseller`
 password broker, which stores its reset tokens in
 `reseller_password_reset_tokens` so neither a tenant user sharing the email nor
@@ -160,7 +161,7 @@ registers the console command and the event listeners. The split is deliberate.
 
 Store screens are reused, not copied: the panel's resources extend
 `misaf/vendra-store`'s `CreateStorePage`, `StorefrontConfigurationFields`
-and `ReplaceDomainAction`, supplying the authenticated user's reseller.
+and `ReplaceDomainTableAction`, supplying the authenticated user's reseller.
 Resolve the acting reseller with `Filament\Concerns\InteractsWithCurrentReseller`;
 `Http\Middleware\AddResellerToRequestJobContext` carries it into queued work.
 

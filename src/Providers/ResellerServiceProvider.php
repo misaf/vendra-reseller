@@ -48,6 +48,9 @@ final class ResellerServiceProvider extends PackageServiceProvider
         $package
             ->name('vendra-reseller')
             ->hasTranslations()
+            ->hasMigrations([
+                'create_resellers_table',
+            ])
             ->hasCommand(ProvisionStoreCommand::class);
     }
 
