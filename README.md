@@ -117,14 +117,13 @@ here.
 $reseller->canHoldUnits();
 $reseller->activeSubscription();
 $reseller->subscribedUnitCount();
-$reseller->suspendActiveUnits();
-$reseller->reactivateSuspendedUnits();
 $reseller->allows('feature-key');
 ```
 
-`suspendActiveUnits()` and `reactivateSuspendedUnits()` run each store through
-`SuspendStoreForBillingAction` or `ReactivateStoreForBillingAction`, so its
-storefront stops or starts with it.
+`Support\ResellerStoreSuspender` implements the subscription package's
+`SubscriptionUnitSuspender` contract: it suspends or reactivates a reseller's
+stores through `SuspendStoreForBillingAction` or
+`ReactivateStoreForBillingAction`, so each storefront stops or starts with it.
 
 `Support\TransactionSubscriptionCharger` implements the `SubscriptionCharger`
 contract by posting an internal withdrawal against the payer's wallet through

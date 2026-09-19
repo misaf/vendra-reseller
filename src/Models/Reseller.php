@@ -19,8 +19,6 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Support\Carbon;
 use Misaf\VendraReseller\Database\Factories\ResellerFactory;
 use Misaf\VendraReseller\Observers\ResellerObserver;
-use Misaf\VendraStore\Actions\ReactivateStoreForBillingAction;
-use Misaf\VendraStore\Actions\SuspendStoreForBillingAction;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSubscription\Contracts\SubscriptionSubscriber;
 use Misaf\VendraSubscription\Models\Subscription;
@@ -177,24 +175,6 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     public function activeSubscribedUnitCount(): int
     {
         return $this->stores()->accessible()->count();
-    }
-
-    public function suspendActiveUnits(): int
-    {
-        $stores = $this->stores()->accessible()->get();
-
-        $stores->each(fn (Store $store): Store => resolve(SuspendStoreForBillingAction::class)->execute($store));
-
-        return $stores->count();
-    }
-
-    public function reactivateSuspendedUnits(): int
-    {
-        $stores = $this->stores()->whereNotNull('billing_suspended_at')->get();
-
-        $stores->each(fn (Store $store): Store => resolve(ReactivateStoreForBillingAction::class)->execute($store));
-
-        return $stores->count();
     }
 
     public function allows(string $feature): bool

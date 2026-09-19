@@ -9,6 +9,7 @@ use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraReseller\Notifications\StoresSuspendedNotification;
 use Misaf\VendraReseller\Notifications\SubscriptionActivatedNotification;
 use Misaf\VendraReseller\Notifications\SubscriptionExpiringNotification;
+use Misaf\VendraReseller\Support\ResellerStoreSuspender;
 use Misaf\VendraStore\Enums\StorefrontDesiredState;
 use Misaf\VendraStore\Jobs\ReconcileStorefrontJob;
 use Misaf\VendraStore\Models\Store;
@@ -16,6 +17,7 @@ use Misaf\VendraStore\Models\StorefrontDeployment;
 use Misaf\VendraSubscription\Actions\CancelSubscriptionAction;
 use Misaf\VendraSubscription\Actions\EnforceSubscriptionsAction;
 use Misaf\VendraSubscription\Actions\SubscribeAction;
+use Misaf\VendraSubscription\Contracts\SubscriptionUnitSuspender;
 use Misaf\VendraSubscription\Enums\SubscriptionStatus;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
@@ -128,9 +130,12 @@ it('stops and restarts storefronts with billing suspension and reactivation', fu
     $store = Store::factory()->active()->create(['reseller_id' => $reseller->getKey()]);
     $deployment = StorefrontDeployment::factory()->for($store)->create(['desired_state' => StorefrontDesiredState::Running]);
 
-    expect($reseller->suspendActiveUnits())->toBe(1)
+    $storeSuspender = resolve(SubscriptionUnitSuspender::class);
+
+    expect($storeSuspender)->toBeInstanceOf(ResellerStoreSuspender::class)
+        ->and($storeSuspender->suspendActiveUnits($reseller))->toBe(1)
         ->and($deployment->refresh()->desired_state)->toBe(StorefrontDesiredState::Stopped)
-        ->and($reseller->reactivateSuspendedUnits())->toBe(1)
+        ->and($storeSuspender->reactivateSuspendedUnits($reseller))->toBe(1)
         ->and($store->refresh()->billing_suspended_at)->toBeNull()
         ->and($deployment->refresh()->desired_state)->toBe(StorefrontDesiredState::Running);
 

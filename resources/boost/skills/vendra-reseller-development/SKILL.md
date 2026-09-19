@@ -37,7 +37,7 @@ description: "Create, modify, review, or test the Vendra Reseller module in pack
 - Password changes use `vendra-user`'s `UpdateUserPasswordAction`; email changes use `UpdateResellerUserEmailAction`; `ReplaceResellerUserAction` creates a new account and repoints `user_id`, leaving the former identity intact. There is no account disable — deactivating the reseller locks its account out of the panel.
 - `Actions\OffboardResellerAction` is the only supported removal path. `Reseller::deleting` throws for a reseller that was not offboarded first, and `Events\ResellerOffboarded` is the extension point.
 - `Actions\SetResellerActiveAction` is the only supported way to change `active` after creation. It locks the row and throws for an offboarded reseller; an inactive reseller keeps its stores but its account cannot enter the panel.
-- `Models\Reseller` implements `SubscriptionSubscriber` and `ShouldLogActivity`. Read quota state through `Misaf\VendraStore\Support\StoreQuota`; do not recompute plan limits inline.
+- `Models\Reseller` implements `SubscriptionSubscriber` and `ShouldLogActivity`. Read quota state through `Misaf\VendraStore\Support\StoreQuota`; do not recompute plan limits inline. Suspend or reactivate a reseller's stores for billing through `Support\ResellerStoreSuspender` (the `SubscriptionUnitSuspender` binding), never from the model.
 
 ## Subscription Reactions
 

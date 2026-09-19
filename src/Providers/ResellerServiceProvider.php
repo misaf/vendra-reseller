@@ -16,8 +16,10 @@ use Misaf\VendraReseller\Listeners\RemindExpiringSubscriber;
 use Misaf\VendraReseller\Listeners\SuspendSubscriberStores;
 use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraReseller\Support\EloquentStoreResellerResolver;
+use Misaf\VendraReseller\Support\ResellerStoreSuspender;
 use Misaf\VendraStore\Contracts\StoreResellerResolver;
 use Misaf\VendraStore\Models\Store;
+use Misaf\VendraSubscription\Contracts\SubscriptionUnitSuspender;
 use Misaf\VendraSubscription\Events\SubscriptionActivated;
 use Misaf\VendraSubscription\Events\SubscriptionCancelled;
 use Misaf\VendraSubscription\Events\SubscriptionExpiringSoon;
@@ -46,6 +48,7 @@ final class ResellerServiceProvider extends PackageServiceProvider
     public function packageRegistered(): void
     {
         $this->app->bind(StoreResellerResolver::class, EloquentStoreResellerResolver::class);
+        $this->app->singleton(SubscriptionUnitSuspender::class, ResellerStoreSuspender::class);
     }
 
     public function packageBooted(): void
