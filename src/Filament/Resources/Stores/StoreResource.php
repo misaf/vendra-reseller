@@ -24,7 +24,7 @@ use Misaf\VendraReseller\Filament\Resources\Stores\Schemas\StoreForm;
 use Misaf\VendraReseller\Filament\Resources\Stores\Schemas\StoreInfolist;
 use Misaf\VendraReseller\Filament\Resources\Stores\Tables\StoreTable;
 use Misaf\VendraStore\Models\Store;
-use Misaf\VendraStore\Support\StoreCreationPolicy;
+use Misaf\VendraStore\Settings\StoreCreationSettings;
 
 final class StoreResource extends Resource
 {
@@ -89,7 +89,7 @@ final class StoreResource extends Resource
      */
     public static function canCreate(): bool
     {
-        if (! resolve(StoreCreationPolicy::class)->isOpen()) {
+        if (! resolve(StoreCreationSettings::class)->open) {
             return false;
         }
 

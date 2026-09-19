@@ -122,8 +122,7 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
      * Resolve the reseller from the `--reseller` or `--plan` options.
      *
      * Returns null when neither is given, or false when one cannot be resolved.
-     */
-    /**
+     *
      * @param  array{name: string, domain: string, username: string, email: string}  $data
      */
     private function resolveReseller(array $data, string $password): Reseller|false|null
@@ -131,16 +130,7 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
         $resellerOption = $this->option('reseller');
 
         if ($resellerOption !== null) {
-            $reseller = Reseller::query()
-                ->when(
-                    ctype_digit((string) $resellerOption),
-                    fn (Builder $query): Builder => $query->whereKey((int) $resellerOption),
-                    fn (Builder $query): Builder => $query->whereHas(
-                        'user',
-                        fn (Builder $query): Builder => $query->where('username', $resellerOption),
-                    ),
-                )
-                ->first();
+            $reseller = $this->findReseller((string) $resellerOption);
 
             if ($reseller === null) {
                 $this->error(sprintf('Reseller [%s] was not found.', $resellerOption));
@@ -153,31 +143,56 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
 
         $planOption = $this->option('plan');
 
-        if ($planOption !== null) {
-            $plan = Plan::query()
-                ->active()
-                ->when(
-                    ctype_digit((string) $planOption),
-                    fn (Builder $query): Builder => $query->whereKey((int) $planOption),
-                    fn (Builder $query): Builder => $query->where('slug', $planOption),
-                )
-                ->first();
-
-            if ($plan === null) {
-                $this->error(sprintf('Plan [%s] was not found.', $planOption));
-
-                return false;
-            }
-
-            return Arr::get($this->createResellerAction->execute(
-                plan: $plan,
-                username: Arr::get($data, 'username'),
-                email: Arr::get($data, 'email'),
-                password: $password,
-            ), 'reseller');
+        if ($planOption === null) {
+            return null;
         }
 
-        return null;
+        $plan = $this->findPlan((string) $planOption);
+
+        if ($plan === null) {
+            $this->error(sprintf('Plan [%s] was not found.', $planOption));
+
+            return false;
+        }
+
+        return Arr::get($this->createResellerAction->execute(
+            plan: $plan,
+            username: Arr::get($data, 'username'),
+            email: Arr::get($data, 'email'),
+            password: $password,
+        ), 'reseller');
+    }
+
+    /**
+     * Find a reseller by id, or by the username of its user.
+     */
+    private function findReseller(string $identifier): ?Reseller
+    {
+        return Reseller::query()
+            ->when(
+                ctype_digit($identifier),
+                fn (Builder $query): Builder => $query->whereKey((int) $identifier),
+                fn (Builder $query): Builder => $query->whereHas(
+                    'user',
+                    fn (Builder $query): Builder => $query->where('username', $identifier),
+                ),
+            )
+            ->first();
+    }
+
+    /**
+     * Find an active plan by id or slug.
+     */
+    private function findPlan(string $identifier): ?Plan
+    {
+        return Plan::query()
+            ->active()
+            ->when(
+                ctype_digit($identifier),
+                fn (Builder $query): Builder => $query->whereKey((int) $identifier),
+                fn (Builder $query): Builder => $query->where('slug', $identifier),
+            )
+            ->first();
     }
 
     private function shouldSkipExistingTenant(): bool

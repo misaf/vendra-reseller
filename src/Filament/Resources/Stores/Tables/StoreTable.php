@@ -6,8 +6,6 @@ namespace Misaf\VendraReseller\Filament\Resources\Stores\Tables;
 
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Support\Icons\Heroicon;
@@ -17,10 +15,10 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Collection;
+use Misaf\VendraReseller\Filament\Resources\Stores\Actions\OffboardStoreBulkAction;
+use Misaf\VendraReseller\Filament\Resources\Stores\Actions\OffboardStoreTableAction;
 use Misaf\VendraReseller\Filament\Resources\Stores\Actions\ReplaceDomainTableAction;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
-use Misaf\VendraStore\Actions\OffboardStoreAction;
 use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
 use Misaf\VendraStore\Enums\StoreStatus;
 use Misaf\VendraStore\Models\Store;
@@ -33,8 +31,6 @@ use Misaf\VendraSupport\Filament\Tables\Filters\IsActiveFilter;
 
 final class StoreTable
 {
-    private const string OFFBOARDING_REASON = 'Deleted by the reseller.';
-
     public static function configure(Table $table): Table
     {
         return $table
@@ -129,20 +125,14 @@ final class StoreTable
                         ReplaceDomainTableAction::make(),
                     ])->dropdown(false),
                     ActionGroup::make([
-                        DeleteAction::make()
-                            ->authorize(fn (): bool => StoreResource::canManageStores())
-                            // Offboarding records the prior state, so a restore can reactivate the store.
-                            ->using(fn (Store $record, OffboardStoreAction $offboardStore): Store => $offboardStore->execute($record, self::OFFBOARDING_REASON)),
+                        OffboardStoreTableAction::make(),
                     ])->dropdown(false),
                 ]),
             ])
             ->recordUrl(fn (Store $record): string => StoreResource::getUrl('view', ['record' => $record]))
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make()
-                        ->authorize(fn (): bool => StoreResource::canManageStores())
-                        ->using(fn (Collection $records, OffboardStoreAction $offboardStore): Collection => $records
-                            ->each(fn (Store $record): Store => $offboardStore->execute($record, self::OFFBOARDING_REASON))),
+                    OffboardStoreBulkAction::make(),
                 ]),
             ])
             ->defaultSort(column: 'id', direction: 'desc');
