@@ -19,7 +19,8 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Support\Carbon;
 use Misaf\VendraReseller\Database\Factories\ResellerFactory;
 use Misaf\VendraReseller\Observers\ResellerObserver;
-use Misaf\VendraStore\Actions\AlignStorefrontWithStoreAction;
+use Misaf\VendraStore\Actions\ReactivateStoreForBillingAction;
+use Misaf\VendraStore\Actions\SuspendStoreForBillingAction;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSubscription\Contracts\SubscriptionSubscriber;
 use Misaf\VendraSubscription\Models\Subscription;
@@ -178,18 +179,11 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
         return $this->stores()->accessible()->count();
     }
 
-    /**
-     * Suspend the active stores one by one, so each storefront stops too.
-     */
     public function suspendActiveUnits(): int
     {
         $stores = $this->stores()->accessible()->get();
 
-        $stores->each(function (Store $store): void {
-            $store->forceFill(['billing_suspended_at' => now()])->save();
-
-            resolve(AlignStorefrontWithStoreAction::class)->execute($store);
-        });
+        $stores->each(fn (Store $store): Store => resolve(SuspendStoreForBillingAction::class)->execute($store));
 
         return $stores->count();
     }
@@ -198,11 +192,7 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     {
         $stores = $this->stores()->whereNotNull('billing_suspended_at')->get();
 
-        $stores->each(function (Store $store): void {
-            $store->forceFill(['billing_suspended_at' => null])->save();
-
-            resolve(AlignStorefrontWithStoreAction::class)->execute($store);
-        });
+        $stores->each(fn (Store $store): Store => resolve(ReactivateStoreForBillingAction::class)->execute($store));
 
         return $stores->count();
     }

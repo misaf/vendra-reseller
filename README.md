@@ -122,6 +122,10 @@ $reseller->reactivateSuspendedUnits();
 $reseller->allows('feature-key');
 ```
 
+`suspendActiveUnits()` and `reactivateSuspendedUnits()` run each store through
+`SuspendStoreForBillingAction` or `ReactivateStoreForBillingAction`, so its
+storefront stops or starts with it.
+
 `Support\TransactionSubscriptionCharger` implements the `SubscriptionCharger`
 contract by posting an internal withdrawal against the payer's wallet through
 `misaf/vendra-transaction`.
