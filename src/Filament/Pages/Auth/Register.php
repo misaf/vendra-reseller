@@ -12,12 +12,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
-use Illuminate\Validation\Rules\Unique;
 use InvalidArgumentException;
 use Misaf\VendraReseller\Actions\CreateResellerAction;
 use Misaf\VendraSubscription\Models\Plan;
-use Misaf\VendraSupport\Tenancy\TenantSchema;
-use Misaf\VendraUser\Models\User;
+use Misaf\VendraUser\Support\UserRules;
 use SensitiveParameter;
 
 final class Register extends \Filament\Auth\Pages\Register
@@ -43,10 +41,7 @@ final class Register extends \Filament\Auth\Pages\Register
             ->maxLength(12)
             ->rules(['alpha_dash:ascii'])
             ->required()
-            ->unique(
-                table: User::class,
-                modifyRuleUsing: fn (Unique $rule): Unique => self::amongPlatformUsers($rule),
-            );
+            ->rule(UserRules::unique('username'));
     }
 
     protected function getEmailFormComponent(): Component
@@ -56,20 +51,7 @@ final class Register extends \Filament\Auth\Pages\Register
             ->email()
             ->maxLength(255)
             ->required()
-            ->unique(
-                table: User::class,
-                modifyRuleUsing: fn (Unique $rule): Unique => self::amongPlatformUsers($rule),
-            );
-    }
-
-    /**
-     * Limit a unique rule to platform users.
-     */
-    private static function amongPlatformUsers(Unique $rule): Unique
-    {
-        return TenantSchema::enabled()
-            ? $rule->whereNull(TenantSchema::column())->withoutTrashed()
-            : $rule->withoutTrashed();
+            ->rule(UserRules::unique('email'));
     }
 
     protected function getPasswordFormComponent(): Component
