@@ -10,10 +10,6 @@ use Misaf\VendraReseller\Filament\Widgets\LatestStores;
 use Misaf\VendraReseller\Filament\Widgets\PlanSummary;
 use Misaf\VendraReseller\Filament\Widgets\StoresNeedingAttention;
 
-/**
- * The reseller's home: what to do next, the plan they are on, the stores that
- * need them, and their latest stores — in that order.
- */
 final class Dashboard extends BaseDashboard
 {
     /**

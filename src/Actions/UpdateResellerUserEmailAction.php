@@ -12,8 +12,7 @@ use Misaf\VendraUser\Models\User;
 final class UpdateResellerUserEmailAction
 {
     /**
-     * The caller validates the email (format and uniqueness among active
-     * users); the users table's unique guard still rejects a duplicate.
+     * The caller validates the email; the unique index still rejects a duplicate.
      */
     public function execute(Reseller $reseller, string $email, bool $verified = true): User
     {

@@ -63,8 +63,7 @@ final class Register extends \Filament\Auth\Pages\Register
     }
 
     /**
-     * Store administrators are tenant users with their own uniqueness; a
-     * reseller only collides with other platform identities.
+     * Limit a unique rule to platform users.
      */
     private static function amongPlatformUsers(Unique $rule): Unique
     {

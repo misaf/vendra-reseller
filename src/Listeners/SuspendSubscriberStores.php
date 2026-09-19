@@ -9,11 +9,6 @@ use Misaf\VendraSubscription\Contracts\SubscriptionSubscriber;
 use Misaf\VendraSubscription\Events\SubscriptionCancelled;
 use Misaf\VendraSubscription\Events\SubscriptionGraceExpired;
 
-/**
- * Suspends a subscriber's active stores after explicit cancellation or once
- * its grace period expires, and notifies the contact. Suspending concrete units
- * remains a host-specific reaction.
- */
 final class SuspendSubscriberStores
 {
     public function handle(SubscriptionCancelled|SubscriptionGraceExpired $event): void

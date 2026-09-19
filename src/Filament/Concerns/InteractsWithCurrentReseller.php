@@ -10,9 +10,6 @@ use Misaf\VendraUser\Models\User;
 
 trait InteractsWithCurrentReseller
 {
-    /**
-     * The billing reseller of the currently authenticated user, if any.
-     */
     protected static function currentReseller(): ?Reseller
     {
         $user = Filament::auth()->user();
@@ -25,8 +22,7 @@ trait InteractsWithCurrentReseller
     }
 
     /**
-     * Resolved once per request and user: the store query scope, the create
-     * gate, the list page and the dashboard widgets each ask while rendering.
+     * Resolve the user's reseller, memoized per request.
      */
     private static function resellerFor(User $user): ?Reseller
     {

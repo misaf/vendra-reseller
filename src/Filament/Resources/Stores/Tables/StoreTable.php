@@ -131,7 +131,7 @@ final class StoreTable
                     ActionGroup::make([
                         DeleteAction::make()
                             ->authorize(fn (): bool => StoreResource::canManageStores())
-                            // Offboarding records what the store was, so restoring it can bring it back active.
+                            // Offboarding records the prior state, so a restore can reactivate the store.
                             ->using(fn (Store $record, OffboardStoreAction $offboardStore): Store => $offboardStore->execute($record, self::OFFBOARDING_REASON)),
                     ])->dropdown(false),
                 ]),

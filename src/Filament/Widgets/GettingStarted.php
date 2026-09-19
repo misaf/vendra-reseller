@@ -15,10 +15,6 @@ use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSubscription\Models\Subscription;
 
-/**
- * The three steps from a new reseller account to a live storefront, shown until
- * the first storefront is live.
- */
 final class GettingStarted extends StatsOverviewWidget
 {
     use InteractsWithCurrentReseller;

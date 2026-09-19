@@ -8,11 +8,6 @@ use Misaf\VendraReseller\Notifications\SubscriptionActivatedNotification;
 use Misaf\VendraSubscription\Contracts\SubscriptionSubscriber;
 use Misaf\VendraSubscription\Events\SubscriptionActivated;
 
-/**
- * Notifies a subscriber's contact that their subscription is now active. The
- * subscription engine has already activated the subscription and reactivated
- * its stores; this listener only performs the host-specific notification.
- */
 final class NotifyActivatedSubscriber
 {
     public function handle(SubscriptionActivated $event): void

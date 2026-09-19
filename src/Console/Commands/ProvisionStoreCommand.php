@@ -119,10 +119,9 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
     }
 
     /**
-     * Resolve the owning reseller from the --reseller or --plan options.
+     * Resolve the reseller from the `--reseller` or `--plan` options.
      *
-     * Returns null when neither option is given (legacy reseller-less path),
-     * or false when an option references something that cannot be resolved.
+     * Returns null when neither is given, or false when one cannot be resolved.
      */
     /**
      * @param  array{name: string, domain: string, username: string, email: string}  $data
@@ -199,7 +198,7 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
     }
 
     /**
-     * Validate the optional password option: null when omitted, false when invalid.
+     * Validate the password option, returning null when omitted or false when invalid.
      */
     private function validatedPassword(): string|false|null
     {

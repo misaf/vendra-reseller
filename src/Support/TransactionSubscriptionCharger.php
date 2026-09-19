@@ -24,10 +24,6 @@ use Misaf\VendraTransaction\States\Declined;
 use Misaf\VendraTransaction\States\Failed;
 use Misaf\VendraUser\Models\User;
 
-/**
- * Collects subscription payments through vendra-transaction by posting an
- * internal withdrawal against the payer's wallet.
- */
 final readonly class TransactionSubscriptionCharger implements SubscriptionCharger
 {
     public function __construct(private CreateTransactionAction $createTransactionAction) {}
@@ -93,14 +89,10 @@ final readonly class TransactionSubscriptionCharger implements SubscriptionCharg
     }
 
     /**
-     * Re-resolve a previously initiated charge by its idempotency reference.
+     * Retrieve a previous charge by its idempotency reference.
      *
-     * Delegating to {@see charge()} is safe and non-duplicating: the internal
-     * gateway keys transactions by {@see SubscriptionCharge::$reference}, so
-     * {@see CreateTransactionAction::execute()} returns the *existing* transaction rather than
-     * posting a new withdrawal, and the `canTransitionTo(Approved::class)` guard
-     * prevents re-approving an already-settled transaction. The result therefore
-     * reflects the current stored status of the original operation.
+     * Delegating to {@see charge()} is safe, since transactions are keyed by the
+     * reference and a settled one is never approved twice.
      */
     public function retrieve(SubscriptionCharge $charge): SubscriptionChargeResult
     {

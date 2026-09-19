@@ -15,8 +15,6 @@ final class CreateStore extends CreateStorePage
     protected static string $resource = StoreResource::class;
 
     /**
-     * A reseller only ever creates stores under its own billing account.
-     *
      * @param  array<string, mixed>  $data
      */
     protected function resolveReseller(array $data): ?SubscriptionSubscriber

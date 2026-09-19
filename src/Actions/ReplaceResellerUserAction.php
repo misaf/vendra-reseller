@@ -19,9 +19,8 @@ final readonly class ReplaceResellerUserAction
     ) {}
 
     /**
-     * The reseller's pointer and its open payments move: the former main
-     * account's canonical identity stays intact, since it may hold access beyond
-     * this reseller, but it no longer pays this reseller's renewals.
+     * Open payments move with the reseller. The former user is kept, since it
+     * may have access beyond this reseller.
      */
     public function execute(
         Reseller $reseller,

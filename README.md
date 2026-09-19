@@ -48,8 +48,9 @@ enter the panel only while it is the main account of an active reseller:
 deactivating the reseller (`SetResellerActiveAction`) is how its account is
 locked out, and an offboarded reseller grants nothing.
 
-The panel is served on `reseller.<app host>`, derived from `app.url` — nothing
-here hard-codes a host.
+The panel is served on `reseller.<app host>`, derived from `app.url` by
+`Support\ResellerAddress::domain()` (`reseller.localhost` when `app.url` has no
+host) — nothing here hard-codes or re-derives a host.
 
 ## Usage
 

@@ -8,8 +8,7 @@ use LogicException;
 use Misaf\VendraReseller\Models\Reseller;
 
 /**
- * Guards the offboarding invariant. Synchronous because the throw is the point:
- * it has to abort the delete rather than report on one that already happened.
+ * Guard the offboarding invariant by aborting an invalid delete.
  */
 final class ResellerObserver
 {

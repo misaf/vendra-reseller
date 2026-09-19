@@ -55,25 +55,16 @@ final class StoreResource extends Resource
         return __('vendra-reseller::navigation.stores');
     }
 
-    /**
-     * The billing reseller of the currently authenticated user.
-     */
     public static function currentResellerId(): ?int
     {
         return self::currentReseller()?->id;
     }
 
     /**
-     * Every read of a store in this panel, scoped to the user's own reseller.
+     * Scope every store query in the panel to the user's reseller.
      *
-     * The single chokepoint on purpose: the table, the record actions resolve
-     * through, and global search all build on this, so scoping the table alone
-     * would leave the others open.
-     *
-     * A user with no resolvable reseller sees nothing. Panel access already
-     * requires an active, non-offboarded reseller, but the guard stays
-     * explicit: `where('reseller_id', null)` is `whereNull` to Eloquent —
-     * which is every store the platform owns directly.
+     * Without a reseller the query matches nothing, since a null `reseller_id`
+     * would match every platform store.
      *
      * @return Builder<Store>
      */
@@ -94,9 +85,7 @@ final class StoreResource extends Resource
     }
 
     /**
-     * Two halves of the same gate: the platform must be open for new stores at
-     * all — the shared rule `vendra-store` owns and the console edits — and the
-     * signed-in user must still be an active reseller.
+     * Determine if the platform accepts new stores and the user is an active reseller.
      */
     public static function canCreate(): bool
     {
@@ -110,8 +99,7 @@ final class StoreResource extends Resource
     }
 
     /**
-     * Managing existing stores — deleting one, replacing its domain — needs only
-     * an active reseller. The creation freeze stops new stores, not these.
+     * Determine if the user may manage existing stores, regardless of the creation freeze.
      */
     public static function canManageStores(): bool
     {

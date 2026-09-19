@@ -15,13 +15,8 @@ use Misaf\VendraUser\Models\User;
 use SensitiveParameter;
 
 /**
- * The reseller's own password change.
- *
- * Filament's default profile writes the form straight onto the user: a `name`
- * column users do not have, an email change that skips the reseller's email
- * action, and a password hashed outside vendra-user. The main account's email
- * is changed by the console; here the reseller changes only the password, and
- * that goes through {@see UpdateUserPasswordAction}.
+ * Filament's default profile would write fields users do not have and hash
+ * the password outside vendra-user. The console changes the email.
  */
 final class EditProfile extends \Filament\Auth\Pages\EditProfile
 {
@@ -47,8 +42,7 @@ final class EditProfile extends \Filament\Auth\Pages\EditProfile
     }
 
     /**
-     * The plain password is held back from `$data`, so Filament neither writes it
-     * onto the user nor stores it as the session's password hash.
+     * Remove the password from the data, so Filament does not write it itself.
      *
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>

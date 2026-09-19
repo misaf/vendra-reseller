@@ -16,11 +16,6 @@ use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSupport\Filament\Tables\Columns\NameColumn;
 use Misaf\VendraTenant\Enums\TenantProvisioningStatus;
 
-/**
- * The reseller's stores that are still provisioning, failed to provision, or
- * whose storefront failed, with the reason where one was recorded. Hidden when
- * nothing needs the reseller.
- */
 final class StoresNeedingAttention extends TableWidget
 {
     use InteractsWithCurrentReseller;

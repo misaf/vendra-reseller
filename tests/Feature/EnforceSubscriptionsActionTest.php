@@ -10,9 +10,6 @@ use Misaf\VendraSubscription\Enums\SubscriptionStatus;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
 
-/**
- * Create a reseller whose only subscription is active but past its end date.
- */
 function lapsedReseller(int $graceDays, Carbon $endsAt): Reseller
 {
     $reseller = Reseller::factory()->create();

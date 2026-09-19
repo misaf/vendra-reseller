@@ -27,19 +27,8 @@ use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
 /**
- * Registers the reseller package's console command, its subscription event
- * reactions, and both sides of the reseller/store relationship.
- *
- * The subscription engine only raises generic lifecycle events; the reseller
- * domain reacts by notifying contacts and suspending expired stores, so those
- * listeners are wired here instead of the host app.
- *
- * The store's billing reseller is wired here too, and only here:
- * `misaf/vendra-store` sits below this package and holds nothing but the
- * reseller key, so this provider
- * supplies the {@see StoreResellerResolver} adapter and registers `$store->reseller()`
- * on the Store model. That is what keeps the dependency arrow pointing one way,
- * reseller → store, with no cycle.
+ * The {@see StoreResellerResolver} binding and `$store->reseller()` live here so
+ * the store package never depends on this one.
  */
 final class ResellerServiceProvider extends PackageServiceProvider
 {
@@ -93,10 +82,7 @@ final class ResellerServiceProvider extends PackageServiceProvider
     }
 
     /**
-     * Point the reseller guard at the reseller user provider, which resolves
-     * platform identities only, so a tenant row sharing an email can never
-     * win a lookup. The provider and its password broker are declared in
-     * `config/auth.php`.
+     * Point the reseller guard at a provider that only resolves platform users.
      */
     private function useResellerUserProvider(): void
     {

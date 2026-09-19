@@ -17,21 +17,17 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
-use Illuminate\Support\Uri;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Misaf\VendraLocalization\Http\Middleware\SetLocale;
 use Misaf\VendraReseller\Filament\Pages\Auth\EditProfile;
 use Misaf\VendraReseller\Filament\Pages\Auth\Login;
 use Misaf\VendraReseller\Filament\Pages\Auth\Register;
 use Misaf\VendraReseller\Http\Middleware\AddResellerToRequestJobContext;
+use Misaf\VendraReseller\Support\ResellerAddress;
 use Misaf\VendraSupport\Http\Middleware\AddPanelToRequestJobContext;
 
 /**
- * The reseller (self-service) panel.
- *
- * A reseller user manages their own billing reseller here: they see their
- * subscription and create/list stores within their plan's quota. It runs
- * outside the tenant middleware because a reseller spans multiple stores.
+ * Runs outside the tenant middleware because a reseller spans many stores.
  */
 final class ResellerPanelServiceProvider extends PanelProvider
 {
@@ -53,7 +49,7 @@ final class ResellerPanelServiceProvider extends PanelProvider
             ->homeUrl('/')
             ->authGuard('reseller')
             ->authPasswordBroker('reseller')
-            ->domain('reseller.'.Uri::of(config()->string('app.url'))->host())
+            ->domain(ResellerAddress::domain())
             ->login(Login::class)
             ->registration(Register::class)
             ->passwordReset()

@@ -83,8 +83,6 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     }
 
     /**
-     * The stores owned by this reseller.
-     *
      * @return HasMany<Store, $this>
      */
     public function stores(): HasMany
@@ -111,11 +109,7 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     }
 
     /**
-     * The reseller's main account: a canonical platform user (`tenant_id` null).
-     *
-     * The tenant scopes are lifted because the account belongs to no tenant, so
-     * resolving it inside a tenant context (a notification raised while a store
-     * is current) must not hide it.
+     * Get the reseller's main account, without tenant scopes.
      *
      * @return BelongsTo<User, $this>
      */
@@ -126,7 +120,7 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     }
 
     /**
-     * A reseller has no name of its own: it is shown by its main account's username.
+     * Get the main account's username, since a reseller has no name of its own.
      */
     public function displayName(): string
     {
@@ -134,8 +128,6 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     }
 
     /**
-     * Display names keyed by reseller id for every reseller the query matches.
-     *
      * @param  Builder<self>  $query
      * @return array<int, string>
      */
@@ -148,20 +140,11 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
             ->all();
     }
 
-    /**
-     * The reseller the given user is the main account of, if any.
-     *
-     * An offboarded reseller is soft-deleted, so its former account resolves
-     * to null and sees nothing in the reseller panel.
-     */
     public static function forUser(User $user): ?self
     {
         return self::query()->where('user_id', $user->getKey())->first();
     }
 
-    /**
-     * The reseller's currently active subscription, if any.
-     */
     public function activeSubscription(): ?Subscription
     {
         return $this->subscriptions()
@@ -175,9 +158,6 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
         return $this->active;
     }
 
-    /**
-     * The reseller has no contact details of its own: its main account is always the contact.
-     */
     public function notifyContact(Notification $notification): void
     {
         $this->user->notify($notification);
@@ -199,8 +179,7 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     }
 
     /**
-     * Store by store rather than one bulk update, so each storefront is taken
-     * down along with its store instead of serving on while billing is lapsed.
+     * Suspend the active stores one by one, so each storefront stops too.
      */
     public function suspendActiveUnits(): int
     {
@@ -228,9 +207,6 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
         return $stores->count();
     }
 
-    /**
-     * Whether the reseller's active plan grants the given feature entitlement.
-     */
     public function allows(string $feature): bool
     {
         return $this->activeSubscription()?->plan?->allows($feature) ?? false;

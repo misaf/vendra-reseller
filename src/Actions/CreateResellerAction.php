@@ -21,8 +21,6 @@ final readonly class CreateResellerAction
     ) {}
 
     /**
-     * Create a billing reseller with its main account and subscribe it to the given plan.
-     *
      * @return array{reseller: Reseller, user: User, subscription: Subscription}
      */
     public function execute(

@@ -18,16 +18,12 @@ use Misaf\VendraSubscription\Enums\SubscriptionStatus;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
 
-/**
- * The reseller's plan, how much of it their stores use, and whether billing is
- * holding any store down.
- */
 final class PlanSummary extends StatsOverviewWidget
 {
     use InteractsWithCurrentReseller;
 
     /**
-     * A plan ending within this many days is shown as a warning.
+     * The number of days before a plan's end at which it shows a warning.
      */
     private const int ENDING_SOON_DAYS = 7;
 
