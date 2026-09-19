@@ -146,7 +146,7 @@ it('collects an internal subscription payment only once and settles it before re
     makeCurrentTestTenant();
     TransactionGatewayFactory::new()->active()->internal()->create();
     $payer = createTestUser();
-    $wallet = WalletResolver::walletFor($payer, 'USD');
+    $wallet = WalletResolver::firstOrCreateWalletFor($payer, 'USD');
     resolve(CreateTransactionAction::class)->execute(
         TransactionGatewayRegistryClass::INTERNAL_GATEWAY_SLUG,
         $wallet,
