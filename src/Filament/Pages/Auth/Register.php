@@ -11,7 +11,6 @@ use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 use InvalidArgumentException;
 use Misaf\VendraReseller\Actions\CreateResellerAction;
 use Misaf\VendraSubscription\Models\Plan;
@@ -37,9 +36,9 @@ final class Register extends \Filament\Auth\Pages\Register
         return TextInput::make('username')
             ->label(__('vendra-reseller::attributes.username'))
             ->autofocus()
-            ->minLength(3)
-            ->maxLength(12)
-            ->rules(['alpha_dash:ascii'])
+            ->minLength(UserRules::USERNAME_MIN_LENGTH)
+            ->maxLength(UserRules::USERNAME_MAX_LENGTH)
+            ->rules([...UserRules::username(), 'ascii'])
             ->required()
             ->rule(UserRules::unique('username'));
     }
@@ -61,7 +60,7 @@ final class Register extends \Filament\Auth\Pages\Register
             ->password()
             ->revealable(filament()->arePasswordsRevealable())
             ->required()
-            ->rule(Password::default())
+            ->rules(UserRules::password())
             ->showAllValidationMessages()
             ->same('passwordConfirmation')
             ->validationAttribute(__('filament-panels::auth/pages/register.form.password.validation_attribute'));

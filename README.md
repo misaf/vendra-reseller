@@ -17,7 +17,7 @@ an active, non-offboarded reseller, but the guard stays explicit because
 the platform owns directly.
 
 Each reseller has exactly one main account: `resellers.user_id` (required,
-unique) points at a canonical platform user (`misaf/vendra-user`,
+unique) points at a canonical tenantless user (`misaf/vendra-user`,
 `tenant_id` null). Identity columns live on `users`; replacing the account
 repoints `user_id` while the former identity — and any tenant access it holds —
 stays intact.
@@ -31,6 +31,12 @@ stays intact.
   `misaf/vendra-tenant`, `misaf/vendra-localization`, `misaf/vendra-user`
   and `misaf/vendra-support`
 
+Registration and provisioning validate credentials through `vendra-user`’s
+`Support\UserRules::username()` and `password()`. Username rules require 3–12
+letters, numbers, dashes, or underscores; registration additionally requires ASCII.
+Password strength follows the application default policy, for a supplied
+`--password` and for the generated one alike.
+
 ## Installation
 
 ```bash
@@ -40,7 +46,7 @@ php artisan migrate
 ```
 
 The published migration creates the `resellers` table; the host application's `config/auth.php` points the `reseller`
-guard at the platform-scoped `reseller` provider and the `reseller`
+guard at the tenantless `reseller` provider and the `reseller`
 password broker, which stores its reset tokens in
 `reseller_password_reset_tokens` so neither a tenant user sharing the email nor
 the console panel can consume them. A user may

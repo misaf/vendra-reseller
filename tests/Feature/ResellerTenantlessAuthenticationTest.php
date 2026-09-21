@@ -17,11 +17,11 @@ use Misaf\VendraUser\Models\User;
 use function Pest\Laravel\actingAs;
 use function Pest\Livewire\livewire;
 
-function resellerPlatformUser(Reseller $reseller, array $attributes = []): User
+function resellerTenantlessUser(Reseller $reseller, array $attributes = []): User
 {
     $user = User::factory()->create([
         'tenant_id' => null,
-        'password' => Hash::make('platform-password'),
+        'password' => Hash::make('tenantless-password'),
         ...$attributes,
     ]);
 
@@ -30,7 +30,7 @@ function resellerPlatformUser(Reseller $reseller, array $attributes = []): User
     return $user;
 }
 
-it('authenticates the platform user when a tenant row shares the email', function (): void {
+it('authenticates the tenantless user when a tenant row shares the email', function (): void {
     $tenant = createTestTenant();
     $email = 'reseller-shared@example.test';
 
@@ -41,7 +41,7 @@ it('authenticates the platform user when a tenant row shares the email', functio
     ]);
 
     $reseller = Reseller::factory()->active()->create();
-    $user = resellerPlatformUser($reseller, [
+    $user = resellerTenantlessUser($reseller, [
         'username' => 'reseller_owner',
         'email' => $email,
     ]);
@@ -51,7 +51,7 @@ it('authenticates the platform user when a tenant row shares the email', functio
     livewire(Login::class)
         ->fillForm([
             'email' => $email,
-            'password' => 'platform-password',
+            'password' => 'tenantless-password',
         ])
         ->call('authenticate')
         ->assertHasNoFormErrors();
@@ -71,7 +71,7 @@ it('rejects the tenant password and wrong passwords on the reseller panel', func
         'password' => Hash::make('tenant-password'),
     ]);
 
-    resellerPlatformUser(Reseller::factory()->active()->create(), [
+    resellerTenantlessUser(Reseller::factory()->active()->create(), [
         'username' => 'reseller_owner2',
         'email' => $email,
     ]);
@@ -128,7 +128,7 @@ it('does not let a tenant-only user into the reseller panel', function (): void 
         ->and($tenantUser->canAccessPanel(Filament::getPanel('reseller')))->toBeFalse();
 });
 
-it('restores reseller sessions only for the platform user via remember token', function (): void {
+it('restores reseller sessions only for the tenantless user via remember token', function (): void {
     $tenant = createTestTenant();
     $email = 'reseller-remember@example.test';
 
@@ -138,21 +138,21 @@ it('restores reseller sessions only for the platform user via remember token', f
         'remember_token' => 'tenant-remember-token',
     ]);
 
-    $user = resellerPlatformUser(Reseller::factory()->active()->create(), [
+    $user = resellerTenantlessUser(Reseller::factory()->active()->create(), [
         'username' => 'reseller_rem_owner',
         'email' => $email,
-        'remember_token' => 'platform-remember-token',
+        'remember_token' => 'tenantless-remember-token',
     ]);
 
     $provider = auth('reseller')->getProvider();
 
-    expect($provider->retrieveByToken($user->getKey(), 'platform-remember-token')?->getKey())->toBe($user->getKey())
+    expect($provider->retrieveByToken($user->getKey(), 'tenantless-remember-token')?->getKey())->toBe($user->getKey())
         ->and($provider->retrieveByToken($tenantUser->getKey(), 'tenant-remember-token'))->toBeNull();
 });
 
 it('removes reseller access when the reseller is deactivated', function (): void {
     $reseller = Reseller::factory()->active()->create();
-    $user = resellerPlatformUser($reseller);
+    $user = resellerTenantlessUser($reseller);
     $panel = Filament::getPanel('reseller');
 
     expect($user->canAccessPanel($panel))->toBeTrue();
@@ -163,7 +163,7 @@ it('removes reseller access when the reseller is deactivated', function (): void
         ->and(User::query()->find($user->getKey()))->not->toBeNull();
 });
 
-it('routes the reseller password reset flow to the platform identity and store', function (): void {
+it('routes the reseller password reset flow to the tenantless identity and store', function (): void {
     Notification::fake();
 
     $tenant = createTestTenant();
@@ -175,7 +175,7 @@ it('routes the reseller password reset flow to the platform identity and store',
         'password' => Hash::make('tenant-password'),
     ]);
 
-    $user = resellerPlatformUser(Reseller::factory()->active()->create(), [
+    $user = resellerTenantlessUser(Reseller::factory()->active()->create(), [
         'username' => 'reseller_reset_owner',
         'email' => $email,
     ]);

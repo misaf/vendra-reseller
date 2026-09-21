@@ -60,8 +60,8 @@ final class ResellerServiceProvider extends PackageServiceProvider
         /*
         | Reseller authorization lives here: the resolver gates panel entry
         | on being the main account of an active reseller, and the reseller guard
-        | resolves only platform identities (tenant_id IS NULL) through the
-        | shared platform provider, so a tenant row can never win a lookup.
+        | resolves only tenantless identities (tenant_id IS NULL) through
+        | the shared tenantless provider, so a tenant row can never win a lookup.
         */
         $this->app->make(PanelAccessRegistry::class)->register(new ResellerPanelAccessResolver);
 
@@ -85,7 +85,7 @@ final class ResellerServiceProvider extends PackageServiceProvider
     }
 
     /**
-     * Point the reseller guard at a provider that only resolves platform users.
+     * Point the reseller guard at a provider that only resolves tenantless users.
      */
     private function useResellerUserProvider(): void
     {

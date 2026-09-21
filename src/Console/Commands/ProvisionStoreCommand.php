@@ -12,7 +12,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Misaf\VendraReseller\Actions\CreateResellerAction;
 use Misaf\VendraReseller\Models\Reseller;
@@ -21,6 +20,7 @@ use Misaf\VendraStore\Models\StoreDomain;
 use Misaf\VendraSubscription\Exceptions\SubscriptionLimitException;
 use Misaf\VendraSubscription\Exceptions\SubscriptionPaymentException;
 use Misaf\VendraSubscription\Models\Plan;
+use Misaf\VendraUser\Support\UserRules;
 
 #[Description('Provision a store (tenant) with a domain, administrator user, and role assignment')]
 #[Signature('vendra-reseller:provision-store
@@ -75,8 +75,7 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
         }
 
         $passwordWasProvided = $validatedPassword !== null;
-        $password = $validatedPassword
-            ?? Str::password(length: 8, letters: true, numbers: true, symbols: false);
+        $password = $validatedPassword ?? UserRules::generatePassword();
 
         /*
          | One transaction: a reseller created for --plan and then refused a store
@@ -225,7 +224,7 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
 
         $validator = Validator::make(
             ['password' => $password],
-            ['password' => ['required', 'string', 'min:8', 'max:255']],
+            ['password' => ['required', ...UserRules::password()]],
         );
 
         if ($validator->fails()) {
@@ -262,7 +261,7 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
                 ...StoreDomain::activeDomainRules(),
                 Rule::unique('store_domains', 'name')->withoutTrashed(),
             ],
-            'username' => ['required', 'string', 'max:255'],
+            'username' => ['required', ...UserRules::username()],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->withoutTrashed()],
         ]);
 
