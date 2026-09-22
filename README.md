@@ -54,9 +54,11 @@ enter the panel only while it is the main account of an active reseller:
 deactivating the reseller (`SetResellerActiveAction`) is how its account is
 locked out, and an offboarded reseller grants nothing.
 
-The panel is served on `reseller.<app host>`, derived from `app.url` by
-`Support\ResellerAddress::domain()` (`reseller.localhost` when `app.url` has no
-host) — nothing here hard-codes or re-derives a host.
+The panel is served on `vendra-reseller.domain`, which the panel provider reads
+with `Config::string()`. The config file defaults it to the `reseller.` subdomain
+of `APP_URL`'s host, and `VENDRA_RESELLER_DOMAIN` overrides it — nothing here
+hard-codes or re-derives a host. Because the value is resolved when config loads
+rather than per call, changing `app.url` at runtime does not move the panel.
 
 ## Usage
 

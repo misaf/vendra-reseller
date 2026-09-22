@@ -27,7 +27,6 @@ use Misaf\VendraReseller\Filament\Widgets\LatestStores;
 use Misaf\VendraReseller\Filament\Widgets\PlanSummary;
 use Misaf\VendraReseller\Filament\Widgets\StoresNeedingAttention;
 use Misaf\VendraReseller\Models\Reseller;
-use Misaf\VendraReseller\Support\ResellerAddress;
 use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
 use Misaf\VendraStore\Enums\StorefrontDesiredState;
 use Misaf\VendraStore\Enums\StoreStatus;
@@ -691,12 +690,7 @@ it('offboards a deleted store and still allows it while store creation is frozen
         ->and($trashed->metadata('offboarding.previous_active'))->toBeTrue();
 });
 
-it('derives the panel domain from the app host, falling back to localhost', function (): void {
-    Config::set('app.url', 'https://www.vendra.test');
-
-    expect(ResellerAddress::domain())->toBe('reseller.www.vendra.test');
-
-    Config::set('app.url', '');
-
-    expect(ResellerAddress::domain())->toBe('reseller.localhost');
+it('defaults the panel domain to the reseller subdomain of the app host', function (): void {
+    expect(Config::string('vendra-reseller.domain'))
+        ->toBe('reseller.'.(string) parse_url((string) env('APP_URL'), PHP_URL_HOST));
 });
