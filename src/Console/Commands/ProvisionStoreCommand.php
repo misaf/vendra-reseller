@@ -20,6 +20,7 @@ use Misaf\VendraStore\Models\StoreDomain;
 use Misaf\VendraSubscription\Exceptions\SubscriptionLimitException;
 use Misaf\VendraSubscription\Exceptions\SubscriptionPaymentException;
 use Misaf\VendraSubscription\Models\Plan;
+use Misaf\VendraUser\Support\PasswordGenerator;
 use Misaf\VendraUser\Support\UserRules;
 
 #[Description('Provision a store (tenant) with a domain, administrator user, and role assignment')]
@@ -75,7 +76,7 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
         }
 
         $passwordWasProvided = $validatedPassword !== null;
-        $password = $validatedPassword ?? UserRules::generatePassword();
+        $password = $validatedPassword ?? PasswordGenerator::generate();
 
         /*
          | One transaction: a reseller created for --plan and then refused a store
