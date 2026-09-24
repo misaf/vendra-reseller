@@ -38,7 +38,6 @@ final class ResellerServiceProvider extends PackageServiceProvider
     {
         $package
             ->name('vendra-reseller')
-            ->hasConfigFile()
             ->hasTranslations()
             ->hasMigrations([
                 'create_resellers_table',

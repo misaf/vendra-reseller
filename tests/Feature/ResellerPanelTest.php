@@ -688,7 +688,7 @@ it('offboards a deleted store and still allows it while store creation is frozen
         ->and($trashed->metadata('offboarding.previous_active'))->toBeTrue();
 });
 
-it('defaults the panel domain to the reseller subdomain of the app host', function (): void {
-    expect(Config::string('vendra-reseller.domain'))
-        ->toBe('reseller.'.(string) parse_url((string) env('APP_URL'), PHP_URL_HOST));
+it('serves the panel on the reseller subdomain of the central host', function (): void {
+    expect(Filament::getPanel('reseller')->getDomains())
+        ->toBe(['reseller.'.Config::string('vendra-tenant.central_host')]);
 });

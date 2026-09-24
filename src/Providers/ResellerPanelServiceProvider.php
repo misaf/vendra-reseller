@@ -49,7 +49,7 @@ final class ResellerPanelServiceProvider extends PanelProvider
             ->homeUrl('/')
             ->authGuard('reseller')
             ->authPasswordBroker('reseller')
-            ->domain(Config::string('vendra-reseller.domain'))
+            ->domain('reseller.'.Config::string('vendra-tenant.central_host'))
             ->login(Login::class)
             ->registration(Register::class)
             ->passwordReset()
