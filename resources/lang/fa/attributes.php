@@ -7,7 +7,6 @@ return [
     'storefronts_ready' => 'ویترین‌های آماده',
     'stores_needing_attention' => 'املاک نیازمند بررسی',
     'store_identity' => 'نمای کلی ملک',
-    'slug' => 'شناسه مستأجر',
     'desired_state' => 'وضعیت مطلوب',
     'provisioning_error' => 'هشدار راه‌اندازی',
     'remaining_stores' => 'املاک باقی‌مانده',

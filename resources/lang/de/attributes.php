@@ -7,7 +7,6 @@ return [
     'storefronts_ready' => 'Bereite Storefronts',
     'stores_needing_attention' => 'Stores mit Handlungsbedarf',
     'store_identity' => 'Store-Übersicht',
-    'slug' => 'Mandantenkennung',
     'desired_state' => 'Sollzustand',
     'provisioning_error' => 'Bereitstellungswarnung',
     'remaining_stores' => 'Verbleibende Stores',

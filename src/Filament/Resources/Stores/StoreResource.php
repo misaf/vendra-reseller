@@ -78,6 +78,7 @@ final class StoreResource extends Resource
             ->with([
                 'storefrontDeployment',
                 'primaryDomain',
+                'aliasDomains',
             ]);
     }
 

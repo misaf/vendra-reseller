@@ -26,7 +26,7 @@ final class StoreInfolist
                 ->schema([
                     Grid::make(3)->schema([
                         NameEntry::make(),
-                        SlugEntry::make()->label(__('vendra-reseller::attributes.slug'))->copyable(),
+                        SlugEntry::make()->copyable(),
                         TextEntry::make('active_domain')->label(__('vendra-reseller::attributes.domain'))
                             ->state(fn (Store $record): ?string => $record->primaryDomain?->name)->placeholder('—'),
                         TextEntry::make('admin_url')->label(__('vendra-reseller::attributes.admin_url'))

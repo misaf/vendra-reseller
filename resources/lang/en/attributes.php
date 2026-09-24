@@ -7,7 +7,6 @@ return [
     'storefronts_ready' => 'Ready storefronts',
     'stores_needing_attention' => 'Stores needing attention',
     'store_identity' => 'Store overview',
-    'slug' => 'Tenant identifier',
     'desired_state' => 'Desired state',
     'provisioning_error' => 'Provisioning warning',
     'remaining_stores' => 'Remaining stores',

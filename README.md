@@ -177,7 +177,8 @@ registers the console command and the event listeners. The split is deliberate.
 
 Store screens are reused, not copied: the panel's resources extend
 `misaf/vendra-store`'s `CreateStorePage`, `StorefrontConfigurationFields`
-and `ReplaceDomainTableAction`, supplying the authenticated user's reseller.
+and its domain actions (`ReplaceDomainTableAction`, `AddDomainAliasTableAction`,
+`MakeDomainPrimaryTableAction`, `RemoveDomainAliasTableAction`), supplying the authenticated user's reseller.
 Resolve the acting reseller with `Filament\Concerns\InteractsWithCurrentReseller`;
 `Http\Middleware\AddResellerToRequestJobContext` carries it into queued work.
 
