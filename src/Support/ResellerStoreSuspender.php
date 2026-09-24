@@ -35,7 +35,7 @@ final readonly class ResellerStoreSuspender implements SubscriptionUnitSuspender
 
     public function reactivateSuspendedUnits(Model&SubscriptionSubscriber $subscriber): int
     {
-        $stores = $this->reseller($subscriber)->stores()->whereNotNull('billing_suspended_at')->get();
+        $stores = $this->reseller($subscriber)->stores()->billingSuspended()->get();
 
         $stores->each(fn (Store $store): Store => $this->reactivateStore->execute($store));
 

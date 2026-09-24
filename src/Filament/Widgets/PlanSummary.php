@@ -44,7 +44,7 @@ final class PlanSummary extends StatsOverviewWidget
                 ? self::activePlanStat($subscription)
                 : self::inactivePlanStat($reseller->latestSubscription()),
             self::capacityStat($subscription, $counts->total(), resolve(StoreQuota::class)->remainingStores($reseller)),
-            self::storesStat($counts, (clone $stores)->whereNotNull('billing_suspended_at')->count()),
+            self::storesStat($counts, (clone $stores)->billingSuspended()->count()),
         ];
     }
 
