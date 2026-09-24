@@ -13,7 +13,6 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\Relation;
 use InvalidArgumentException;
 use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\CreateStore;
@@ -78,7 +77,7 @@ final class StoreResource extends Resource
             ->where('reseller_id', $resellerId)
             ->with([
                 'storefrontDeployment',
-                'domains' => fn (Relation $relation): Relation => $relation->where('active', true),
+                'primaryDomain',
             ]);
     }
 
@@ -136,7 +135,7 @@ final class StoreResource extends Resource
     {
         return parent::getGlobalSearchEloquentQuery()
             ->with([
-                'domains' => fn (Relation $relation): Relation => $relation->where('active', true),
+                'primaryDomain',
             ]);
     }
 
@@ -146,10 +145,9 @@ final class StoreResource extends Resource
     public static function getGlobalSearchResultDetails(Model $record): array
     {
         $store = self::store($record);
-        $domainName = $store->domains->pluck('name')->first();
 
         return [
-            __('vendra-reseller::attributes.domain') => is_string($domainName) ? $domainName : '—',
+            __('vendra-reseller::attributes.domain') => $store->primaryDomain->name ?? '—',
         ];
     }
 

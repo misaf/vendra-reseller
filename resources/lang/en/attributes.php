@@ -35,7 +35,6 @@ return [
     'storefront_status' => 'Storefront status',
     'storefront_not_requested' => 'Not requested',
     'admin_url' => 'Admin URL',
-    'storefront_url' => 'Storefront URL',
     'created_at' => 'Created at',
     'updated_at' => 'Updated at',
     'active' => 'Active',

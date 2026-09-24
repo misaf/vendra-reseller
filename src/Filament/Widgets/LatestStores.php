@@ -9,7 +9,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\Relation;
 use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
 use Misaf\VendraStore\Enums\StoreStatus;
@@ -44,7 +43,7 @@ final class LatestStores extends BaseWidget
             ->query(fn (): Builder => Store::query()
                 ->ownedBy(self::currentReseller())
                 ->with([
-                    'domains' => fn (Relation $relation): Relation => $relation->where('active', true),
+                    'primaryDomain',
                 ]))
             ->columns([
                 NameColumn::make()
@@ -53,7 +52,7 @@ final class LatestStores extends BaseWidget
                 TextColumn::make('domain')
                     ->label(__('vendra-reseller::attributes.domain'))
                     ->icon(Heroicon::GlobeAlt)
-                    ->state(fn (Store $record): ?string => $record->domains->first()?->name)
+                    ->state(fn (Store $record): ?string => $record->primaryDomain?->name)
                     ->placeholder('—'),
 
                 TextColumn::make('status')

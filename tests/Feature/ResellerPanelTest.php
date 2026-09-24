@@ -126,9 +126,8 @@ it('globally searches only the authenticated reseller stores', function (): void
         'reseller_id' => $otherReseller->getKey(),
         'name' => 'Other Search Property',
     ]);
-    StoreDomain::factory()->for($store)->create([
+    StoreDomain::factory()->for($store)->primary()->create([
         'name' => 'owned-global-search.test',
-        'active' => true,
     ]);
 
     $result = StoreResource::getGlobalSearchResults('owned-global-search.test')->sole();
@@ -154,7 +153,7 @@ it('globally searches only the authenticated reseller stores', function (): void
 it('uses a store overview as the reseller record landing page', function (): void {
     $reseller = Reseller::factory()->active()->create();
     $store = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'name' => 'Acme Flowers']);
-    StoreDomain::factory()->for($store)->create(['name' => 'acme.test', 'active' => true]);
+    StoreDomain::factory()->for($store)->primary()->create(['name' => 'acme.test']);
     StorefrontDeployment::factory()->for($store)->create(['domain' => 'shop.acme.test', 'desired_state' => StorefrontDesiredState::Stopped]);
     actAsResellerUser($reseller);
 
@@ -165,7 +164,6 @@ it('uses a store overview as the reseller record landing page', function (): voi
         ->assertOk()
         ->assertSee('Acme Flowers')
         ->assertSee('acme.test')
-        ->assertSee('shop.acme.test')
         ->assertSee(StorefrontDesiredState::Stopped->getLabel());
 });
 
@@ -325,7 +323,7 @@ it('renders the reseller dashboard with its widgets for a user', function (): vo
     $reseller = Reseller::factory()->active()->create();
     Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->active()->maxUnits(3))->create();
     $store = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
-    StoreDomain::factory()->for($store)->create(['name' => 'shop.test', 'active' => true]);
+    StoreDomain::factory()->for($store)->primary()->create(['name' => 'shop.test']);
 
     actAsResellerUser($reseller);
 
@@ -565,7 +563,7 @@ it('lets a user soft-delete their own store', function (): void {
 it('lets a user replace their store domain, keeping the old one as trashed history', function (): void {
     $reseller = Reseller::factory()->active()->create();
     $store = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
-    StoreDomain::factory()->for($store)->create(['name' => 'old.test', 'active' => true]);
+    StoreDomain::factory()->for($store)->primary()->create(['name' => 'old.test']);
 
     actAsResellerUser($reseller);
 
@@ -580,10 +578,10 @@ it('lets a user replace their store domain, keeping the old one as trashed histo
 it('validates the replacement domain format and active-domain uniqueness', function (): void {
     $reseller = Reseller::factory()->active()->create();
     $store = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
-    StoreDomain::factory()->for($store)->create(['name' => 'current.test', 'active' => true]);
+    StoreDomain::factory()->for($store)->primary()->create(['name' => 'current.test']);
 
     $other = Store::factory()->create();
-    StoreDomain::factory()->for($other)->create(['name' => 'taken.test', 'active' => true]);
+    StoreDomain::factory()->for($other)->primary()->create(['name' => 'taken.test']);
 
     actAsResellerUser($reseller);
 

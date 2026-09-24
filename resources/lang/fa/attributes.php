@@ -35,7 +35,6 @@ return [
     'storefront_status' => 'وضعیت فروشگاه',
     'storefront_not_requested' => 'درخواست نشده',
     'admin_url' => 'URL ادمین',
-    'storefront_url' => 'URL ویترین',
     'created_at' => 'ایجاد شده در',
     'updated_at' => 'به‌روزرسانی شده در',
     'active' => 'فعال',

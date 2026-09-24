@@ -44,7 +44,7 @@ final class StoreTable
 
                 TextColumn::make('domain')
                     ->label(__('vendra-reseller::attributes.domain'))
-                    ->state(fn (Store $record): ?string => $record->domains->first()?->name)
+                    ->state(fn (Store $record): ?string => $record->primaryDomain?->name)
                     ->placeholder('—'),
 
                 TextColumn::make('storefront_status')
@@ -52,23 +52,6 @@ final class StoreTable
                     ->badge()
                     ->state(fn (Store $record): ?StorefrontDeploymentStatus => $record->storefrontDeployment?->status)
                     ->placeholder(__('vendra-reseller::attributes.storefront_not_requested')),
-
-                TextColumn::make('admin_url')
-                    ->label(__('vendra-reseller::attributes.admin_url'))
-                    ->state(fn (Store $record): string => $record->adminUrl())
-                    ->url(fn (Store $record): string => $record->adminUrl())
-                    ->openUrlInNewTab()
-                    ->copyable()
-                    ->copyMessage(__('vendra-reseller::messages.url_copied')),
-
-                TextColumn::make('storefront_url')
-                    ->label(__('vendra-reseller::attributes.storefront_url'))
-                    ->state(fn (Store $record): ?string => $record->storefrontDeployment?->domain)
-                    ->placeholder('—')
-                    ->url(fn (Store $record): ?string => $record->storefrontDeployment?->url())
-                    ->openUrlInNewTab()
-                    ->copyable()
-                    ->copyMessage(__('vendra-reseller::messages.url_copied')),
 
                 IsActiveIconColumn::make(),
 
