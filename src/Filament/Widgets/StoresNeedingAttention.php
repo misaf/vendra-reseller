@@ -14,7 +14,6 @@ use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
 use Misaf\VendraStore\Enums\StoreStatus;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSupport\Filament\Tables\Columns\NameColumn;
-use Misaf\VendraTenant\Enums\TenantProvisioningStatus;
 
 final class StoresNeedingAttention extends TableWidget
 {
@@ -62,13 +61,7 @@ final class StoresNeedingAttention extends TableWidget
     private static function query(): Builder
     {
         return Store::query()
-            ->where('reseller_id', self::currentReseller()?->getKey() ?? 0)
-            ->where(fn (Builder $query): Builder => $query
-                ->whereIn('provisioning_status', [
-                    TenantProvisioningStatus::Pending,
-                    TenantProvisioningStatus::Processing,
-                    TenantProvisioningStatus::Failed,
-                ])
-                ->orWhereHas('storefrontDeployment', fn (Builder $deployment): Builder => $deployment->where('status', StorefrontDeploymentStatus::Failed)));
+            ->ownedBy(self::currentReseller())
+            ->needingAttention();
     }
 }

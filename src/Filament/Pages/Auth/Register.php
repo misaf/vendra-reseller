@@ -97,12 +97,14 @@ final class Register extends \Filament\Auth\Pages\Register
 
         $plan = Plan::query()->active()->where('price', 0)->findOrFail((int) $planId);
 
-        return Arr::get(resolve(CreateResellerAction::class)->execute(
+        ['user' => $user] = resolve(CreateResellerAction::class)->execute(
             plan: $plan,
             username: $username,
             email: $email,
             password: $password,
             emailVerified: false,
-        ), 'user');
+        );
+
+        return $user;
     }
 }

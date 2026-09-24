@@ -24,7 +24,7 @@ final class SetResellerActiveAction
             | nothing behind it.
             */
             if ($lockedReseller->offboarded_at !== null) {
-                throw new LogicException("Reseller [{$lockedReseller->getKey()}] is offboarded and cannot change its active state.");
+                throw new LogicException("Reseller [{$lockedReseller->id}] is offboarded and cannot change its active state.");
             }
 
             $lockedReseller->forceFill(['active' => $active])->save();

@@ -128,6 +128,10 @@ $reseller->subscribedUnitCount();
 $reseller->allows('feature-key');
 ```
 
+Filter resellers by their subscriptions with the `withActiveSubscription()`,
+`withoutActiveSubscription()`, `withSubscriptionEndingWithin($days)` and
+`withPastDueSubscription()` scopes.
+
 `Support\ResellerStoreSuspender` implements the subscription package's
 `SubscriptionUnitSuspender` contract: it suspends or reactivates a reseller's
 stores through `SuspendStoreForBillingAction` or

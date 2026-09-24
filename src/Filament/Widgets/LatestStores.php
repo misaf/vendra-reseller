@@ -42,7 +42,7 @@ final class LatestStores extends BaseWidget
         return $table
             ->heading(self::getHeading())
             ->query(fn (): Builder => Store::query()
-                ->where('reseller_id', self::currentReseller()?->getKey() ?? 0)
+                ->ownedBy(self::currentReseller())
                 ->with([
                     'domains' => fn (Relation $relation): Relation => $relation->where('active', true),
                 ]))

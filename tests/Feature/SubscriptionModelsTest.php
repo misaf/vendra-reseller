@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Date;
 use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraSubscription\Enums\PeriodUnit;
+use Misaf\VendraSubscription\Enums\SubscriptionStatus;
 use Misaf\VendraSubscription\Exceptions\PlanInUseException;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
@@ -54,6 +56,24 @@ it('reports no active subscription when none are active', function (): void {
     Subscription::factory()->expired()->forSubscriber($reseller)->create();
 
     expect($reseller->activeSubscription())->toBeNull();
+});
+
+it('filters resellers by the state of their subscriptions', function (): void {
+    $active = Reseller::factory()->create();
+    Subscription::factory()->forSubscriber($active)->create(['ends_at' => now()->addMonth()]);
+    $endingSoon = Reseller::factory()->create();
+    Subscription::factory()->forSubscriber($endingSoon)->create(['ends_at' => now()->addDays(3)]);
+    $pastDue = Reseller::factory()->create();
+    Subscription::factory()->forSubscriber($pastDue)->create(['status' => SubscriptionStatus::PastDue]);
+    $expired = Reseller::factory()->create();
+    Subscription::factory()->expired()->forSubscriber($expired)->create();
+
+    $ids = fn (Builder $query): array => $query->orderBy('id')->pluck('id')->all();
+
+    expect($ids(Reseller::query()->withActiveSubscription()))->toBe([$active->id, $endingSoon->id])
+        ->and($ids(Reseller::query()->withSubscriptionEndingWithin(7)))->toBe([$endingSoon->id])
+        ->and($ids(Reseller::query()->withPastDueSubscription()))->toBe([$pastDue->id])
+        ->and($ids(Reseller::query()->withoutActiveSubscription()))->toBe([$pastDue->id, $expired->id]);
 });
 
 it('treats a subscription without an end date as active', function (): void {

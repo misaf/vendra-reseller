@@ -51,7 +51,7 @@ final readonly class TransactionSubscriptionCharger implements SubscriptionCharg
             operation: 'subscription_charge',
             metadata: [
                 ContextKeys::RESELLER_ID => $charge->payer instanceof User
-                    ? Reseller::forUser($charge->payer)?->getKey()
+                    ? Reseller::forUser($charge->payer)?->id
                     : null,
             ],
         )->scope(fn (): SubscriptionChargeResult => $this->chargeWithinContext($charge));

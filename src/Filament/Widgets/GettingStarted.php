@@ -7,7 +7,6 @@ namespace Misaf\VendraReseller\Filament\Widgets;
 use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Illuminate\Database\Eloquent\Builder;
 use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
 use Misaf\VendraReseller\Models\Reseller;
@@ -65,8 +64,8 @@ final class GettingStarted extends StatsOverviewWidget
     private static function hasLiveStorefront(Reseller $reseller): bool
     {
         return once(fn (): bool => Store::query()
-            ->where('reseller_id', $reseller->getKey())
-            ->whereHas('storefrontDeployment', fn (Builder $query): Builder => $query->where('status', StorefrontDeploymentStatus::Ready))
+            ->ownedBy($reseller)
+            ->withDeploymentStatus(StorefrontDeploymentStatus::Ready)
             ->exists());
     }
 }

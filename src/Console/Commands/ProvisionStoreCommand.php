@@ -103,15 +103,15 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
             return self::FAILURE;
         }
 
-        [$reseller, $result] = $provisioned;
+        [$reseller, ['user' => $user, 'password' => $generatedPassword]] = $provisioned;
 
         $this->info('Store provisioned.');
         $this->table(['Field', 'Value'], [
             ['Domain', Arr::get($data, 'domain')],
             ['Reseller', $reseller === null ? '[none]' : $reseller->displayName()],
-            ['Username', Arr::get($result, 'user')->username],
-            ['Email', Arr::get($result, 'user')->email],
-            ['Password', $passwordWasProvided ? '[provided]' : Arr::get($result, 'password')],
+            ['Username', $user->username],
+            ['Email', $user->email],
+            ['Password', $passwordWasProvided ? '[provided]' : $generatedPassword],
             ['Seeders', $shouldSeed ? 'Run' : 'Skipped'],
         ]);
 
@@ -155,12 +155,14 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
             return false;
         }
 
-        return Arr::get($this->createResellerAction->execute(
+        ['reseller' => $reseller] = $this->createResellerAction->execute(
             plan: $plan,
-            username: Arr::get($data, 'username'),
-            email: Arr::get($data, 'email'),
+            username: Arr::string($data, 'username'),
+            email: Arr::string($data, 'email'),
             password: $password,
-        ), 'reseller');
+        );
+
+        return $reseller;
     }
 
     /**

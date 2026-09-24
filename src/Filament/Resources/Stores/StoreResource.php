@@ -65,8 +65,6 @@ final class StoreResource extends Resource
      *
      * Without a reseller the query matches nothing, since a null `reseller_id`
      * would match every platform store.
-     *
-     * @return Builder<Store>
      */
     public static function getEloquentQuery(): Builder
     {

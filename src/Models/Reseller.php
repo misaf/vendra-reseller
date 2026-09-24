@@ -21,6 +21,7 @@ use Misaf\VendraReseller\Database\Factories\ResellerFactory;
 use Misaf\VendraReseller\Observers\ResellerObserver;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSubscription\Contracts\SubscriptionSubscriber;
+use Misaf\VendraSubscription\Enums\SubscriptionStatus;
 use Misaf\VendraSubscription\Models\Subscription;
 use Misaf\VendraSupport\Contracts\ShouldLogActivity;
 use Misaf\VendraSupport\Tenancy\Scopes\TeamScope;
@@ -79,6 +80,46 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     protected function inactive(Builder $query): Builder
     {
         return $query->where('active', false);
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    #[Scope]
+    protected function withActiveSubscription(Builder $query): Builder
+    {
+        return $query->whereHas('subscriptions', fn (Builder $query): Builder => $query->active());
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    #[Scope]
+    protected function withoutActiveSubscription(Builder $query): Builder
+    {
+        return $query->whereDoesntHave('subscriptions', fn (Builder $query): Builder => $query->active());
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    #[Scope]
+    protected function withSubscriptionEndingWithin(Builder $query, int $days): Builder
+    {
+        return $query->whereHas('subscriptions', fn (Builder $query): Builder => $query->endingWithin($days));
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    #[Scope]
+    protected function withPastDueSubscription(Builder $query): Builder
+    {
+        return $query->whereHas('subscriptions', fn (Builder $query): Builder => $query->where('status', SubscriptionStatus::PastDue));
     }
 
     /**

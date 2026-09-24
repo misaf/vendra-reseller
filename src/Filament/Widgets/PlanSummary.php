@@ -36,7 +36,7 @@ final class PlanSummary extends StatsOverviewWidget
         }
 
         $subscription = $reseller->activeSubscription();
-        $stores = Store::query()->where('reseller_id', $reseller->getKey());
+        $stores = Store::query()->ownedBy($reseller);
         $counts = StoreStatusCounts::for($stores);
 
         return [

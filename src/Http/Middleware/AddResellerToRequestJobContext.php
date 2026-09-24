@@ -26,7 +26,7 @@ final readonly class AddResellerToRequestJobContext
         $resellerUser = $this->auth->guard('reseller')->user();
         $tenant = Store::current();
         $resellerId = $resellerUser instanceof User
-            ? Reseller::forUser($resellerUser)?->getKey()
+            ? Reseller::forUser($resellerUser)?->id
             : ($tenant instanceof Store ? $tenant->reseller_id : null);
 
         new RequestJobContext(

@@ -93,27 +93,12 @@ final class StoreTable
                     SelectFilter::make('status')
                         ->label(__('vendra-reseller::attributes.operational_status'))
                         ->options(StoreStatus::class)
-                        ->query(function (Builder $query, array $data): Builder {
-                            $value = Arr::get($data, 'value', null);
-                            $status = is_string($value) ? StoreStatus::tryFrom($value) : null;
-
-                            return $status === null ? $query : $query->withStatus($status);
-                        }),
+                        ->query(fn (Builder $query, array $data): Builder => self::filterByStatus($query, Arr::get($data, 'value', null))),
 
                     SelectFilter::make('storefront_status')
                         ->label(__('vendra-reseller::attributes.storefront_status'))
                         ->options(StorefrontDeploymentStatus::class)
-                        ->query(function (Builder $query, array $data): Builder {
-                            $value = Arr::get($data, 'value', null);
-                            $status = is_string($value) ? StorefrontDeploymentStatus::tryFrom($value) : null;
-
-                            return $status === null
-                                ? $query
-                                : $query->whereHas(
-                                    'storefrontDeployment',
-                                    fn (Builder $query): Builder => $query->where('status', $status),
-                                );
-                        }),
+                        ->query(fn (Builder $query, array $data): Builder => self::filterByDeploymentStatus($query, Arr::get($data, 'value', null))),
                 ],
                 layout: FiltersLayout::AboveContentCollapsible,
             )
@@ -136,5 +121,27 @@ final class StoreTable
                 ]),
             ])
             ->defaultSort(column: 'id', direction: 'desc');
+    }
+
+    /**
+     * @param  Builder<Store>  $query
+     * @return Builder<Store>
+     */
+    private static function filterByStatus(Builder $query, mixed $value): Builder
+    {
+        $status = is_string($value) ? StoreStatus::tryFrom($value) : null;
+
+        return $status instanceof StoreStatus ? $query->withStatus($status) : $query;
+    }
+
+    /**
+     * @param  Builder<Store>  $query
+     * @return Builder<Store>
+     */
+    private static function filterByDeploymentStatus(Builder $query, mixed $value): Builder
+    {
+        $status = is_string($value) ? StorefrontDeploymentStatus::tryFrom($value) : null;
+
+        return $status instanceof StorefrontDeploymentStatus ? $query->withDeploymentStatus($status) : $query;
     }
 }
