@@ -18,6 +18,8 @@ use Misaf\VendraStore\Support\StoreStatusCounts;
 use Misaf\VendraSubscription\Enums\SubscriptionStatus;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
+use Misaf\VendraSupport\Enums\PlanLimit;
+use Misaf\VendraSupport\Tenancy\TenantUsageRegistry;
 
 final class PlanSummary extends StatsOverviewWidget
 {
@@ -27,6 +29,11 @@ final class PlanSummary extends StatsOverviewWidget
      * The number of days before a plan's end at which it shows a warning.
      */
     private const int ENDING_SOON_DAYS = 7;
+
+    /**
+     * The share of a limit, in percent, at which its usage shows a warning.
+     */
+    private const int NEARING_LIMIT_PERCENT = 80;
 
     protected function getStats(): array
     {
@@ -46,7 +53,69 @@ final class PlanSummary extends StatsOverviewWidget
                 : self::inactivePlanStat($reseller->latestSubscription()),
             self::capacityStat($subscription, $counts->total(), resolve(StoreQuota::class)->remainingStores($reseller)),
             self::storesStat($counts, (clone $stores)->billingSuspended()->count()),
+            ...($subscription?->plan instanceof Plan ? self::limitStats($subscription->plan, Store::query()->ownedBy($reseller)->get()) : []),
         ];
+    }
+
+    /**
+     * Show each per-store limit against the store that uses the most of it.
+     *
+     * @param  iterable<Store>  $stores
+     * @return list<Stat>
+     */
+    private static function limitStats(Plan $plan, iterable $stores): array
+    {
+        $usageRegistry = resolve(TenantUsageRegistry::class);
+        $stats = [];
+
+        foreach (PlanLimit::cases() as $limit) {
+            $allowed = $plan->limit($limit->value);
+
+            if ($allowed === null) {
+                continue;
+            }
+
+            $busiestStore = null;
+            $busiestUsage = 0;
+
+            foreach ($stores as $store) {
+                $usage = $usageRegistry->usage($limit, $store);
+
+                if ($usage === null) {
+                    continue 2;
+                }
+
+                $usage = $limit->toUnits($usage);
+
+                if ($busiestStore === null || $usage > $busiestUsage) {
+                    $busiestStore = $store;
+                    $busiestUsage = $usage;
+                }
+            }
+
+            $stats[] = self::limitStat($limit, $allowed, $busiestUsage, $busiestStore);
+        }
+
+        return $stats;
+    }
+
+    private static function limitStat(PlanLimit $limit, int $allowed, int $used, ?Store $busiestStore): Stat
+    {
+        $stat = Stat::make($limit->getLabel(), $used.' / '.$allowed)
+            ->icon(match ($limit) {
+                PlanLimit::DomainsPerStore => Heroicon::OutlinedGlobeAlt,
+                PlanLimit::ProductsPerStore => Heroicon::OutlinedCube,
+                PlanLimit::StorageMegabytesPerStore => Heroicon::OutlinedCircleStack,
+            })
+            ->color(match (true) {
+                $used >= $allowed => 'danger',
+                $used * 100 >= $allowed * self::NEARING_LIMIT_PERCENT => 'warning',
+                default => 'primary',
+            });
+
+        return $busiestStore instanceof Store
+            ? $stat->description(__('vendra-reseller::attributes.busiest_store', ['store' => $busiestStore->name]))
+            : $stat->description(__('vendra-reseller::attributes.limit_per_store'));
     }
 
     private static function activePlanStat(Subscription $subscription): Stat

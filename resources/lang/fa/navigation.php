@@ -6,4 +6,5 @@ return [
     'store' => 'ملک',
     'stores' => 'املاک',
     'billing' => 'صورت‌حساب',
+    'invoices' => 'صورت‌حساب‌ها',
 ];

@@ -50,6 +50,30 @@ it('reminds the reseller user once about a soon-to-expire subscription', functio
     expect($subscription->refresh()->expiry_reminder_sent_at)->not->toBeNull();
 });
 
+it('warns in the reminder when the stores have outgrown the scheduled downgrade', function (): void {
+    Notification::fake();
+
+    $reseller = Reseller::factory()->create();
+    Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->maxUnits(5)->create(['name' => 'Growth']))->create([
+        'status' => SubscriptionStatus::Active,
+        'starts_at' => now()->subDays(20),
+        'ends_at' => now()->addDays(3),
+        'scheduled_plan_id' => Plan::factory()->maxUnits(1)->create(['name' => 'Starter'])->id,
+    ]);
+    Store::factory()->count(2)->create(['reseller_id' => $reseller->getKey()]);
+
+    resolve(EnforceSubscriptionsAction::class)->execute();
+
+    Notification::assertSentTo(
+        $reseller->user,
+        SubscriptionExpiringNotification::class,
+        fn (SubscriptionExpiringNotification $notification): bool => str_contains(
+            implode(' ', $notification->toMail($reseller->user)->introLines),
+            'renews on Growth unless you bring usage within Starter',
+        ),
+    );
+});
+
 it('notifies the reseller user when properties are suspended', function (): void {
     Notification::fake();
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Misaf\VendraReseller\Providers;
 
+use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\FontProviders\SpatieGoogleFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -54,6 +55,7 @@ final class ResellerPanelServiceProvider extends PanelProvider
             ->registration(Register::class)
             ->passwordReset()
             ->emailVerification(isRequired: true)
+            ->multiFactorAuthentication(AppAuthentication::make()->recoverable())
             ->maxContentWidth(Width::Full)
             ->middleware([
                 EncryptCookies::class,

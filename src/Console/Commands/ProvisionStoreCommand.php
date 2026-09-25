@@ -20,6 +20,7 @@ use Misaf\VendraStore\Models\StoreDomain;
 use Misaf\VendraSubscription\Exceptions\SubscriptionLimitException;
 use Misaf\VendraSubscription\Exceptions\SubscriptionPaymentException;
 use Misaf\VendraSubscription\Models\Plan;
+use Misaf\VendraSupport\Exceptions\EntitlementExceededException;
 use Misaf\VendraUser\Support\PasswordGenerator;
 use Misaf\VendraUser\Support\UserRules;
 
@@ -93,7 +94,7 @@ final class ProvisionStoreCommand extends Command implements PromptsForMissingIn
 
                 return [$reseller, $this->provisionTenantAction->execute($data, $shouldSeed, $password, $reseller)];
             });
-        } catch (SubscriptionLimitException|SubscriptionPaymentException $exception) {
+        } catch (EntitlementExceededException|SubscriptionLimitException|SubscriptionPaymentException $exception) {
             $this->error($exception->getMessage());
 
             return self::FAILURE;

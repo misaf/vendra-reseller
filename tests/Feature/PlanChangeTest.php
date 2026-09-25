@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Misaf\VendraReseller\Actions\CreditResellerWalletAction;
 use Misaf\VendraReseller\Models\Reseller;
+use Misaf\VendraReseller\Notifications\ScheduledPlanChangeDroppedNotification;
 use Misaf\VendraSubscription\Actions\ChangeSubscriptionPlanAction;
 use Misaf\VendraSubscription\Actions\ChargeSubscriptionAction;
 use Misaf\VendraSubscription\Actions\EnforceSubscriptionsAction;
@@ -137,6 +139,26 @@ describe('auto-renewal', function (): void {
             ->and($renewal->status)->toBe(SubscriptionStatus::Active)
             ->and($renewal->starts_at->equalTo($current->ends_at))->toBeTrue()
             ->and(WalletResolver::firstOrCreateWalletFor($reseller->user, 'USD')->balance)->toBe(2_000);
+    });
+
+    it('renews on the current plan and tells the reseller when the stores outgrew the scheduled one', function (): void {
+        Notification::fake();
+        $reseller = planChangeReseller();
+        $plan = Plan::factory()->active()->priced(6_000)->maxUnits(5)->graceDays(3)->create();
+        $current = subscribePlanChangeReseller($reseller, $plan, [
+            'ends_at' => Date::parse('2026-04-10 23:00:00'),
+            'scheduled_plan_id' => Plan::factory()->active()->priced(3_000)->maxUnits(1)->create()->id,
+        ]);
+        createTestTenant(['reseller_id' => $reseller->getKey()]);
+        createTestTenant(['reseller_id' => $reseller->getKey()]);
+        resolve(CreditResellerWalletAction::class)->execute($reseller, 10_000, 'USD', 'Bank transfer');
+
+        $result = resolve(EnforceSubscriptionsAction::class)->execute();
+
+        expect(Arr::get($result, 'renewed'))->toBe(1)
+            ->and($reseller->subscriptions()->whereKeyNot($current->id)->sole()->plan_id)->toBe($plan->id)
+            ->and($current->refresh()->scheduled_plan_id)->toBeNull();
+        Notification::assertSentTo($reseller->user, ScheduledPlanChangeDroppedNotification::class);
     });
 
     it('still suspends the stores after grace when the renewal cannot be paid', function (): void {

@@ -54,6 +54,11 @@ enter the panel only while it is the main account of an active reseller:
 deactivating the reseller (`SetResellerActiveAction`) is how its account is
 locked out, and an offboarded reseller grants nothing.
 
+Two-factor authentication is optional: a reseller turns on an authenticator app,
+with recovery codes, from the profile page, and from then on the login asks for
+a code. A reseller who lost both asks the platform; console staff remove it from
+the reseller's row.
+
 The panel is served on the `reseller.` subdomain of `vendra-tenant.central_host`,
 the host in `APP_URL`. Because that value is resolved when config loads rather than
 per call, changing `app.url` at runtime does not move the panel.
@@ -117,7 +122,11 @@ reseller cannot create stores; an offboarded reseller cannot be reactivated.
 `Models\Reseller` implements `SubscriptionSubscriber`, so plan limits are
 answered by `misaf/vendra-subscription` and store quotas by
 `Misaf\VendraStore\Support\StoreQuota` — no limit arithmetic is duplicated
-here.
+here. `Support\ResellerPlanUsageGuard` refuses a plan change or renewal onto a
+plan whose per-store limits any of the reseller's stores already exceeds, or that
+drops `custom_domain` while a store uses a custom domain. The billing page's
+plan picker disables and labels plans the stores have outgrown, and the store
+table shows each store's usage against every per-store limit.
 
 ```php
 $reseller->canHoldUnits();
@@ -146,11 +155,23 @@ them into reseller behaviour, wired in `Providers\ResellerServiceProvider`:
 
 | Event | Listener |
 | --- | --- |
+| `ScheduledPlanChangeDropped` | `NotifyDroppedPlanChange` |
+| `StoreLimitApproached` (vendra-store) | `WarnResellerOfStoreLimit` |
 | `SubscriptionActivated` | `NotifyActivatedSubscriber` |
 | `SubscriptionCancelled` | `SuspendSubscriberStores` |
 | `SubscriptionExpiringSoon` | `RemindExpiringSubscriber` |
 | `SubscriptionGraceExpired` | `SuspendSubscriberStores` |
+| `SubscriptionInvoiceIssued` | `NotifyInvoiceIssued` |
 | `TransactionApproved` (deposit) | `RenewAfterWalletDeposit` |
+
+`WarnResellerOfStoreLimit` emails the reseller once a store crosses 80% and
+again at 100% of a plan limit, at most once per threshold each subscription
+period. `RemindExpiringSubscriber`'s reminder also warns when the stores have
+outgrown the scheduled downgrade, before the renewal falls back to the current
+plan.
+
+`Support\ResellersOverPlan` lists resellers whose stores no longer fit their
+active plan, which happens when console staff lower a plan's limits.
 
 `RenewAfterWalletDeposit` retries an auto-renewing plan that expired or went
 past due for lack of funds as soon as the reseller's wallet is credited.
@@ -166,6 +187,13 @@ in `misaf/vendra-transaction` (`Reseller::wallets()`), through the platform's
 internal gateway (`PlatformGatewaySeeder`). Money reaches it only as a console
 credit: `Actions\CreditResellerWalletAction` records a payment made outside
 the platform as a settled deposit with a note.
+
+Every paid charge is invoiced by the subscription engine. `Reseller::billingDetails()`
+supplies the buyer: the optional `billing_name` (falling back to the username),
+`billing_address` and `tax_id`, which `Actions\UpdateResellerBillingDetailsAction`
+sets; invoices already issued keep the details they were issued with.
+`NotifyInvoiceIssued` emails the reseller user a link to its invoices through the
+queued `Notifications\InvoiceIssuedNotification`. `Reseller::invoices()` lists them.
 
 ## Commands
 
@@ -196,8 +224,9 @@ The reseller dashboard (`Filament\Pages\Dashboard`) lists its widgets in a
 fixed order: `GettingStarted` walks a new reseller from subscribing to a live
 storefront and disappears once one is live; `PlanSummary` shows the plan, its
 renewal or trial end (warning a week ahead), store usage against the allowance,
-and stores suspended for billing; `StoresNeedingAttention` lists stores still
-provisioning, failed, or with a failed storefront, with the recorded reason;
+stores suspended for billing, and each per-store plan limit against the store
+that uses the most of it (warning from 80%); `StoresNeedingAttention` lists stores still
+provisioning, failed, with a failed storefront, or over a plan limit, with the reason;
 `LatestStores` lists the newest stores. Store counts come from
 `Misaf\VendraStore\Support\StoreStatusCounts` in one grouped query. Store listings expose derived store and storefront-deployment
 statuses and filters, with all queries still rooted in
@@ -208,8 +237,11 @@ The `Filament\Pages\Billing` page shows the acting reseller's plan, auto-renew
 state, scheduled change, wallet balance and recent payments. Its header actions
 (`Filament\Pages\Billing\Actions\`) change the plan (quoting each option with
 `PlanChangeQuote`), renew a plan that is no longer running, turn auto-renew on or
-off, and cancel a scheduled downgrade. Anything that charges the wallet is
-refused up front when the balance cannot cover it.
+off, cancel a scheduled downgrade, and edit the billing details invoices name.
+Anything that charges the wallet is refused up front when the balance cannot
+cover it with tax added, and quoted charges include that tax. The
+`Filament\Pages\Invoices` page lists the reseller's invoices and downloads each
+as a PDF rendered on demand.
 
 ## Testing
 

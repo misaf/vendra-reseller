@@ -9,6 +9,7 @@ use Filament\Support\Exceptions\Halt;
 use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
 use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraSubscription\Support\MoneyFormatter;
+use Misaf\VendraSubscription\Support\TaxedAmount;
 
 trait InteractsWithResellerBilling
 {
@@ -25,10 +26,13 @@ trait InteractsWithResellerBilling
 
     /**
      * Stop before charging when the wallet cannot cover the amount, rather
-     * than letting the payment fail and cancel the new period.
+     * than letting the payment fail and cancel the new period. The amount is
+     * net; the check covers it with tax added, as the charge will be.
      */
-    protected static function ensureWalletCovers(Reseller $reseller, int $amount, ?string $currencyCode): void
+    protected static function ensureWalletCovers(Reseller $reseller, int $netAmount, ?string $currencyCode): void
     {
+        $amount = TaxedAmount::withProfileTax($netAmount)->total;
+
         if ($amount === 0 || $currencyCode === null) {
             return;
         }

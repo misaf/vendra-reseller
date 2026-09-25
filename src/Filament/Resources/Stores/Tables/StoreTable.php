@@ -25,12 +25,15 @@ use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
 use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
 use Misaf\VendraStore\Enums\StoreStatus;
 use Misaf\VendraStore\Models\Store;
+use Misaf\VendraSupport\Contracts\TenantEntitlements;
+use Misaf\VendraSupport\Enums\PlanLimit;
 use Misaf\VendraSupport\Filament\Tables\Columns\CreatedAtColumn;
 use Misaf\VendraSupport\Filament\Tables\Columns\IsActiveIconColumn;
 use Misaf\VendraSupport\Filament\Tables\Columns\NameColumn;
 use Misaf\VendraSupport\Filament\Tables\Columns\RowIndexColumn;
 use Misaf\VendraSupport\Filament\Tables\Columns\UpdatedAtColumn;
 use Misaf\VendraSupport\Filament\Tables\Filters\IsActiveFilter;
+use Misaf\VendraSupport\Tenancy\TenantUsageRegistry;
 
 final class StoreTable
 {
@@ -62,6 +65,8 @@ final class StoreTable
                     ->label(__('vendra-reseller::attributes.operational_status'))
                     ->badge()
                     ->state(fn (Store $record): StoreStatus => $record->status()),
+
+                ...self::planUsageColumns(),
 
                 CreatedAtColumn::make()
                     ->sortable(),
@@ -110,6 +115,58 @@ final class StoreTable
                 ]),
             ])
             ->defaultSort(column: 'id', direction: 'desc');
+    }
+
+    /**
+     * Show each store's usage of every per-store plan limit.
+     *
+     * Limits are read once per reseller, since every store of a reseller shares its plan.
+     *
+     * @return list<TextColumn>
+     */
+    private static function planUsageColumns(): array
+    {
+        /** @var array<string, int|null> $limits */
+        $limits = [];
+
+        /** @var array<string, int|null> $usages */
+        $usages = [];
+
+        /** @return array{used: int|null, allowed: int|null} */
+        $usageOf = function (PlanLimit $limit, Store $store) use (&$limits, &$usages): array {
+            $limitKey = $store->reseller_id.':'.$limit->value;
+            $usageKey = $store->id.':'.$limit->value;
+
+            if (! array_key_exists($limitKey, $limits)) {
+                $limits[$limitKey] = resolve(TenantEntitlements::class)->limit($limit, $store);
+            }
+
+            if (! array_key_exists($usageKey, $usages)) {
+                $usage = resolve(TenantUsageRegistry::class)->usage($limit, $store);
+                $usages[$usageKey] = $usage === null ? null : $limit->toUnits($usage);
+            }
+
+            return ['used' => $usages[$usageKey], 'allowed' => $limits[$limitKey]];
+        };
+
+        return array_map(fn (PlanLimit $limit): TextColumn => TextColumn::make('usage_'.$limit->value)
+            ->label($limit->getLabel())
+            ->state(function (Store $record) use ($limit, $usageOf): ?string {
+                ['used' => $used, 'allowed' => $allowed] = $usageOf($limit, $record);
+
+                if ($used === null) {
+                    return null;
+                }
+
+                return $allowed === null ? (string) $used : $used.' / '.$allowed;
+            })
+            ->color(function (Store $record) use ($limit, $usageOf): ?string {
+                ['used' => $used, 'allowed' => $allowed] = $usageOf($limit, $record);
+
+                return $used !== null && $allowed !== null && $used >= $allowed ? 'danger' : null;
+            })
+            ->placeholder('—')
+            ->toggleable(), PlanLimit::cases());
     }
 
     /**

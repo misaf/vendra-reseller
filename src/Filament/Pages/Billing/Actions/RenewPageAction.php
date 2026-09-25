@@ -14,6 +14,7 @@ use Misaf\VendraSubscription\Exceptions\SubscriptionLimitException;
 use Misaf\VendraSubscription\Exceptions\SubscriptionPaymentException;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
+use Misaf\VendraSubscription\Support\PlanCoverage;
 
 final class RenewPageAction extends Action
 {
@@ -33,7 +34,7 @@ final class RenewPageAction extends Action
             ->icon(Heroicon::OutlinedArrowPath)
             ->visible(fn (): bool => self::renewable(self::currentReseller()) instanceof Subscription)
             ->requiresConfirmation()
-            ->modalDescription(fn (): ?string => self::renewable(self::currentReseller())?->plan?->formattedPrice())
+            ->modalDescription(fn (): ?string => self::describe(self::renewable(self::currentReseller())))
             ->action(function (): void {
                 $reseller = self::reseller();
                 $subscription = self::renewable($reseller);
@@ -42,7 +43,7 @@ final class RenewPageAction extends Action
                     return;
                 }
 
-                $plan = $subscription->scheduledPlan ?? $subscription->plan;
+                $plan = resolve(PlanCoverage::class)->renewalPlan($subscription);
 
                 if ($plan instanceof Plan) {
                     self::ensureWalletCovers($reseller, $plan->price, $plan->currency_code);
@@ -58,6 +59,25 @@ final class RenewPageAction extends Action
 
                 Notification::make()->success()->title(__('vendra-reseller::attributes.renewal_requested'))->send();
             });
+    }
+
+    private static function describe(?Subscription $subscription): ?string
+    {
+        if (! $subscription instanceof Subscription) {
+            return null;
+        }
+
+        $planCoverage = resolve(PlanCoverage::class);
+        $price = $planCoverage->renewalPlan($subscription)?->formattedPrice();
+
+        if (! $planCoverage->scheduledPlanOutgrown($subscription)) {
+            return $price;
+        }
+
+        return implode(' ', array_filter([$price, __('vendra-reseller::attributes.scheduled_plan_outgrown', [
+            'plan' => $subscription->scheduledPlan?->name,
+            'current' => $subscription->plan?->name,
+        ])]));
     }
 
     /**

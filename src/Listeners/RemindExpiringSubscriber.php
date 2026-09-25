@@ -7,17 +7,24 @@ namespace Misaf\VendraReseller\Listeners;
 use Misaf\VendraReseller\Notifications\SubscriptionExpiringNotification;
 use Misaf\VendraSubscription\Contracts\SubscriptionSubscriber;
 use Misaf\VendraSubscription\Events\SubscriptionExpiringSoon;
+use Misaf\VendraSubscription\Support\PlanCoverage;
 
-final class RemindExpiringSubscriber
+final readonly class RemindExpiringSubscriber
 {
+    public function __construct(private PlanCoverage $planCoverage) {}
+
     public function handle(SubscriptionExpiringSoon $event): void
     {
-        $subscriber = $event->subscription->subscriber;
+        $subscription = $event->subscription;
+        $subscriber = $subscription->subscriber;
 
         if (! $subscriber instanceof SubscriptionSubscriber) {
             return;
         }
 
-        $subscriber->notifyContact(new SubscriptionExpiringNotification($event->subscription));
+        $subscriber->notifyContact(new SubscriptionExpiringNotification(
+            $subscription,
+            $this->planCoverage->scheduledPlanOutgrown($subscription) ? $subscription->scheduledPlan : null,
+        ));
     }
 }

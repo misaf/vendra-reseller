@@ -37,6 +37,7 @@ use Misaf\VendraStore\Models\StorefrontImage;
 use Misaf\VendraStore\Settings\StoreCreationSettings;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
+use Misaf\VendraSupport\Enums\PlanLimit;
 use Misaf\VendraSupport\Tenancy\Events\TenantProvisioned;
 use Misaf\VendraUser\Models\User;
 
@@ -449,6 +450,34 @@ it('locks an inactive reseller out of the panel and its store operations', funct
     livewire(ListStores::class)
         ->assertActionHidden(TestAction::make('replaceDomain')->table($store))
         ->assertActionHidden(TestAction::make('delete')->table($store));
+});
+
+it('disables adding a domain alias once the store reaches the plan domain limit', function (): void {
+    $reseller = Reseller::factory()->active()->create();
+    Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->active()->maxUnits(2)->withLimits([PlanLimit::DomainsPerStore->value => 1]))->create();
+    $fullStore = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
+    StoreDomain::factory()->for($fullStore)->primary()->create();
+    $roomyStore = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
+
+    actAsResellerUser($reseller);
+
+    livewire(ListStores::class)
+        ->assertActionDisabled(TestAction::make('addDomainAlias')->table($fullStore))
+        ->assertActionEnabled(TestAction::make('addDomainAlias')->table($roomyStore));
+});
+
+it('shows each store usage against the plan limits', function (): void {
+    $reseller = Reseller::factory()->active()->create();
+    Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->active()->maxUnits(2)->withLimits([PlanLimit::DomainsPerStore->value => 3]))->create();
+    $store = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
+    StoreDomain::factory()->for($store)->primary()->create();
+    StoreDomain::factory()->for($store)->active()->create();
+
+    actAsResellerUser($reseller);
+
+    livewire(ListStores::class)
+        ->call('loadTable')
+        ->assertTableColumnStateSet('usage_'.PlanLimit::DomainsPerStore->value, '2 / 3', $store);
 });
 
 it('shows a user only their own reseller stores', function (): void {

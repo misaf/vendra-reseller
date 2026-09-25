@@ -16,6 +16,7 @@ use Filament\Support\Icons\Heroicon;
 use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
 use Misaf\VendraReseller\Filament\Pages\Billing\Actions\CancelScheduledChangePageAction;
 use Misaf\VendraReseller\Filament\Pages\Billing\Actions\ChangePlanPageAction;
+use Misaf\VendraReseller\Filament\Pages\Billing\Actions\EditBillingDetailsPageAction;
 use Misaf\VendraReseller\Filament\Pages\Billing\Actions\RenewPageAction;
 use Misaf\VendraReseller\Filament\Pages\Billing\Actions\ToggleAutoRenewPageAction;
 use Misaf\VendraReseller\Models\Reseller;
@@ -23,6 +24,7 @@ use Misaf\VendraSubscription\Enums\SubscriptionStatus;
 use Misaf\VendraSubscription\Models\Subscription;
 use Misaf\VendraSubscription\Models\SubscriptionPayment;
 use Misaf\VendraSubscription\Support\MoneyFormatter;
+use Misaf\VendraSubscription\Support\PlanCoverage;
 
 final class Billing extends Page
 {
@@ -75,6 +77,7 @@ final class Billing extends Page
                         TextEntry::make('scheduled_plan')
                             ->label(__('vendra-reseller::attributes.scheduled_plan'))
                             ->state(fn (): ?string => self::scheduledChange())
+                            ->color(fn (): ?string => self::scheduledPlanOutgrown() ? 'danger' : null)
                             ->placeholder('—'),
                     ]),
                 ])
@@ -108,6 +111,7 @@ final class Billing extends Page
     {
         return [
             ChangePlanPageAction::make(),
+            EditBillingDetailsPageAction::make(),
             RenewPageAction::make(),
             ToggleAutoRenewPageAction::make(),
             CancelScheduledChangePageAction::make(),
@@ -133,10 +137,24 @@ final class Billing extends Page
             return null;
         }
 
+        if (self::scheduledPlanOutgrown()) {
+            return __('vendra-reseller::attributes.scheduled_plan_outgrown', [
+                'plan' => $plan->name,
+                'current' => $subscription->plan?->name,
+            ]);
+        }
+
         return __('vendra-reseller::attributes.scheduled_plan_from', [
             'plan' => $plan->name,
             'date' => $subscription->ends_at->format('Y-m-d'),
         ]);
+    }
+
+    private static function scheduledPlanOutgrown(): bool
+    {
+        $subscription = self::currentReseller()?->activeSubscription();
+
+        return $subscription instanceof Subscription && resolve(PlanCoverage::class)->scheduledPlanOutgrown($subscription);
     }
 
     /**
@@ -152,14 +170,16 @@ final class Billing extends Page
 
         return array_values(SubscriptionPayment::query()
             ->whereIn('subscription_id', $reseller->subscriptions()->select('id'))
+            ->with('invoice')
             ->latest()
             ->limit(self::RECENT_PAYMENTS)
             ->get()
-            ->map(fn (SubscriptionPayment $payment): string => implode(' · ', [
+            ->map(fn (SubscriptionPayment $payment): string => implode(' · ', array_filter([
                 $payment->created_at->format('Y-m-d'),
                 MoneyFormatter::format($payment->amount, $payment->currency_code),
                 $payment->status->getLabel(),
-            ]))
+                $payment->invoice?->number,
+            ])))
             ->all());
     }
 }

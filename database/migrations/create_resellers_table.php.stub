@@ -28,6 +28,12 @@ return new class extends Migration
                 ->restrictOnDelete();
             $table->boolean('active')
                 ->index();
+            $table->string('billing_name')
+                ->nullable();
+            $table->text('billing_address')
+                ->nullable();
+            $table->string('tax_id')
+                ->nullable();
             $table->text('offboarding_reason')
                 ->nullable();
             $table->timestampTz('offboarded_at')

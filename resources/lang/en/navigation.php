@@ -6,4 +6,5 @@ return [
     'store' => 'Store',
     'stores' => 'Stores',
     'billing' => 'Billing',
+    'invoices' => 'Invoices',
 ];

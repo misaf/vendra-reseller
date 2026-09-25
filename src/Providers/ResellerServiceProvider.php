@@ -12,19 +12,27 @@ use Illuminate\Support\Facades\Event;
 use Misaf\VendraReseller\Auth\ResellerPanelAccessResolver;
 use Misaf\VendraReseller\Console\Commands\ProvisionStoreCommand;
 use Misaf\VendraReseller\Listeners\NotifyActivatedSubscriber;
+use Misaf\VendraReseller\Listeners\NotifyDroppedPlanChange;
+use Misaf\VendraReseller\Listeners\NotifyInvoiceIssued;
 use Misaf\VendraReseller\Listeners\RemindExpiringSubscriber;
 use Misaf\VendraReseller\Listeners\RenewAfterWalletDeposit;
 use Misaf\VendraReseller\Listeners\SuspendSubscriberStores;
+use Misaf\VendraReseller\Listeners\WarnResellerOfStoreLimit;
 use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraReseller\Support\EloquentStoreResellerResolver;
+use Misaf\VendraReseller\Support\ResellerPlanUsageGuard;
 use Misaf\VendraReseller\Support\ResellerStoreSuspender;
 use Misaf\VendraStore\Contracts\StoreResellerResolver;
+use Misaf\VendraStore\Events\StoreLimitApproached;
 use Misaf\VendraStore\Models\Store;
+use Misaf\VendraSubscription\Contracts\PlanUsageGuard;
 use Misaf\VendraSubscription\Contracts\SubscriptionUnitSuspender;
+use Misaf\VendraSubscription\Events\ScheduledPlanChangeDropped;
 use Misaf\VendraSubscription\Events\SubscriptionActivated;
 use Misaf\VendraSubscription\Events\SubscriptionCancelled;
 use Misaf\VendraSubscription\Events\SubscriptionExpiringSoon;
 use Misaf\VendraSubscription\Events\SubscriptionGraceExpired;
+use Misaf\VendraSubscription\Events\SubscriptionInvoiceIssued;
 use Misaf\VendraTransaction\Events\TransactionApproved;
 use Misaf\VendraUser\Support\PanelAccessRegistry;
 use Spatie\LaravelPackageTools\Package;
@@ -51,6 +59,7 @@ final class ResellerServiceProvider extends PackageServiceProvider
     {
         $this->app->bind(StoreResellerResolver::class, EloquentStoreResellerResolver::class);
         $this->app->singleton(SubscriptionUnitSuspender::class, ResellerStoreSuspender::class);
+        $this->app->singleton(PlanUsageGuard::class, ResellerPlanUsageGuard::class);
     }
 
     public function packageBooted(): void
@@ -80,10 +89,13 @@ final class ResellerServiceProvider extends PackageServiceProvider
             fn (Store $store): BelongsTo => $store->belongsTo(Reseller::class, 'reseller_id', 'id', 'reseller'),
         );
 
+        Event::listen(ScheduledPlanChangeDropped::class, NotifyDroppedPlanChange::class);
+        Event::listen(StoreLimitApproached::class, WarnResellerOfStoreLimit::class);
         Event::listen(SubscriptionActivated::class, NotifyActivatedSubscriber::class);
         Event::listen(SubscriptionCancelled::class, SuspendSubscriberStores::class);
         Event::listen(SubscriptionExpiringSoon::class, RemindExpiringSubscriber::class);
         Event::listen(SubscriptionGraceExpired::class, SuspendSubscriberStores::class);
+        Event::listen(SubscriptionInvoiceIssued::class, NotifyInvoiceIssued::class);
         Event::listen(TransactionApproved::class, RenewAfterWalletDeposit::class);
     }
 
