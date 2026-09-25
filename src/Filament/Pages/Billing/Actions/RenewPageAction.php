@@ -33,6 +33,8 @@ final class RenewPageAction extends Action
             ->label(__('vendra-reseller::attributes.renew'))
             ->icon(Heroicon::OutlinedArrowPath)
             ->visible(fn (): bool => self::renewable(self::currentReseller()) instanceof Subscription)
+            ->disabled(fn (): bool => self::blocked(self::renewable(self::currentReseller())))
+            ->tooltip(fn (): ?string => self::blockedReason(self::renewable(self::currentReseller())))
             ->requiresConfirmation()
             ->modalDescription(fn (): ?string => self::describe(self::renewable(self::currentReseller())))
             ->action(function (): void {
@@ -78,6 +80,23 @@ final class RenewPageAction extends Action
             'plan' => $subscription->scheduledPlan?->name,
             'current' => $subscription->plan?->name,
         ])]));
+    }
+
+    /**
+     * The stores have outgrown the plan a renewal would start, so the reseller changes plan instead.
+     */
+    private static function blocked(?Subscription $subscription): bool
+    {
+        return $subscription instanceof Subscription && resolve(PlanCoverage::class)->renewalBlocked($subscription);
+    }
+
+    private static function blockedReason(?Subscription $subscription): ?string
+    {
+        if (! $subscription instanceof Subscription || ! self::blocked($subscription)) {
+            return null;
+        }
+
+        return __('vendra-reseller::attributes.plan_outgrown_renewal', ['plan' => $subscription->plan?->name]);
     }
 
     /**

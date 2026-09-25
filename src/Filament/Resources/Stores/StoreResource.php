@@ -19,9 +19,12 @@ use Misaf\VendraReseller\Filament\Resources\Stores\Pages\CreateStore;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\EditStore;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\ListStores;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\ViewStore;
+use Misaf\VendraReseller\Filament\Resources\Stores\RelationManagers\DomainsRelationManager;
 use Misaf\VendraReseller\Filament\Resources\Stores\Schemas\StoreForm;
 use Misaf\VendraReseller\Filament\Resources\Stores\Schemas\StoreInfolist;
 use Misaf\VendraReseller\Filament\Resources\Stores\Tables\StoreTable;
+use Misaf\VendraReseller\Filament\Resources\Stores\Widgets\StoreStatusOverview;
+use Misaf\VendraStore\Filament\Widgets\StorePlanUsage;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraStore\Settings\StoreCreationSettings;
 
@@ -174,6 +177,21 @@ final class StoreResource extends Resource
         $store = self::store($record);
 
         return self::getUrl('view', ['record' => $store]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            DomainsRelationManager::class,
+        ];
+    }
+
+    public static function getWidgets(): array
+    {
+        return [
+            StoreStatusOverview::class,
+            StorePlanUsage::class,
+        ];
     }
 
     public static function getPages(): array

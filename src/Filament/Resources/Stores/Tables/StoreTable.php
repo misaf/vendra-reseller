@@ -15,12 +15,8 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
-use Misaf\VendraReseller\Filament\Resources\Stores\Actions\AddDomainAliasTableAction;
-use Misaf\VendraReseller\Filament\Resources\Stores\Actions\MakeDomainPrimaryTableAction;
 use Misaf\VendraReseller\Filament\Resources\Stores\Actions\OffboardStoreBulkAction;
 use Misaf\VendraReseller\Filament\Resources\Stores\Actions\OffboardStoreTableAction;
-use Misaf\VendraReseller\Filament\Resources\Stores\Actions\RemoveDomainAliasTableAction;
-use Misaf\VendraReseller\Filament\Resources\Stores\Actions\ReplaceDomainTableAction;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
 use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
 use Misaf\VendraStore\Enums\StoreStatus;
@@ -97,12 +93,6 @@ final class StoreTable
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make(),
-                    ActionGroup::make([
-                        ReplaceDomainTableAction::make(),
-                        AddDomainAliasTableAction::make(),
-                        MakeDomainPrimaryTableAction::make(),
-                        RemoveDomainAliasTableAction::make(),
-                    ])->dropdown(false),
                     ActionGroup::make([
                         OffboardStoreTableAction::make(),
                     ])->dropdown(false),

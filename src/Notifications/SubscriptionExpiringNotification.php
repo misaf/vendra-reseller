@@ -17,11 +17,13 @@ final class SubscriptionExpiringNotification extends Notification implements Not
     use Queueable;
 
     /**
-     * An outgrown scheduled plan warns that the renewal stays on the current plan.
+     * An outgrown scheduled plan warns that the renewal stays on the current plan;
+     * a blocked renewal asks the reseller to choose a plan that fits instead.
      */
     public function __construct(
         private readonly Subscription $subscription,
         private readonly ?Plan $outgrownScheduledPlan = null,
+        private readonly bool $renewalBlocked = false,
     ) {
         $this->onQueue('transactional-email');
     }
@@ -40,8 +42,15 @@ final class SubscriptionExpiringNotification extends Notification implements Not
 
         $message = (new MailMessage)
             ->subject('Your subscription is expiring soon')
-            ->line("Your subscription expires on {$endsAt}.")
-            ->line('Renew now to keep your stores online.');
+            ->line("Your subscription expires on {$endsAt}.");
+
+        if ($this->renewalBlocked) {
+            $currentPlan = $this->subscription->plan->name ?? 'your current plan';
+
+            return $message->line("Your stores now use more than the {$currentPlan} plan allows, so it cannot renew. Change to a plan that fits before {$endsAt} to keep your stores online.");
+        }
+
+        $message->line('Renew now to keep your stores online.');
 
         if ($this->outgrownScheduledPlan instanceof Plan) {
             $currentPlan = $this->subscription->plan->name ?? 'your current plan';

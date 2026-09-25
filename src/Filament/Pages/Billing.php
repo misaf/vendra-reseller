@@ -79,6 +79,12 @@ final class Billing extends Page
                             ->state(fn (): ?string => self::scheduledChange())
                             ->color(fn (): ?string => self::scheduledPlanOutgrown() ? 'danger' : null)
                             ->placeholder('—'),
+                        TextEntry::make('renewal_blocked')
+                            ->hiddenLabel()
+                            ->state(fn (): string => __('vendra-reseller::attributes.plan_outgrown_renewal', ['plan' => self::displayedSubscription()?->plan?->name]))
+                            ->color('danger')
+                            ->visible(fn (): bool => self::renewalBlocked())
+                            ->columnSpanFull(),
                     ]),
                 ])
                 ->columnSpanFull(),
@@ -148,6 +154,13 @@ final class Billing extends Page
             'plan' => $plan->name,
             'date' => $subscription->ends_at->format('Y-m-d'),
         ]);
+    }
+
+    private static function renewalBlocked(): bool
+    {
+        $subscription = self::displayedSubscription();
+
+        return $subscription instanceof Subscription && resolve(PlanCoverage::class)->renewalBlocked($subscription);
     }
 
     private static function scheduledPlanOutgrown(): bool

@@ -18,6 +18,7 @@ use Misaf\VendraReseller\Listeners\RemindExpiringSubscriber;
 use Misaf\VendraReseller\Listeners\RenewAfterWalletDeposit;
 use Misaf\VendraReseller\Listeners\SuspendSubscriberStores;
 use Misaf\VendraReseller\Listeners\WarnResellerOfStoreLimit;
+use Misaf\VendraReseller\Listeners\WarnResellersOfOutgrownPlan;
 use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraReseller\Support\EloquentStoreResellerResolver;
 use Misaf\VendraReseller\Support\ResellerPlanUsageGuard;
@@ -27,6 +28,7 @@ use Misaf\VendraStore\Events\StoreLimitApproached;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSubscription\Contracts\PlanUsageGuard;
 use Misaf\VendraSubscription\Contracts\SubscriptionUnitSuspender;
+use Misaf\VendraSubscription\Events\PlanEntitlementsChanged;
 use Misaf\VendraSubscription\Events\ScheduledPlanChangeDropped;
 use Misaf\VendraSubscription\Events\SubscriptionActivated;
 use Misaf\VendraSubscription\Events\SubscriptionCancelled;
@@ -52,7 +54,7 @@ final class ResellerServiceProvider extends PackageServiceProvider
             ->hasMigrations([
                 'create_resellers_table',
             ])
-            ->hasCommand(ProvisionStoreCommand::class);
+            ->hasConsoleCommand(ProvisionStoreCommand::class);
     }
 
     public function packageRegistered(): void
@@ -89,6 +91,7 @@ final class ResellerServiceProvider extends PackageServiceProvider
             fn (Store $store): BelongsTo => $store->belongsTo(Reseller::class, 'reseller_id', 'id', 'reseller'),
         );
 
+        Event::listen(PlanEntitlementsChanged::class, WarnResellersOfOutgrownPlan::class);
         Event::listen(ScheduledPlanChangeDropped::class, NotifyDroppedPlanChange::class);
         Event::listen(StoreLimitApproached::class, WarnResellerOfStoreLimit::class);
         Event::listen(SubscriptionActivated::class, NotifyActivatedSubscriber::class);

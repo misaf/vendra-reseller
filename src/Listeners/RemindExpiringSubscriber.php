@@ -25,6 +25,7 @@ final readonly class RemindExpiringSubscriber
         $subscriber->notifyContact(new SubscriptionExpiringNotification(
             $subscription,
             $this->planCoverage->scheduledPlanOutgrown($subscription) ? $subscription->scheduledPlan : null,
+            $this->planCoverage->renewalBlocked($subscription),
         ));
     }
 }

@@ -205,6 +205,33 @@ describe('plan summary', function (): void {
             ->assertDontSee(PlanLimit::ProductsPerStore->getLabel());
     });
 
+    it('shows every plan limit the plan sets', function (): void {
+        $reseller = Reseller::factory()->active()->create();
+        $limits = array_fill_keys(array_map(fn (PlanLimit $limit): string => $limit->value, PlanLimit::cases()), 5);
+        Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->withLimits($limits))->create();
+        Store::factory()->active()->create(['reseller_id' => $reseller->getKey()]);
+
+        actAsReseller($reseller);
+
+        $component = livewire(PlanSummary::class)->assertOk();
+
+        foreach (PlanLimit::cases() as $limit) {
+            $component->assertSee($limit->getLabel());
+        }
+    });
+
+    it('asks to change plan when the stores have outgrown the current one', function (): void {
+        $reseller = Reseller::factory()->active()->create();
+        Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->maxUnits(1))->create();
+        Store::factory()->count(2)->create(['reseller_id' => $reseller->getKey()]);
+
+        actAsReseller($reseller);
+
+        livewire(PlanSummary::class)
+            ->assertOk()
+            ->assertSee(__('vendra-reseller::attributes.plan_outgrown_change'));
+    });
+
     it('flags stores suspended for billing', function (): void {
         $reseller = Reseller::factory()->active()->create();
         Store::factory()->count(2)->active()->suspended()->create(['reseller_id' => $reseller->getKey()]);

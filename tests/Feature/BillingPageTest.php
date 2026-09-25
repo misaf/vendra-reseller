@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Select;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Queue;
 use Misaf\VendraReseller\Actions\CreditResellerWalletAction;
@@ -12,6 +13,8 @@ use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSubscription\Enums\SubscriptionStatus;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
+use Misaf\VendraSupport\Enums\PlanFeature;
+use Misaf\VendraSupport\Enums\PlanLimit;
 use Misaf\VendraTransaction\Database\Factories\TransactionGatewayFactory;
 use Misaf\VendraUser\Models\User;
 
@@ -83,6 +86,41 @@ it('upgrades from the wallet and refuses when the wallet is short', function ():
         ->assertHasNoFormErrors();
 
     expect($reseller->subscriptions()->where('status', SubscriptionStatus::PendingPayment)->sole()->plan_id)->toBe($upgrade->id);
+});
+
+it('lists what the chosen plan includes', function (): void {
+    $reseller = billingReseller();
+    billingSubscription($reseller, Plan::factory()->active()->priced(3_000)->create());
+    $pro = Plan::factory()->active()->priced(6_000)->maxUnits(5)->withLimits([PlanLimit::ProductsPerStore->value => 1000])->create(['features' => [PlanFeature::CustomDomain->value]]);
+    actAsBillingReseller($reseller);
+
+    livewire(Billing::class)
+        ->mountAction('changePlan')
+        ->fillForm(['plan_id' => $pro->id])
+        ->assertFormFieldExists('plan_id', fn (Select $field): bool => str_contains((string) $field->getChildSchema(Select::BELOW_CONTENT_SCHEMA_KEY)?->toHtmlString(), __('vendra-reseller::attributes.plan_includes', ['items' => implode(' · ', [
+            trans_choice('vendra-reseller::attributes.plan_includes_stores', 5, ['count' => 5]),
+            __('vendra-reseller::attributes.plan_limit_unlimited', ['limit' => PlanLimit::DomainsPerStore->getLabel()]),
+            __('vendra-reseller::attributes.plan_limit_value', ['limit' => PlanLimit::ProductsPerStore->getLabel(), 'value' => 1000]),
+            __('vendra-reseller::attributes.plan_limit_unlimited', ['limit' => PlanLimit::StorageMegabytesPerStore->getLabel()]),
+            __('vendra-reseller::attributes.plan_limit_unlimited', ['limit' => PlanLimit::StaffPerStore->getLabel()]),
+            PlanFeature::CustomDomain->getLabel(),
+        ])])));
+});
+
+it('asks the reseller to change plan when the stores have outgrown the current one', function (): void {
+    $reseller = billingReseller();
+    billingSubscription($reseller, Plan::factory()->active()->priced(3_000)->maxUnits(1)->create(['name' => 'Starter']), [
+        'status' => SubscriptionStatus::Expired,
+        'ends_at' => Date::parse('2026-04-10 00:00:00'),
+    ]);
+    Store::factory()->count(2)->create(['reseller_id' => $reseller->getKey()]);
+    resolve(CreditResellerWalletAction::class)->execute($reseller, 10_000, 'USD', 'Bank transfer');
+    actAsBillingReseller($reseller);
+
+    livewire(Billing::class)
+        ->assertSee(__('vendra-reseller::attributes.plan_outgrown_renewal', ['plan' => 'Starter']))
+        ->assertActionVisible('renew')
+        ->assertActionDisabled('renew');
 });
 
 it('refuses a plan the reseller stores have outgrown before it is chosen', function (): void {

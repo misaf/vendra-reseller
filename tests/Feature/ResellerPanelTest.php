@@ -7,6 +7,7 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Enums\FiltersLayout;
+use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
@@ -22,7 +23,9 @@ use Misaf\VendraReseller\Filament\Resources\Stores\Pages\CreateStore;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\EditStore;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\ListStores;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\ViewStore;
+use Misaf\VendraReseller\Filament\Resources\Stores\RelationManagers\DomainsRelationManager;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
+use Misaf\VendraReseller\Filament\Resources\Stores\Widgets\StoreStatusOverview;
 use Misaf\VendraReseller\Filament\Widgets\LatestStores;
 use Misaf\VendraReseller\Filament\Widgets\PlanSummary;
 use Misaf\VendraReseller\Filament\Widgets\StoresNeedingAttention;
@@ -30,6 +33,7 @@ use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraStore\Enums\StorefrontDeploymentStatus;
 use Misaf\VendraStore\Enums\StorefrontDesiredState;
 use Misaf\VendraStore\Enums\StoreStatus;
+use Misaf\VendraStore\Filament\Widgets\StorePlanUsage;
 use Misaf\VendraStore\Models\Store;
 use Misaf\VendraStore\Models\StoreDomain;
 use Misaf\VendraStore\Models\StorefrontDeployment;
@@ -41,6 +45,7 @@ use Misaf\VendraSupport\Enums\PlanLimit;
 use Misaf\VendraSupport\Tenancy\Events\TenantProvisioned;
 use Misaf\VendraUser\Models\User;
 
+use function Livewire\invade;
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
@@ -448,8 +453,10 @@ it('locks an inactive reseller out of the panel and its store operations', funct
         ->and(StoreResource::canCreate())->toBeFalse();
 
     livewire(ListStores::class)
-        ->assertActionHidden(TestAction::make('replaceDomain')->table($store))
         ->assertActionHidden(TestAction::make('delete')->table($store));
+
+    livewire(DomainsRelationManager::class, ['ownerRecord' => $store, 'pageClass' => EditStore::class])
+        ->assertActionHidden(TestAction::make('addDomainAlias')->table());
 });
 
 it('disables adding a domain alias once the store reaches the plan domain limit', function (): void {
@@ -461,9 +468,11 @@ it('disables adding a domain alias once the store reaches the plan domain limit'
 
     actAsResellerUser($reseller);
 
-    livewire(ListStores::class)
-        ->assertActionDisabled(TestAction::make('addDomainAlias')->table($fullStore))
-        ->assertActionEnabled(TestAction::make('addDomainAlias')->table($roomyStore));
+    livewire(DomainsRelationManager::class, ['ownerRecord' => $fullStore, 'pageClass' => EditStore::class])
+        ->assertActionDisabled(TestAction::make('addDomainAlias')->table());
+
+    livewire(DomainsRelationManager::class, ['ownerRecord' => $roomyStore, 'pageClass' => EditStore::class])
+        ->assertActionEnabled(TestAction::make('addDomainAlias')->table());
 });
 
 it('shows each store usage against the plan limits', function (): void {
@@ -589,23 +598,32 @@ it('lets a user soft-delete their own store', function (): void {
     expect($store->fresh()?->trashed())->toBeTrue();
 });
 
-it('lets a user replace their store domain, keeping the old one as trashed history', function (): void {
+it('lets a user add and remove a domain alias while the primary domain stays', function (): void {
     $reseller = Reseller::factory()->active()->create();
+    Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->active())->create();
     $store = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
-    StoreDomain::factory()->for($store)->primary()->create(['name' => 'old.test']);
+    StoreDomain::factory()->for($store)->primary()->create(['name' => 'main.test']);
 
     actAsResellerUser($reseller);
 
-    livewire(ListStores::class)
-        ->callAction(TestAction::make('replaceDomain')->table($store), ['domain' => 'new.test'])
-        ->assertHasNoErrors();
+    $domains = livewire(DomainsRelationManager::class, ['ownerRecord' => $store, 'pageClass' => EditStore::class])
+        ->loadTable()
+        ->callAction(TestAction::make('addDomainAlias')->table(), ['domain' => 'alias.test'])
+        ->assertHasNoFormErrors();
 
-    expect($store->execute(fn () => $store->storeDomains()->where('active', true)->value('name')))->toBe('new.test')
-        ->and($store->execute(fn () => $store->storeDomains()->onlyTrashed()->where('name', 'old.test')->exists()))->toBeTrue();
+    $alias = $store->aliasDomains()->sole();
+
+    $domains->callAction(TestAction::make('removeDomainAlias')->table($alias))
+        ->assertNotified(__('vendra-store::messages.domain_alias_removed'));
+
+    expect($store->aliasDomains()->exists())->toBeFalse()
+        ->and($store->primaryDomain()->value('name'))->toBe('main.test')
+        ->and($store->execute(fn () => $store->storeDomains()->onlyTrashed()->where('name', 'alias.test')->exists()))->toBeTrue();
 });
 
-it('validates the replacement domain format and active-domain uniqueness', function (): void {
+it('validates the alias domain format and active-domain uniqueness', function (): void {
     $reseller = Reseller::factory()->active()->create();
+    Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->active())->create();
     $store = Store::factory()->create(['reseller_id' => $reseller->getKey(), 'active' => true]);
     StoreDomain::factory()->for($store)->primary()->create(['name' => 'current.test']);
 
@@ -614,13 +632,13 @@ it('validates the replacement domain format and active-domain uniqueness', funct
 
     actAsResellerUser($reseller);
 
-    livewire(ListStores::class)
-        ->callAction(TestAction::make('replaceDomain')->table($store), ['domain' => 'not a domain'])
-        ->assertHasActionErrors(['domain' => 'regex']);
+    livewire(DomainsRelationManager::class, ['ownerRecord' => $store, 'pageClass' => EditStore::class])
+        ->callAction(TestAction::make('addDomainAlias')->table(), ['domain' => 'not a domain'])
+        ->assertHasFormErrors(['domain' => 'regex']);
 
-    livewire(ListStores::class)
-        ->callAction(TestAction::make('replaceDomain')->table($store), ['domain' => 'taken.test'])
-        ->assertHasActionErrors(['domain' => 'unique']);
+    livewire(DomainsRelationManager::class, ['ownerRecord' => $store, 'pageClass' => EditStore::class])
+        ->callAction(TestAction::make('addDomainAlias')->table(), ['domain' => 'taken.test'])
+        ->assertHasFormErrors(['domain' => 'unique']);
 });
 
 it('blocks a user from exceeding the plan limit', function (): void {
@@ -720,4 +738,42 @@ it('offboards a deleted store and still allows it while store creation is frozen
 it('serves the panel on the reseller subdomain of the central host', function (): void {
     expect(Filament::getPanel('reseller')->getDomains())
         ->toBe(['reseller.'.Config::string('vendra-tenant.central_host')]);
+});
+
+it("counts only the reseller's own stores by status above the store list", function (): void {
+    $reseller = Reseller::factory()->active()->create();
+    Store::factory()->active()->create(['reseller_id' => $reseller->getKey()]);
+    $failing = Store::factory()->active()->create(['reseller_id' => $reseller->getKey()]);
+    StorefrontDeployment::factory()->for($failing)->create(['status' => StorefrontDeploymentStatus::Failed]);
+    Store::factory()->provisioningFailed()->create(['reseller_id' => $reseller->getKey()]);
+    Store::factory()->active()->count(3)->create();
+
+    actAsResellerUser($reseller);
+
+    $stats = collect(invade(livewire(StoreStatusOverview::class)->instance())->getStats())
+        ->mapWithKeys(fn (Stat $stat): array => [(string) $stat->getLabel() => $stat->getValue()]);
+
+    expect($stats->get(StoreStatus::Active->getLabel()))->toBe(2)
+        ->and($stats->get(StoreStatus::Failed->getLabel()))->toBe(1)
+        ->and($stats->get(__('vendra-store::attributes.failed_storefronts')))->toBe(1);
+});
+
+it("shows a store's plan usage on its view page only when the plan limits it", function (): void {
+    $reseller = Reseller::factory()->active()->create();
+    $plan = Plan::factory()->active()->maxUnits(2)->create();
+    Subscription::factory()->forSubscriber($reseller)->for($plan)->create();
+    $store = Store::factory()->active()->create(['reseller_id' => $reseller->getKey()]);
+    StoreDomain::factory()->for($store)->primary()->create();
+
+    actAsResellerUser($reseller);
+
+    expect(invade(livewire(ViewStore::class, ['record' => $store->getKey()])->instance())->getHeaderWidgets())->toBe([]);
+
+    $plan->update(['limits' => [PlanLimit::DomainsPerStore->value => 3]]);
+
+    expect(invade(livewire(ViewStore::class, ['record' => $store->getKey()])->instance())->getHeaderWidgets())->toBe([StorePlanUsage::class]);
+
+    livewire(StorePlanUsage::class, ['record' => $store])
+        ->assertSee(PlanLimit::DomainsPerStore->getLabel())
+        ->assertSee('1 / 3');
 });

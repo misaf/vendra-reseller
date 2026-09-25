@@ -21,6 +21,8 @@ use Misaf\VendraSubscription\Support\MoneyFormatter;
 use Misaf\VendraSubscription\Support\PlanChangeQuote;
 use Misaf\VendraSubscription\Support\PlanCoverage;
 use Misaf\VendraSubscription\Support\TaxedAmount;
+use Misaf\VendraSupport\Enums\PlanFeature;
+use Misaf\VendraSupport\Enums\PlanLimit;
 
 final class ChangePlanPageAction extends Action
 {
@@ -44,6 +46,8 @@ final class ChangePlanPageAction extends Action
                     ->label(__('vendra-reseller::attributes.subscription_plan'))
                     ->options(fn (): array => self::planOptions(self::reseller()))
                     ->disableOptionWhen(fn (string $value): bool => ! self::planFits(self::reseller(), (int) $value))
+                    ->helperText(fn (?string $state): ?string => filled($state) ? self::entitlements(Plan::query()->find((int) $state)) : null)
+                    ->live()
                     ->required()
                     ->native(false),
             ])
@@ -111,6 +115,34 @@ final class ChangePlanPageAction extends Action
         }
 
         return $label;
+    }
+
+    /**
+     * Summarise what a plan includes, so resellers can compare plans before choosing.
+     */
+    private static function entitlements(?Plan $plan): ?string
+    {
+        if (! $plan instanceof Plan) {
+            return null;
+        }
+
+        $items = [trans_choice('vendra-reseller::attributes.plan_includes_stores', $plan->max_units, ['count' => $plan->max_units])];
+
+        foreach (PlanLimit::cases() as $limit) {
+            $allowed = $plan->limit($limit->value);
+
+            $items[] = $allowed === null
+                ? __('vendra-reseller::attributes.plan_limit_unlimited', ['limit' => $limit->getLabel()])
+                : __('vendra-reseller::attributes.plan_limit_value', ['limit' => $limit->getLabel(), 'value' => $allowed]);
+        }
+
+        foreach (PlanFeature::cases() as $feature) {
+            if ($plan->allows($feature->value)) {
+                $items[] = $feature->getLabel();
+            }
+        }
+
+        return __('vendra-reseller::attributes.plan_includes', ['items' => implode(' · ', $items)]);
     }
 
     private static function outcome(Subscription $subscription, Plan $plan): string

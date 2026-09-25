@@ -18,6 +18,7 @@ use Misaf\VendraStore\Support\StoreStatusCounts;
 use Misaf\VendraSubscription\Enums\SubscriptionStatus;
 use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
+use Misaf\VendraSubscription\Support\PlanCoverage;
 use Misaf\VendraSupport\Enums\PlanLimit;
 use Misaf\VendraSupport\Tenancy\TenantUsageRegistry;
 
@@ -106,6 +107,7 @@ final class PlanSummary extends StatsOverviewWidget
                 PlanLimit::DomainsPerStore => Heroicon::OutlinedGlobeAlt,
                 PlanLimit::ProductsPerStore => Heroicon::OutlinedCube,
                 PlanLimit::StorageMegabytesPerStore => Heroicon::OutlinedCircleStack,
+                PlanLimit::StaffPerStore => Heroicon::OutlinedUsers,
             })
             ->color(match (true) {
                 $used >= $allowed => 'danger',
@@ -125,6 +127,13 @@ final class PlanSummary extends StatsOverviewWidget
         $stat = Stat::make(__('vendra-reseller::attributes.subscription_plan'), $plan instanceof Plan ? $plan->name : $subscription->status->getLabel())
             ->icon(Heroicon::OutlinedCheckBadge)
             ->url(Billing::getUrl());
+
+        if (resolve(PlanCoverage::class)->renewalBlocked($subscription)) {
+            return $stat
+                ->description(__('vendra-reseller::attributes.plan_outgrown_change'))
+                ->descriptionIcon(Heroicon::OutlinedExclamationTriangle)
+                ->color('danger');
+        }
 
         if ($subscription->isOnTrial()) {
             return $stat
@@ -191,7 +200,7 @@ final class PlanSummary extends StatsOverviewWidget
         $stat = Stat::make(__('vendra-reseller::attributes.active_stores'), $counts->count(StoreStatus::Active))
             ->icon(Heroicon::OutlinedBuildingStorefront)
             ->url(StoreResource::getUrl('index', [
-                'tableFilters' => ['status' => ['value' => StoreStatus::Active->value]],
+                'filters' => ['status' => ['value' => StoreStatus::Active->value]],
             ]));
 
         if ($billingSuspended > 0) {

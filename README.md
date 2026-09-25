@@ -125,7 +125,8 @@ answered by `misaf/vendra-subscription` and store quotas by
 here. `Support\ResellerPlanUsageGuard` refuses a plan change or renewal onto a
 plan whose per-store limits any of the reseller's stores already exceeds, or that
 drops `custom_domain` while a store uses a custom domain. The billing page's
-plan picker disables and labels plans the stores have outgrown, and the store
+plan picker disables and labels plans the stores have outgrown and lists what
+the chosen plan includes (stores, per-store limits, features), and the store
 table shows each store's usage against every per-store limit.
 
 ```php
@@ -155,6 +156,7 @@ them into reseller behaviour, wired in `Providers\ResellerServiceProvider`:
 
 | Event | Listener |
 | --- | --- |
+| `PlanEntitlementsChanged` | `WarnResellersOfOutgrownPlan` |
 | `ScheduledPlanChangeDropped` | `NotifyDroppedPlanChange` |
 | `StoreLimitApproached` (vendra-store) | `WarnResellerOfStoreLimit` |
 | `SubscriptionActivated` | `NotifyActivatedSubscriber` |
@@ -169,6 +171,12 @@ again at 100% of a plan limit, at most once per threshold each subscription
 period. `RemindExpiringSubscriber`'s reminder also warns when the stores have
 outgrown the scheduled downgrade, before the renewal falls back to the current
 plan.
+
+A reseller whose stores have outgrown its current plan cannot renew on it and
+has to change to a plan that fits. `WarnResellersOfOutgrownPlan` emails each
+affected reseller once per period when console staff change a plan's limits,
+the expiry reminder asks it to change plan instead of renewing, and the Billing
+page and `PlanSummary` flag it while the renew action is disabled.
 
 `Support\ResellersOverPlan` lists resellers whose stores no longer fit their
 active plan, which happens when console staff lower a plan's limits.
@@ -215,8 +223,15 @@ registers the console command and the event listeners. The split is deliberate.
 
 Store screens are reused, not copied: the panel's resources extend
 `misaf/vendra-store`'s `CreateStorePage`, `StorefrontConfigurationFields`
-and its domain actions (`ReplaceDomainTableAction`, `AddDomainAliasTableAction`,
-`MakeDomainPrimaryTableAction`, `RemoveDomainAliasTableAction`), supplying the authenticated user's reseller.
+and its `DomainsRelationManager` with the alias actions (`AddDomainAliasTableAction`,
+`RemoveDomainAliasTableAction`, gated by `StoreResource::canManageStores()`),
+supplying the authenticated user's reseller. A store's primary domain, the one it
+was created with, never changes; the reseller adds and removes aliases from the
+store's domains tab.
+The store list carries `Resources\Stores\Widgets\StoreStatusOverview` (the
+reseller's stores per status and failed storefronts, each linking to the
+filtered list), and the store view shows `Misaf\VendraStore\Filament\Widgets\StorePlanUsage`
+when the plan sets per-store limits.
 Resolve the acting reseller with `Filament\Concerns\InteractsWithCurrentReseller`;
 `Http\Middleware\AddResellerToRequestJobContext` carries it into queued work.
 

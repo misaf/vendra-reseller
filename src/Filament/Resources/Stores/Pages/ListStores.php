@@ -7,6 +7,7 @@ namespace Misaf\VendraReseller\Filament\Resources\Stores\Pages;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
+use Misaf\VendraReseller\Filament\Resources\Stores\Widgets\StoreStatusOverview;
 use Misaf\VendraStore\Support\StoreQuota;
 
 final class ListStores extends ListRecords
@@ -20,6 +21,13 @@ final class ListStores extends ListRecords
         return $remaining === null
             ? null
             : __('vendra-reseller::attributes.remaining_stores').': '.$remaining;
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            StoreStatusOverview::class,
+        ];
     }
 
     protected function getHeaderActions(): array

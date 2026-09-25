@@ -6,6 +6,7 @@ use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Misaf\VendraReseller\Models\Reseller;
+use Misaf\VendraReseller\Notifications\PlanOutgrownNotification;
 use Misaf\VendraReseller\Notifications\StoresSuspendedNotification;
 use Misaf\VendraReseller\Notifications\SubscriptionActivatedNotification;
 use Misaf\VendraReseller\Notifications\SubscriptionExpiringNotification;
@@ -17,6 +18,7 @@ use Misaf\VendraStore\Models\StorefrontDeployment;
 use Misaf\VendraSubscription\Actions\CancelSubscriptionAction;
 use Misaf\VendraSubscription\Actions\EnforceSubscriptionsAction;
 use Misaf\VendraSubscription\Actions\SubscribeAction;
+use Misaf\VendraSubscription\Actions\UpdatePlanAction;
 use Misaf\VendraSubscription\Contracts\SubscriptionUnitSuspender;
 use Misaf\VendraSubscription\Enums\SubscriptionStatus;
 use Misaf\VendraSubscription\Models\Plan;
@@ -72,6 +74,57 @@ it('warns in the reminder when the stores have outgrown the scheduled downgrade'
             'renews on Growth unless you bring usage within Starter',
         ),
     );
+});
+
+it('asks the reseller to change plan in the reminder when the stores have outgrown the current one', function (): void {
+    Notification::fake();
+
+    $reseller = Reseller::factory()->create();
+    Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->maxUnits(1)->create(['name' => 'Starter']))->create([
+        'status' => SubscriptionStatus::Active,
+        'starts_at' => now()->subDays(20),
+        'ends_at' => now()->addDays(3),
+    ]);
+    Store::factory()->count(2)->create(['reseller_id' => $reseller->getKey()]);
+
+    resolve(EnforceSubscriptionsAction::class)->execute();
+
+    Notification::assertSentTo(
+        $reseller->user,
+        SubscriptionExpiringNotification::class,
+        function (SubscriptionExpiringNotification $notification) use ($reseller): bool {
+            $lines = implode(' ', $notification->toMail($reseller->user)->introLines);
+
+            return str_contains($lines, 'more than the Starter plan allows, so it cannot renew')
+                && ! str_contains($lines, 'Renew now');
+        },
+    );
+});
+
+it('emails the resellers a lowered plan no longer fits, once per period', function (): void {
+    Notification::fake();
+
+    $plan = Plan::factory()->maxUnits(5)->create();
+    $outgrown = Reseller::factory()->create();
+    $fits = Reseller::factory()->create();
+
+    foreach ([$outgrown, $fits] as $reseller) {
+        Subscription::factory()->forSubscriber($reseller)->for($plan)->create([
+            'status' => SubscriptionStatus::Active,
+            'starts_at' => now()->subDays(5),
+            'ends_at' => now()->addDays(25),
+        ]);
+    }
+
+    Store::factory()->count(2)->create(['reseller_id' => $outgrown->getKey()]);
+    Store::factory()->create(['reseller_id' => $fits->getKey()]);
+
+    resolve(UpdatePlanAction::class)->execute($plan, ['max_units' => 1]);
+    resolve(UpdatePlanAction::class)->execute($plan, ['limits' => ['products_per_store' => 100]]);
+    resolve(UpdatePlanAction::class)->execute($plan, ['name' => 'Renamed']);
+
+    Notification::assertSentToTimes($outgrown->user, PlanOutgrownNotification::class, 1);
+    Notification::assertNotSentTo($fits->user, PlanOutgrownNotification::class);
 });
 
 it('notifies the reseller user when properties are suspended', function (): void {
@@ -133,6 +186,7 @@ it('queues subscription notifications off the request lifecycle', function (stri
     SubscriptionActivatedNotification::class,
     SubscriptionExpiringNotification::class,
     StoresSuspendedNotification::class,
+    PlanOutgrownNotification::class,
 ]);
 
 it('sends subscription notifications on the transactional-email queue', function (): void {
