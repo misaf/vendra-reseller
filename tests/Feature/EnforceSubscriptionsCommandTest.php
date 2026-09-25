@@ -13,6 +13,7 @@ it('expires subscriptions and suspends properties via the command', function ():
         'status' => SubscriptionStatus::Active,
         'starts_at' => now()->subMonths(2),
         'ends_at' => now()->subDays(2),
+        'auto_renews' => false,
     ]);
     $store = createTestTenant(['reseller_id' => $reseller->getKey(), 'active' => true]);
 

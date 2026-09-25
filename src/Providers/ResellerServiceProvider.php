@@ -13,6 +13,7 @@ use Misaf\VendraReseller\Auth\ResellerPanelAccessResolver;
 use Misaf\VendraReseller\Console\Commands\ProvisionStoreCommand;
 use Misaf\VendraReseller\Listeners\NotifyActivatedSubscriber;
 use Misaf\VendraReseller\Listeners\RemindExpiringSubscriber;
+use Misaf\VendraReseller\Listeners\RenewAfterWalletDeposit;
 use Misaf\VendraReseller\Listeners\SuspendSubscriberStores;
 use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraReseller\Support\EloquentStoreResellerResolver;
@@ -24,6 +25,7 @@ use Misaf\VendraSubscription\Events\SubscriptionActivated;
 use Misaf\VendraSubscription\Events\SubscriptionCancelled;
 use Misaf\VendraSubscription\Events\SubscriptionExpiringSoon;
 use Misaf\VendraSubscription\Events\SubscriptionGraceExpired;
+use Misaf\VendraTransaction\Events\TransactionApproved;
 use Misaf\VendraUser\Support\PanelAccessRegistry;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -82,6 +84,7 @@ final class ResellerServiceProvider extends PackageServiceProvider
         Event::listen(SubscriptionCancelled::class, SuspendSubscriberStores::class);
         Event::listen(SubscriptionExpiringSoon::class, RemindExpiringSubscriber::class);
         Event::listen(SubscriptionGraceExpired::class, SuspendSubscriberStores::class);
+        Event::listen(TransactionApproved::class, RenewAfterWalletDeposit::class);
     }
 
     /**

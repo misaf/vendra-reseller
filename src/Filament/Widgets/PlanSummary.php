@@ -8,6 +8,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Misaf\VendraReseller\Filament\Concerns\InteractsWithCurrentReseller;
+use Misaf\VendraReseller\Filament\Pages\Billing;
 use Misaf\VendraReseller\Filament\Resources\Stores\StoreResource;
 use Misaf\VendraReseller\Models\Reseller;
 use Misaf\VendraStore\Enums\StoreStatus;
@@ -53,7 +54,8 @@ final class PlanSummary extends StatsOverviewWidget
         $plan = $subscription->plan;
 
         $stat = Stat::make(__('vendra-reseller::attributes.subscription_plan'), $plan instanceof Plan ? $plan->name : $subscription->status->getLabel())
-            ->icon(Heroicon::OutlinedCheckBadge);
+            ->icon(Heroicon::OutlinedCheckBadge)
+            ->url(Billing::getUrl());
 
         if ($subscription->isOnTrial()) {
             return $stat
@@ -89,6 +91,7 @@ final class PlanSummary extends StatsOverviewWidget
         )
             ->description(__('vendra-reseller::attributes.subscribe_to_create_stores'))
             ->icon(Heroicon::OutlinedExclamationCircle)
+            ->url(Billing::getUrl())
             ->color(match ($latest?->status) {
                 SubscriptionStatus::PastDue, SubscriptionStatus::Expired => 'danger',
                 SubscriptionStatus::PendingPayment => 'warning',

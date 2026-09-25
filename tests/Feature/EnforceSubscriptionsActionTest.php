@@ -19,6 +19,7 @@ function lapsedReseller(int $graceDays, Carbon $endsAt): Reseller
         'status' => SubscriptionStatus::Active,
         'starts_at' => now()->subMonths(2),
         'ends_at' => $endsAt,
+        'auto_renews' => false,
     ]);
 
     return $reseller;

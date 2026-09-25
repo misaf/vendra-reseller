@@ -150,10 +150,22 @@ them into reseller behaviour, wired in `Providers\ResellerServiceProvider`:
 | `SubscriptionCancelled` | `SuspendSubscriberStores` |
 | `SubscriptionExpiringSoon` | `RemindExpiringSubscriber` |
 | `SubscriptionGraceExpired` | `SuspendSubscriberStores` |
+| `TransactionApproved` (deposit) | `RenewAfterWalletDeposit` |
+
+`RenewAfterWalletDeposit` retries an auto-renewing plan that expired or went
+past due for lack of funds as soon as the reseller's wallet is credited.
 
 Add a new reaction as a listener here rather than pushing reseller knowledge
 into the subscription engine, and do not register these listeners again in the
 host application.
+
+### Wallet and billing
+
+Plans are charged from the reseller user's platform wallet, a tenantless wallet
+in `misaf/vendra-transaction` (`Reseller::wallets()`), through the platform's
+internal gateway (`PlatformGatewaySeeder`). Money reaches it only as a console
+credit: `Actions\CreditResellerWalletAction` records a payment made outside
+the platform as a settled deposit with a note.
 
 ## Commands
 
@@ -191,6 +203,13 @@ provisioning, failed, or with a failed storefront, with the recorded reason;
 statuses and filters, with all queries still rooted in
 `StoreResource::getEloquentQuery()`. Runtime administration and container details
 remain console concerns and are not exposed here.
+
+The `Filament\Pages\Billing` page shows the acting reseller's plan, auto-renew
+state, scheduled change, wallet balance and recent payments. Its header actions
+(`Filament\Pages\Billing\Actions\`) change the plan (quoting each option with
+`PlanChangeQuote`), renew a plan that is no longer running, turn auto-renew on or
+off, and cancel a scheduled downgrade. Anything that charges the wallet is
+refused up front when the balance cannot cover it.
 
 ## Testing
 

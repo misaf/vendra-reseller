@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,9 +24,11 @@ use Misaf\VendraStore\Models\Store;
 use Misaf\VendraSubscription\Contracts\SubscriptionSubscriber;
 use Misaf\VendraSubscription\Enums\SubscriptionStatus;
 use Misaf\VendraSubscription\Models\Subscription;
+use Misaf\VendraSubscription\Support\MoneyFormatter;
 use Misaf\VendraSupport\Contracts\ShouldLogActivity;
 use Misaf\VendraSupport\Tenancy\Scopes\TeamScope;
 use Misaf\VendraSupport\Tenancy\Scopes\TenantScope;
+use Misaf\VendraTransaction\Models\Wallet;
 use Misaf\VendraUser\Models\User;
 
 /**
@@ -38,6 +41,7 @@ use Misaf\VendraUser\Models\User;
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
  * @property-read User $user
+ * @property-read Collection<int, Wallet> $wallets
  */
 #[Fillable(['user_id', 'active'])]
 #[ObservedBy([ResellerObserver::class])]
@@ -136,6 +140,60 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
     public function subscriptions(): MorphMany
     {
         return $this->morphMany(Subscription::class, 'subscriber');
+    }
+
+    /**
+     * Get the main account's platform wallets, one per currency.
+     *
+     * Reseller users are tenantless, so their wallets are too; the tenant
+     * scopes are dropped for queries that run inside a store's context.
+     *
+     * @return HasMany<Wallet, $this>
+     */
+    public function wallets(): HasMany
+    {
+        return $this->hasMany(Wallet::class, 'user_id', 'user_id')
+            ->withoutGlobalScopes([TenantScope::class, TeamScope::class]);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function formattedWalletBalances(): array
+    {
+        return array_values($this->wallets
+            ->map(fn (Wallet $wallet): string => MoneyFormatter::format($wallet->balance, $wallet->currency_code))
+            ->all());
+    }
+
+    public function walletBalance(string $currencyCode): int
+    {
+        return $this->wallets()->where('currency_code', $currencyCode)->first()->balance ?? 0;
+    }
+
+    /**
+     * Get the latest period that was ever live, which renewal continues from.
+     */
+    public function latestActivatedSubscription(): ?Subscription
+    {
+        return $this->subscriptions()->activated()->latest('starts_at')->first();
+    }
+
+    /**
+     * Get the period a renewal would continue from: the last live one, while
+     * nothing is running and no renewal is awaiting payment.
+     */
+    public function renewableSubscription(): ?Subscription
+    {
+        if ($this->activeSubscription() instanceof Subscription) {
+            return null;
+        }
+
+        if ($this->subscriptions()->where('status', SubscriptionStatus::PendingPayment)->exists()) {
+            return null;
+        }
+
+        return $this->latestActivatedSubscription();
     }
 
     public function latestSubscription(): ?Subscription
