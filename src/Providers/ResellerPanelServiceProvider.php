@@ -21,11 +21,11 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Config;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Misaf\VendraLocalization\Http\Middleware\SetLocale;
-use Misaf\VendraReseller\Filament\Pages\Auth\EditProfile;
 use Misaf\VendraReseller\Filament\Pages\Auth\Login;
 use Misaf\VendraReseller\Filament\Pages\Auth\Register;
 use Misaf\VendraReseller\Http\Middleware\AddResellerToRequestJobContext;
 use Misaf\VendraSupport\Http\Middleware\AddPanelToRequestJobContext;
+use Misaf\VendraUser\Filament\Pages\Auth\EditProfile;
 
 /**
  * Runs outside the tenant middleware because a reseller spans many stores.

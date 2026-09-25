@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Misaf\VendraReseller\Actions\OffboardResellerAction;
-use Misaf\VendraReseller\Filament\Pages\Auth\EditProfile;
 use Misaf\VendraReseller\Filament\Pages\Auth\Login;
 use Misaf\VendraReseller\Filament\Pages\Auth\Register;
 use Misaf\VendraReseller\Filament\Resources\Stores\Pages\CreateStore;
@@ -43,6 +42,7 @@ use Misaf\VendraSubscription\Models\Plan;
 use Misaf\VendraSubscription\Models\Subscription;
 use Misaf\VendraSupport\Enums\PlanLimit;
 use Misaf\VendraSupport\Tenancy\Events\TenantProvisioned;
+use Misaf\VendraUser\Filament\Pages\Auth\EditProfile;
 use Misaf\VendraUser\Models\User;
 
 use function Livewire\invade;

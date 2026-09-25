@@ -189,6 +189,14 @@ final class Reseller extends Model implements ShouldLogActivity, SubscriptionSub
             ->all());
     }
 
+    /**
+     * @return list<string>
+     */
+    public function walletCurrencyCodes(): array
+    {
+        return array_values($this->wallets()->get()->map(fn (Wallet $wallet): string => $wallet->currency_code)->all());
+    }
+
     public function walletBalance(string $currencyCode): int
     {
         return $this->wallets()->where('currency_code', $currencyCode)->first()->balance ?? 0;
