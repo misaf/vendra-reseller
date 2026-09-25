@@ -230,7 +230,7 @@ was created with, never changes; the reseller adds and removes aliases from the
 store's domains tab.
 Store creation records the managed storefront image and slug and deploys with
 sample contact, location, and social details when the runtime is configured.
-The store administrator replaces those details in Admin General Settings.
+The store administrator replaces those details on the admin Storefront settings page.
 The store list carries `Resources\Stores\Widgets\StoreStatusOverview` (the
 reseller's stores per status and failed storefronts, each linking to the
 filtered list), and the store view shows `Misaf\VendraStore\Filament\Widgets\StorePlanUsage`

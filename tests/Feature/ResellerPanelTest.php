@@ -551,7 +551,7 @@ it('lets a user create a store within the plan limit', function (): void {
         'email' => 'admin@gmail.com',
     ]);
     $deployment = StorefrontDeployment::query()->where('slug', 'acme-flowers')->firstOrFail();
-    expect(Arr::get($deployment->configuration, 'contact.email'))->toBe('admin@gmail.com')
+    expect(Arr::get($deployment->configuration, 'contact.email'))->toBe('contact@acme.test')
         ->and(Arr::get($deployment->configuration, 'contact.mobilePhone'))->toBe('00000000000');
 });
 
