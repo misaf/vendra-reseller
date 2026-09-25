@@ -84,21 +84,6 @@ function resellerStorefrontFormData(): array
     return [
         'storefront_image_id' => StorefrontImage::factory()->active()->create()->id,
         'storefront_slug' => 'acme-flowers',
-        'storefront_name_en' => 'Acme Flowers',
-        'storefront_name_fa' => 'گل‌فروشی اکمی',
-        'storefront_business_type' => 'Florist',
-        'storefront_price_currency' => 'IRR',
-        'storefront_locality' => 'Tehran',
-        'storefront_country' => 'IR',
-        'storefront_mobile_phone' => '09120000000',
-        'storefront_office_phone' => '02100000000',
-        'storefront_contact_email' => 'contact@acme.test',
-        'storefront_hours_open' => '08:00',
-        'storefront_hours_close' => '21:00',
-        'storefront_map_query' => '35.7,51.4',
-        'storefront_whatsapp_phone' => '+989120000000',
-        'storefront_telegram_username' => 'acmeflowers',
-        'storefront_instagram_username' => 'acmeflowers',
     ];
 }
 
@@ -184,6 +169,7 @@ it('lets a reseller edit store details without exposing protected billing or pro
     actAsResellerUser($reseller);
 
     livewire(EditStore::class, ['record' => $store->getKey()])
+        ->assertFormFieldDoesNotExist('storefront_mobile_phone')
         ->fillForm([
             'name' => 'Updated store',
             'description' => 'Customer-facing store details.',
@@ -564,10 +550,12 @@ it('lets a user create a store within the plan limit', function (): void {
         'username' => 'admin',
         'email' => 'admin@gmail.com',
     ]);
-    expect(StorefrontDeployment::query()->where('slug', 'acme-flowers')->exists())->toBeTrue();
+    $deployment = StorefrontDeployment::query()->where('slug', 'acme-flowers')->firstOrFail();
+    expect(Arr::get($deployment->configuration, 'contact.email'))->toBe('admin@gmail.com')
+        ->and(Arr::get($deployment->configuration, 'contact.mobilePhone'))->toBe('00000000000');
 });
 
-it('requires storefront configuration when a reseller creates a store', function (): void {
+it('requires only storefront identity when a reseller creates a store', function (): void {
     $reseller = Reseller::factory()->active()->create();
     Subscription::factory()->forSubscriber($reseller)->for(Plan::factory()->active()->maxUnits(2))->create();
     actAsResellerUser($reseller);
@@ -580,8 +568,7 @@ it('requires storefront configuration when a reseller creates a store', function
         ->call('create')
         ->assertHasFormErrors([
             'storefront_slug' => 'required',
-            'storefront_name_en' => 'required',
-            'storefront_name_fa' => 'required',
+            'storefront_image_id' => 'required',
         ]);
 });
 

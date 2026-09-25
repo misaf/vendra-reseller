@@ -6,6 +6,7 @@ namespace Misaf\VendraReseller\Filament\Resources\Stores\Schemas;
 
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
 use Livewire\Component as Livewire;
 use Misaf\VendraStore\Filament\Schemas\StorefrontConfigurationFields;
@@ -55,7 +56,10 @@ final class StoreForm
                     ->rules(UserRules::email())
                     ->visibleOn('create'),
 
-                ...StorefrontConfigurationFields::make(optional: false),
+                Grid::make(2)
+                    ->schema(StorefrontConfigurationFields::creationIdentityFields(optional: false))
+                    ->visibleOn('create')
+                    ->columnSpanFull(),
             ])
             ->columns(2);
     }
